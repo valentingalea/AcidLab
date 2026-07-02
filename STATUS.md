@@ -17,7 +17,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 00 | Oscillator & the scope | ✅ done | vanilla Web Audio, scope + spectrum, 4 waveforms |
 | 01 | Gain & envelopes (ADSR) | ✅ done | VCA + ADSR, live envelope graph w/ playhead, presets |
 | 02 | Low-pass filter & cutoff | ✅ done | single biquad lowpass (Q=0.707, reso saved for 03), live getFrequencyResponse curve + cutoff marker on log spectrum, bypass A/B, auto-sweep, saw/square/noise sources |
-| 03 | Resonance & the squelch | ⬜ planned | |
+| 03 | Resonance & the squelch | ✅ done | reso knob (Q in dB on stage 2 only), 12/24 dB slope toggle (chained biquads), impulse "ping" that rings at cutoff, ★ make-it-squelch preset, dB-scale response curve |
 | 04 | Ladder filter (AudioWorklet) | ⏭️ optional | |
 | 05 | The 303 voice | ⬜ planned | |
 | 06 | Filter env: Env Mod + Decay | ⬜ planned | |
@@ -36,10 +36,10 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 
 ## Now / Next
 - **Now:** Prologue (3 ELI5 parts, rewritten 2026-07-02), Module 0
-  (lessons 00 + 01) and lesson 02 (first filter lesson, Module 1) all playable.
+  (lessons 00 + 01) and Module 1 (lessons 02 + 03 — the filter) all playable.
   Old `prologue-theory/` URL redirects to P1.
-- **Next:** Lesson 03 (resonance & the squelch) — Q, self-oscillation, and
-  stacking two biquads for the 303's 24 dB/oct slope.
+- **Next:** Module 2 — lesson 05 (the 303 voice: osc → 24 dB filter → VCA as
+  one playable mono synth). Lesson 04 (AudioWorklet ladder) stays optional.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Resonance &amp; the squelch — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .scopes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.scopes{grid-template-columns:1fr}}
+  .scopebox{background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .scopebox h3{margin:0 0 8px;font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  canvas{width:100%;height:150px;display:block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  button.squelch{border-color:var(--orange);color:var(--orange);font-weight:700}
+  button.squelch:hover{background:var(--orange);color:#0a0c08}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  .ctrl.hero label b{color:var(--orange);font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  .ctrl.hero input[type=range]{accent-color:var(--orange);height:34px}
+  #power{background:var(--orange);color:#0a0c08;border:none;border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #gate{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px;flex:1;min-width:140px}
+  #gate.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #gate:disabled,#ping:disabled,#sweep:disabled,#squelchBtn:disabled{opacity:.35;cursor:not-allowed}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  ul{margin:8px 0;padding-left:22px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">03</span> · Resonance &amp; the squelch</h1>
+  <p class="sub">The filter learns to sing. One new knob, one new toggle — and suddenly it sounds like acid.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="scopes">
+      <div class="scopebox">
+        <h3>Oscilloscope · waveform (time)</h3>
+        <canvas id="scope"></canvas>
+      </div>
+      <div class="scopebox">
+        <h3>Spectrum (dB) + the filter's curve</h3>
+        <canvas id="spectrum"></canvas>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="gate" disabled>▶ hold note</button>
+      <button id="ping" disabled>◉ ping the filter</button>
+      <button id="sweep" disabled>∿ auto-sweep</button>
+      <button id="squelchBtn" class="squelch" disabled>★ make it squelch</button>
+    </div>
+
+    <div class="row">
+      <div class="ctrl hero">
+        <label>CUTOFF <b id="cutVal">700 Hz</b></label>
+        <input id="cut" type="range" min="0" max="1000" value="502">
+      </div>
+      <div class="ctrl hero">
+        <label>RESONANCE — boost right at the cutoff <b id="resVal">0 dB (off)</b></label>
+        <input id="res" type="range" min="0" max="26" value="0" step="0.5">
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="hint">slope:</span>
+      <button class="slope on" data-m="12">12 dB/oct (one filter)</button>
+      <button class="slope" data-m="24">24 dB/oct (two stacked — the 303 way)</button>
+      <span class="hint" style="margin-left:8px">source:</span>
+      <button class="src on" data-s="sawtooth">◿ saw</button>
+      <button class="src" data-s="square">▨ square</button>
+      <button class="src" data-s="noise">▒ noise</button>
+      <div class="ctrl" style="max-width:170px">
+        <label>level <b id="levVal">30%</b></label>
+        <input id="lev" type="range" min="0" max="100" value="30">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── idea 1: favourite note ─────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>Resonance gives the filter a favourite note</h2>
+    <p>Push a kid on a swing at exactly the swing's own rhythm and a tiny push grows huge. Everything that can
+    wiggle has a rhythm it <i>prefers</i> — that preference is <b class="hl">resonance</b>. Wine glasses,
+    bridges, bathroom acoustics: all playing favourites.</p>
+    <p>Lesson 02's filter treated everything below the cutoff equally. The <b>RESONANCE</b> knob makes the
+    filter <b class="hl">boost the frequencies right at the cutoff edge</b> before the slope cuts everything
+    above — look at the orange curve: turning it up grows a horn at the cutoff line.</p>
+    <p><b class="hl">Try it:</b> <span class="kbd">⏻ power on</span> → <span class="kbd">▶ hold note</span> →
+    raise resonance to ~15 dB → now slowly drag the <b>CUTOFF</b>. That whistle gliding along the harmonics is
+    the resonant peak sweeping across the stack — each harmonic it passes gets its moment of glory. With
+    resonance at 0 this was just "opening a door"; now the door <i>sings</i>.</p>
+  </div>
+
+  <!-- ── idea 2: ringing ────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>Ping it — a resonant filter rings like a glass</h2>
+    <p>Flick a wine glass: one tap, but it answers with a <i>tone</i> — the tap contains every frequency at
+    once, the glass keeps only its favourite and rings it out. <span class="kbd">◉ ping the filter</span> does
+    exactly that: it fires a single one-sample click (all frequencies at once, remember the noise from P3)
+    into the filter, no note held.</p>
+    <p>With resonance low, you hear the click. Turn resonance up and the click becomes a
+    <b class="hl">pitched "boing"</b> — the filter ringing at the cutoff frequency. Drag the cutoff and ping
+    again: <b>the ring follows the knob</b>. At maximum resonance the filter is on the edge of becoming an
+    oscillator that needs no input at all — real analog filters (and lesson 04's ladder) tip over that edge
+    and <b>self-oscillate</b> into a pure sine whistle. That whistle mixed into the sweep is a big part of the
+    acid scream.</p>
+  </div>
+
+  <!-- ── idea 3: slope ──────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>12 vs 24 dB/oct — stack two filters, get the 303's focus</h2>
+    <p>Lesson 02's slope was a gentle ski hill: 12 dB per octave. The 303's filter falls off
+    <b class="hl">twice as steeply</b> (24 dB/oct) — and the cheapest way to get there is to just
+    <b>run the signal through two identical filters in a row</b>. That's literally what the
+    <span class="kbd">24 dB/oct</span> button does, and it's how we'll build the 303 voice.</p>
+    <p>Toggle between them while a note plays and watch the orange curve: same cutoff, much steeper cliff.
+    The ear hears 24 dB as more <i>focused, rubbery, vacuum-sealed</i> — less high-end leaks past the cutoff,
+    and the resonant horn stands out more against what's left. Every "liquid" acid line owes its wetness to
+    this steepness.</p>
+    <div class="nerd"><b>// CS corner:</b> filters in series <i>multiply</i> their responses, and
+    multiplication of magnitudes = <b>addition in dB</b> — so 12 + 12 = 24 dB/oct. The orange curve is honest:
+    it's the product of both stages' <code>getFrequencyResponse()</code>, drawn on a dB scale (straight slopes
+    on a log-log plot). Resonance lives only on the second stage so the peak doesn't double up.</div>
+  </div>
+
+  <!-- ── idea 4: the squelch ────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>The squelch = motion + resonance</h2>
+    <p>Now combine everything you own: a rich wave (lesson 00) + a <i>moving</i> cutoff (lesson 02) + a
+    resonant peak riding that motion (this lesson). Press <span class="kbd">★ make it squelch</span> — it sets
+    24 dB/oct, resonance ~15 dB and starts the sweep. That liquid <i>wow-ow-ow</i> is the acid squelch, made
+    of parts you now understand individually.</p>
+    <p><b class="hl">Experiments before you leave:</b></p>
+    <ul>
+      <li><b>Acid whistle:</b> resonance max, hold note, wiggle the cutoff by hand — chase the harmonics.</li>
+      <li><b>909 kick, for free:</b> cutoff ~60 Hz, resonance high, <span class="kbd">◉ ping</span> — that boom
+        is literally how drum machines synthesize kicks (lesson 11).</li>
+      <li><b>Wind in the wires:</b> source <span class="kbd">noise</span>, resonance ~14, sweep — the peak turns
+        "shhh" into a howling gale.</li>
+      <li><b>12 vs 24 A/B:</b> squelch running, flip the slope buttons — hear the 303's focus appear.</li>
+    </ul>
+    <p>Next: the last piece of the voice is pointing an <b>envelope</b> (lesson 01) at this cutoff instead of
+    your hand — that's Module 2, where the 303 gets assembled.</p>
+    <a class="next" href="../../index.html">Next → Module 2 · The 303 voice (soon)</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* Lesson 03 — resonance & slope. Signal path:
+
+     saw/square osc ─┐
+                     ├─► input bus ──► [F1 lowpass] ──► F2 lowpass ──► VCA ──► Analyser ──► out
+     noise loop ─────┘        (24 dB: through F1+F2 · 12 dB: skip F1)
+
+   Both stages share the cutoff; resonance (Q, in dB for lowpass biquads) lives
+   only on F2 so the peak doesn't double when stacking. "Ping" builds a tiny
+   throwaway copy of the chain and feeds it one unit impulse — a click going in,
+   a ring coming out, VCA not involved.                                          */
+
+let ctx, osc, noise, oscGain, noiseGain, inputBus, f1, f2, vca, analyser;
+let playing=false, sweeping=false, sweepTimer=null, slope24=false;
+let source="sawtooth", level=0.30, reso=0;
+const FREQ=110;
+
+const C_MIN=40, C_MAX=12000;
+const sliderToCut = v => C_MIN*Math.pow(C_MAX/C_MIN, v/1000);
+const cutToSlider = f => 1000*Math.log(f/C_MIN)/Math.log(C_MAX/C_MIN);
+
+const $ = s => document.querySelector(s);
+const powerBtn=$("#power"), gateBtn=$("#gate"), pingBtn=$("#ping"), sweepBtn=$("#sweep"), squelchBtn=$("#squelchBtn");
+const cutEl=$("#cut"), cutVal=$("#cutVal"), resEl=$("#res"), resVal=$("#resVal"), levEl=$("#lev"), levVal=$("#levVal");
+const scope=$("#scope"), spectrum=$("#spectrum");
+let curCut = sliderToCut(+cutEl.value);
+
+function powerOn(){
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  osc = ctx.createOscillator(); osc.type="sawtooth"; osc.frequency.value=FREQ;
+  const nb = ctx.createBuffer(1, 2*ctx.sampleRate, ctx.sampleRate);
+  const d = nb.getChannelData(0);
+  for(let n=0;n<d.length;n++) d[n]=(Math.random()*2-1)*0.6;
+  noise = ctx.createBufferSource(); noise.buffer=nb; noise.loop=true;
+
+  oscGain=ctx.createGain(); noiseGain=ctx.createGain();
+  oscGain.gain.value=1; noiseGain.gain.value=0;
+  inputBus=ctx.createGain();
+
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.frequency.value=curCut; f1.Q.value=-3;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.frequency.value=curCut; f2.Q.value=reso;
+
+  vca=ctx.createGain(); vca.gain.value=0;
+  analyser=ctx.createAnalyser(); analyser.fftSize=4096; analyser.smoothingTimeConstant=0.6;
+
+  osc.connect(oscGain); noise.connect(noiseGain);
+  oscGain.connect(inputBus); noiseGain.connect(inputBus);
+  inputBus.connect(f2);                       // 12 dB default: skip F1
+  f1.connect(f2);
+  f2.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start(); noise.start();
+
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  gateBtn.disabled=pingBtn.disabled=sweepBtn.disabled=squelchBtn.disabled=false;
+  draw();
+}
+
+function setGate(on){
+  playing=on;
+  const t=ctx.currentTime;
+  vca.gain.cancelScheduledValues(t);
+  vca.gain.setValueAtTime(vca.gain.value,t);
+  vca.gain.linearRampToValueAtTime(on?level:0, t+0.012);
+  gateBtn.classList.toggle("on",on);
+  gateBtn.textContent = on ? "■ stop" : "▶ hold note";
+}
+
+function setSlope(m24){
+  slope24=m24;
+  document.querySelectorAll(".slope").forEach(b=>b.classList.toggle("on",(b.dataset.m==="24")===m24));
+  if(!ctx) return;
+  inputBus.disconnect();
+  inputBus.connect(m24 ? f1 : f2);
+}
+
+// ping: one-sample impulse through a throwaway copy of the current chain —
+// audible with the gate closed, rings at the cutoff when resonance is up
+function ping(){
+  if(!ctx) return;
+  if(ctx.state==="suspended") ctx.resume();
+  const cut=f2.frequency.value;
+  // a ~1.4 ms triangular click — enough energy to actually excite the filter
+  // (a lone 1-sample impulse comes out inaudibly quiet after two stages)
+  const L=128, imp=ctx.createBuffer(1,L,ctx.sampleRate), id=imp.getChannelData(0);
+  for(let n=0;n<L;n++) id[n]=1-n/L;
+  const s=ctx.createBufferSource(); s.buffer=imp;
+  const g=ctx.createGain();
+  g.gain.value=0.7/(1+Math.pow(10,reso/20)*0.06);   // tame the ring as the peak grows
+  const stages=(slope24?[0,1]:[0]).map((_,i,arr)=>{
+    const f=ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=cut;
+    f.Q.value = (i===arr.length-1) ? reso : -3;
+    return f;
+  });
+  s.connect(g);
+  let head=g; stages.forEach(f=>{ head.connect(f); head=f; });
+  head.connect(analyser);
+  s.start();
+  s.onended=()=>setTimeout(()=>{ g.disconnect(); stages.forEach(f=>f.disconnect()); }, 6000);
+}
+
+function sweepLap(){
+  const t=ctx.currentTime;
+  [f1.frequency,f2.frequency].forEach(p=>{
+    p.cancelScheduledValues(t);
+    p.setValueAtTime(Math.max(p.value,C_MIN), t);
+    p.exponentialRampToValueAtTime(80, t+3);
+    p.exponentialRampToValueAtTime(8000, t+6);
+  });
+}
+function setSweep(on){
+  sweeping=on;
+  sweepBtn.classList.toggle("on",on);
+  if(on){ if(!playing) setGate(true); sweepLap(); sweepTimer=setInterval(sweepLap,6000); }
+  else{
+    clearInterval(sweepTimer);
+    const t=ctx.currentTime;
+    [f1.frequency,f2.frequency].forEach(p=>{
+      p.cancelScheduledValues(t); p.setValueAtTime(p.value,t);
+      p.setTargetAtTime(curCut,t,0.05);
+    });
+  }
+}
+
+// the one-button payoff: 24 dB + resonance + sweep = the squelch
+function squelch(){
+  if(!ctx) return;
+  setSlope(true);
+  resEl.value=15; resEl.dispatchEvent(new Event("input"));
+  if(!sweeping) setSweep(true);
+}
+
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+gateBtn.onclick=()=>setGate(!playing);
+pingBtn.onclick=ping;
+sweepBtn.onclick=()=>setSweep(!sweeping);
+squelchBtn.onclick=squelch;
+document.querySelectorAll(".slope").forEach(b=>b.onclick=()=>setSlope(b.dataset.m==="24"));
+
+document.querySelectorAll(".src").forEach(b=>b.onclick=()=>{
+  source=b.dataset.s;
+  document.querySelectorAll(".src").forEach(x=>x.classList.toggle("on",x===b));
+  if(!ctx) return;
+  const t=ctx.currentTime;
+  if(source==="noise"){
+    oscGain.gain.setTargetAtTime(0,t,0.01);
+    noiseGain.gain.setTargetAtTime(1,t,0.01);
+  }else{
+    osc.type=source;
+    oscGain.gain.setTargetAtTime(1,t,0.01);
+    noiseGain.gain.setTargetAtTime(0,t,0.01);
+  }
+});
+
+function fmtCut(f){
+  const lbl = f>=10000 ? "wide open" : f>=3000 ? "bright" : f>=800 ? "warm" : f>=250 ? "muffled" : "underwater";
+  return Math.round(f)+" Hz ("+lbl+")";
+}
+function fmtRes(q){
+  const lbl = q<1 ? "off" : q<6 ? "gentle" : q<12 ? "peaky" : q<19 ? "whistly" : "screaming";
+  return q+" dB ("+lbl+")";
+}
+cutEl.oninput=()=>{
+  if(sweeping) setSweep(false);
+  curCut=sliderToCut(+cutEl.value);
+  cutVal.textContent=fmtCut(curCut);
+  if(ctx){ const t=ctx.currentTime;
+    f1.frequency.setTargetAtTime(curCut,t,0.01);
+    f2.frequency.setTargetAtTime(curCut,t,0.01);
+  }
+};
+resEl.oninput=()=>{
+  reso=+resEl.value;
+  resVal.textContent=fmtRes(reso);
+  if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01);
+};
+levEl.oninput=()=>{
+  level=+levEl.value/100; levVal.textContent=levEl.value+"%";
+  if(playing) vca.gain.setTargetAtTime(level,ctx.currentTime,0.01);
+};
+cutVal.textContent=fmtCut(curCut);
+resVal.textContent=fmtRes(reso);
+
+/* ── Visualization ─────────────────────────────────────────────── */
+function fitCanvas(c){
+  const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect();
+  c.width=r.width*dpr; c.height=r.height*dpr;
+  const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return [g,r.width,r.height];
+}
+const V_MIN=40, V_MAX=16000;
+const fx=(f,W)=>W*Math.log(f/V_MIN)/Math.log(V_MAX/V_MIN);
+// dB → y: +30 dB at the top, −42 dB at the bottom (resonant horns need headroom)
+const DB_TOP=30, DB_BOT=-42;
+const dby=(db,H)=>H*(1-(Math.min(Math.max(db,DB_BOT),DB_TOP)-DB_BOT)/(DB_TOP-DB_BOT));
+
+const RESP_N=160;
+const respFreqs=new Float32Array(RESP_N);
+const mag1=new Float32Array(RESP_N), mag2=new Float32Array(RESP_N), ph=new Float32Array(RESP_N);
+for(let i=0;i<RESP_N;i++) respFreqs[i]=V_MIN*Math.pow(V_MAX/V_MIN,i/(RESP_N-1));
+
+function draw(){
+  requestAnimationFrame(draw);
+  if(!analyser) return;
+  const liveCut=f2.frequency.value;
+  if(sweeping){ cutEl.value=cutToSlider(liveCut); cutVal.textContent=fmtCut(liveCut); }
+
+  // Oscilloscope
+  {
+    const [g,W,H]=fitCanvas(scope);
+    const buf=new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(buf);
+    g.clearRect(0,0,W,H);
+    g.strokeStyle="#2a3320"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
+    g.lineWidth=2; g.strokeStyle="#b6ff00"; g.beginPath();
+    const span = source==="noise" ? 1024 : Math.max(2,Math.min(buf.length,Math.round(ctx.sampleRate/FREQ*2)));
+    for(let i=0;i<span;i++){
+      const x=(i/span)*W, y=H-(buf[i]/255)*H;
+      i===0?g.moveTo(x,y):g.lineTo(x,y);
+    }
+    g.stroke();
+  }
+
+  // Spectrum bars + combined response curve + cutoff marker
+  {
+    const [g,W,H]=fitCanvas(spectrum);
+    const bins=new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(bins);
+    g.clearRect(0,0,W,H);
+    g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace";
+    [[100,"100"],[1000,"1k"],[10000,"10k"]].forEach(([f,l])=>{
+      const x=fx(f,W); g.fillRect(x,0,1,H); g.fillText(l+"Hz",x+3,H-4);
+    });
+    // 0 dB reference line for the filter curve
+    g.fillStyle="#25301c"; g.fillRect(0,dby(0,H),W,1);
+    const binHz=ctx.sampleRate/2/bins.length, COLS=Math.floor(W/3);
+    for(let i=0;i<COLS;i++){
+      const f0=V_MIN*Math.pow(V_MAX/V_MIN,i/COLS), f1b=V_MIN*Math.pow(V_MAX/V_MIN,(i+1)/COLS);
+      let v=0;
+      for(let b=Math.floor(f0/binHz); b<=Math.min(bins.length-1,Math.floor(f1b/binHz)); b++) v=Math.max(v,bins[b]);
+      const h=(v/255)*H, t=i/COLS;
+      g.fillStyle=`rgb(${Math.round(120+135*t)},255,0)`;
+      g.fillRect(i*(W/COLS), H-h, Math.max(W/COLS-1,1), h);
+    }
+    // the true combined transfer curve (product of active stages), in dB
+    f1.getFrequencyResponse(respFreqs,mag1,ph);
+    f2.getFrequencyResponse(respFreqs,mag2,ph);
+    g.lineWidth=2; g.strokeStyle="#ff7a00"; g.beginPath();
+    for(let i=0;i<RESP_N;i++){
+      const m=(slope24?mag1[i]:1)*mag2[i];
+      const y=dby(20*Math.log10(Math.max(m,1e-4)),H);
+      const x=fx(respFreqs[i],W);
+      i===0?g.moveTo(x,y):g.lineTo(x,y);
+    }
+    g.stroke();
+    const cx=fx(liveCut,W);
+    g.strokeStyle="#ff7a00"; g.setLineDash([4,4]); g.beginPath();
+    g.moveTo(cx,0); g.lineTo(cx,H); g.stroke(); g.setLineDash([]);
+    g.fillStyle="#ff7a00"; g.fillText("cutoff",Math.min(cx+4,W-42),10);
+  }
+}
+
+// space = hold note
+addEventListener("keydown",e=>{
+  if(e.code==="Space" && ctx && !gateBtn.disabled){ e.preventDefault(); setGate(!playing); }
+});
+</script>
+</body>
+</html>
