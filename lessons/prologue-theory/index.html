@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prologue · Music theory for acid — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace;padding:32px 18px 100px}
+  .wrap{max-width:900px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0}
+  p{margin:10px 0} b{color:var(--ink)} .hl{color:var(--acid)} .kbd{color:var(--orange)} .east{color:var(--blue)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+
+  /* keyboard */
+  #kbwrap{position:relative;height:150px;margin:6px 0 4px;user-select:none;touch-action:none}
+  .wkey,.bkey{position:absolute;bottom:0;border:1px solid #000;border-radius:0 0 5px 5px;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;font-size:10px;padding-bottom:6px}
+  .wkey{top:0;background:linear-gradient(#e6eede,#c3ccb8);color:#4a5540}
+  .bkey{top:0;height:62%;background:linear-gradient(#2a3220,#12160d);color:#8fa073;z-index:2;font-size:9px}
+  .wkey.inscale{background:linear-gradient(#e9ffc0,#b6ff00);color:#2a3a00}
+  .bkey.inscale{background:linear-gradient(#7aa800,#4c6a00);color:#eaffc0}
+  .wkey.root{background:linear-gradient(#ffd9a8,#ff7a00);color:#3a1c00}
+  .bkey.root{background:linear-gradient(#c85c00,#8a3c00);color:#ffe}
+  .wkey.press{filter:brightness(.8)} .bkey.press{filter:brightness(1.6)}
+
+  .readout{display:flex;gap:18px;flex-wrap:wrap;background:#0a0c08;border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px}
+  .readout b{color:var(--acid);font-size:16px}
+  .readout .lbl{color:var(--dim);font-size:11px}
+
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer;font:inherit;font-size:13px;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  .roots button{min-width:38px;padding:7px 6px}
+  .roots button.on{background:var(--orange);color:#0a0c08;border-color:var(--orange)}
+
+  /* scale index */
+  .scalegrid{display:grid;grid-template-columns:260px 1fr;gap:16px}
+  @media(max-width:680px){.scalegrid{grid-template-columns:1fr}}
+  .scalelist{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px;background:#0a0c08}
+  .scalecat{color:var(--orange);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin:10px 6px 4px}
+  .scaleitem{display:block;width:100%;text-align:left;margin:3px 0;border-color:transparent;background:transparent}
+  .scaleitem:hover{background:var(--panel2)}
+  .scaleitem.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  .scaleinfo b.name{color:var(--acid);font-size:17px}
+  .maskrow{display:flex;gap:3px;margin:8px 0}
+  .cell{width:26px;height:26px;border:1px solid var(--line);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim)}
+  .cell.in{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  .cell.rootc{background:var(--orange);color:#0a0c08;border-color:var(--orange);font-weight:700}
+  .formula{color:var(--dim);font-size:13px}
+  .formula b{color:var(--ink)}
+  .toc{columns:2;font-size:13px;color:var(--dim)} @media(max-width:600px){.toc{columns:1}}
+  .toc a{color:var(--acid);text-decoration:none} .toc a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">P</span> · Music theory for acid (a noob's prologue)</h1>
+  <p class="sub">No prior theory assumed. Just enough to make melodies on purpose — plus an interactive index of the classic scales. Click anything to make sound.</p>
+
+  <div class="panel toc">
+    <b class="hl">On this page:</b><br>
+    <a href="#notes">1 · Notes &amp; the keyboard</a><br>
+    <a href="#octave">2 · Octaves, semitones &amp; equal temperament</a><br>
+    <a href="#harm">3 · Harmonics → harmony (why notes agree)</a><br>
+    <a href="#intervals">4 · Intervals — consonant vs dissonant</a><br>
+    <a href="#scales">5 · Scales — the interactive index of classics ★</a><br>
+    <a href="#modes">6 · Modes (same notes, different mood)</a><br>
+    <a href="#east">7 · West vs East — the notes between the keys</a><br>
+    <a href="#chords">8 · Chords &amp; rhythm (a peek)</a><br>
+    <a href="#acid">9 · The acid cheat-sheet</a>
+  </div>
+
+  <!-- ── 1 · NOTES ─────────────────────────────────────────────── -->
+  <div class="panel" id="notes">
+    <h2><span class="k">Section 1</span>Notes &amp; the keyboard</h2>
+    <p>Western music slices pitch into <b class="hl">12 notes</b> that repeat forever, higher and lower.
+    Their names: <code>C  C#  D  D#  E  F  F#  G  G#  A  A#  B</code> — seven letters plus five "sharps"
+    (the black keys). After B it wraps back to C, one <b>octave</b> higher. Play the keyboard — click,
+    or use your computer keys <code>A W S E D F T G Y H U J K</code>:</p>
+    <div id="kbwrap"></div>
+    <div class="readout">
+      <div><span class="lbl">note</span><br><b id="ro-note">—</b></div>
+      <div><span class="lbl">MIDI #</span><br><b id="ro-midi">—</b></div>
+      <div><span class="lbl">frequency</span><br><b id="ro-hz">—</b></div>
+      <div><span class="lbl">vs A4=440</span><br><b id="ro-cents">—</b></div>
+    </div>
+    <p class="hint">MIDI number is just an integer name for each key (A4 = 69). The whole keyboard is one formula:
+    <code>freq = 440 · 2^((midi − 69) / 12)</code>. That's the only equation in this lesson.</p>
+  </div>
+
+  <!-- ── 2 · OCTAVE / SEMITONE / TEMPERAMENT ───────────────────── -->
+  <div class="panel" id="octave">
+    <h2><span class="k">Section 2</span>Octaves, semitones &amp; equal temperament</h2>
+    <p>Two facts do most of the work:</p>
+    <ul>
+      <li><b>Octave = ×2 frequency.</b> A note and the note 12 keys up sound "the same but higher" because
+        the higher one vibrates exactly twice as fast (A4 = 440 Hz, A5 = 880 Hz). Our ears hear <i>ratios</i>,
+        not differences — that's why pitch is <b>logarithmic</b> (and why the sliders in lesson 00 were too).</li>
+      <li><b>Semitone = one key.</b> The smallest step in Western music: adjacent keys (e.g. C→C#). Twelve of
+        them make an octave.</li>
+    </ul>
+    <p><b class="hl">Equal temperament</b> is the deal Western instruments struck: split the octave into 12
+    <i>equal</i> steps, each a frequency ratio of <code>2^(1/12) ≈ 1.0595</code>. Multiply by that 12 times and
+    you've doubled — a perfect octave. The trade-off: every other interval is very slightly "out of tune"
+    versus pure whole-number ratios, but in exchange you can play in any key on the same 12 keys. Almost all
+    acid/house/techno lives in this 12-note equal-tempered world. <span class="east">Many Eastern traditions
+    did <i>not</i> take this deal — section 7.</span></p>
+    <div class="row">
+      <button onclick="demoOctave()">▶ hear an octave (×2)</button>
+      <button onclick="demoSemitone()">▶ hear one semitone</button>
+      <button onclick="demoChromatic()">▶ hear all 12 (chromatic)</button>
+    </div>
+  </div>
+
+  <!-- ── 3 · HARMONICS → HARMONY ───────────────────────────────── -->
+  <div class="panel" id="harm">
+    <h2><span class="k">Section 3</span>Harmonics → harmony · why some notes agree</h2>
+    <p>Remember the <b>spectrum</b> in lesson 00 — a note is secretly a stack of overtones at 1×, 2×, 3×, 4×…
+    its frequency. Here's the payoff: <b class="hl">those overtones are the good intervals.</b> Play the
+    harmonic series of a low note and listen to what each overtone <i>is</i>:</p>
+    <table>
+      <tr><th>harmonic</th><th>ratio to root</th><th>interval it forms</th></tr>
+      <tr><td>1× (root)</td><td>1:1</td><td>the note itself</td></tr>
+      <tr><td>2×</td><td>2:1</td><td>octave</td></tr>
+      <tr><td>3×</td><td>3:2</td><td><b class="hl">perfect fifth</b> (the most consonant interval after the octave)</td></tr>
+      <tr><td>4×</td><td>4:3</td><td>perfect fourth (+ another octave)</td></tr>
+      <tr><td>5×</td><td>5:4</td><td>major third</td></tr>
+      <tr><td>6×</td><td>6:5</td><td>minor third</td></tr>
+    </table>
+    <p>Two notes sound <b>consonant</b> when their overtones line up (simple ratios like 2:1, 3:2). They clash
+    (<b>dissonant</b>) when the ratios are complex and overtones beat against each other. So harmony isn't
+    arbitrary — it falls out of the physics you already saw on the scope.</p>
+    <div class="row">
+      <button onclick="demoHarmonics()">▶ play the harmonic series (root → 8×)</button>
+    </div>
+  </div>
+
+  <!-- ── 4 · INTERVALS ─────────────────────────────────────────── -->
+  <div class="panel" id="intervals">
+    <h2><span class="k">Section 4</span>Intervals — the distance between two notes</h2>
+    <p>An <b>interval</b> is just "how many semitones apart". Name them once and you'll hear them everywhere.
+    Each button plays the two notes together (root + the interval):</p>
+    <div class="row" id="intervalRow"></div>
+    <p class="hint">The <b>perfect fifth</b> (7 semitones, 3:2) and <b>octave</b> (12, 2:1) are rock-solid —
+    that's your low harmonics again. The <b>tritone</b> (6) is the tense, "evil" one. The <b>minor third</b> (3)
+    is what makes a chord/scale sound <i>sad</i> — and it's the backbone of acid's minor mood.</p>
+  </div>
+
+  <!-- ── 5 · SCALES ────────────────────────────────────────────── -->
+  <div class="panel" id="scales">
+    <h2><span class="k">Section 5 ★</span>Scales — the index of classics</h2>
+    <p>A <b class="hl">scale</b> is a chosen subset of the 12 notes — a mask that says "these belong together".
+    Stay on a scale's notes and almost anything you play sounds intentional. Pick a <b>root</b> (the home note)
+    and a scale; the keyboard lights up its notes and plays it. This is your reference — steal freely.</p>
+    <div class="row roots" id="rootRow"></div>
+    <div class="scalegrid">
+      <div class="scalelist" id="scaleList"></div>
+      <div class="scaleinfo">
+        <p style="margin:2px 0 4px"><b class="name" id="sc-name">—</b> &nbsp; <span id="sc-root" class="kbd"></span></p>
+        <p id="sc-mood" class="formula"></p>
+        <p class="formula" id="sc-where"></p>
+        <div class="maskrow" id="sc-mask"></div>
+        <p class="formula" id="sc-formula"></p>
+        <div class="row">
+          <button onclick="playCurrentScale()">▶ play scale ↑↓</button>
+          <button onclick="playCurrentScale(true)">▶ arpeggio chord</button>
+        </div>
+        <p class="hint">CS view: a scale is a 12-bit mask. Minor = <code>101101011010</code>. Transposing to a
+        new root is just a rotation of the mask. Generating a "correct" melody = random-walk that stays on the
+        lit cells (exactly how we'll auto-write acid lines for the game in Module 6).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6 · MODES ─────────────────────────────────────────────── -->
+  <div class="panel" id="modes">
+    <h2><span class="k">Section 6</span>Modes — same notes, different centre of gravity</h2>
+    <p>Take the white keys C→C and you get the <b>major</b> scale (bright, happy). Play the <i>same white keys</i>
+    but treat A as home and you get <b>natural minor</b> (dark). Nothing changed but the <i>home note</i> — that's
+    a <b class="hl">mode</b>. The seven modes of the major scale are just seven different starting points:</p>
+    <table>
+      <tr><th>mode</th><th>flavour</th><th>you know it from</th></tr>
+      <tr><td>Ionian (major)</td><td>bright, resolved</td><td>most pop, nursery rhymes</td></tr>
+      <tr><td>Dorian</td><td>minor but hopeful, funky</td><td>deep/soulful house, "So What"</td></tr>
+      <tr><td><span class="hl">Phrygian</span></td><td>very dark, "Spanish", tense</td><td>dark techno, flamenco, metal</td></tr>
+      <tr><td>Lydian</td><td>dreamy, floating</td><td>film "wonder" cues</td></tr>
+      <tr><td>Mixolydian</td><td>bluesy, dominant</td><td>rock, funk vamps</td></tr>
+      <tr><td>Aeolian (natural minor)</td><td>sad, serious</td><td><b>the</b> acid/house default</td></tr>
+      <tr><td>Locrian</td><td>unstable, rarely used</td><td>experimental/metal</td></tr>
+    </table>
+    <p class="hint">They're all in the scale index above — pick a root and audition them. For acid, you'll mostly
+    live in <b>Aeolian (minor)</b> and <b>Phrygian</b>, and reach for <b>harmonic minor</b> / <b>Phrygian dominant</b>
+    when you want that exotic, "eastern" edge.</p>
+  </div>
+
+  <!-- ── 7 · WEST vs EAST ──────────────────────────────────────── -->
+  <div class="panel" id="east">
+    <h2><span class="k">Section 7</span><span class="east">West vs East</span> — the notes between the keys</h2>
+    <p>Everything so far assumed 12 equal semitones. That's a <i>Western</i> choice. Other traditions divide pitch
+    differently — and crucially, many use pitches that sit <b class="east">between</b> our piano keys
+    (<b>microtones</b> / <b>quarter tones</b>). Hear it: this plays C, then a note halfway to C# (a "quarter tone",
+    +50 cents — impossible on a piano), then C#.</p>
+    <div class="row">
+      <button onclick="demoQuarterTone()">▶ hear a quarter tone (between the keys)</button>
+    </div>
+    <p style="margin-top:14px">Same 7-note "major-ish" scale, two worlds. <b>Western major</b> uses exact
+    semitones; <b class="east">Arabic Maqam Rast</b> flattens the 3rd and 7th by a quarter tone into "neutral"
+    notes that don't exist on a keyboard. Play both back to back — that half-flat is the whole flavour:</p>
+    <div class="row">
+      <button onclick="demoScaleCents('major')">▶ Western major (C)</button>
+      <button onclick="demoScaleCents('rast')" class="east">▶ Maqam Rast (Arabic)</button>
+      <button onclick="demoScaleCents('hijaz')" class="east">▶ Maqam Hijaz (that "desert" sound)</button>
+    </div>
+    <table style="margin-top:14px">
+      <tr><th>tradition</th><th>the idea</th><th>sound / instrument</th></tr>
+      <tr><td>Western (12-TET)</td><td>12 equal semitones; harmony via stacked chords</td><td>piano, most electronic music</td></tr>
+      <tr><td><span class="east">Arabic / Turkish maqam</span></td><td>~24 quarter-tones; melody + neutral thirds; no chords</td><td>oud, ney — the "Middle-Eastern" feel</td></tr>
+      <tr><td><span class="east">Indian raga</span></td><td>melodic framework (not just a scale): ~22 shruti microtones, rules, mood, even a time of day; drone underneath</td><td>sitar, tabla, tanpura drone</td></tr>
+      <tr><td><span class="east">Japanese</span></td><td>5-note scales (Hirajoshi, In) with dramatic half-steps</td><td>koto — also great for chiptune/game music</td></tr>
+      <tr><td><span class="east">Indonesian gamelan</span></td><td>slendro (5) &amp; pelog (7), <i>non-equal</i> tunings unique to each ensemble</td><td>metallophones — "shimmering, out-of-tune" to Western ears</td></tr>
+    </table>
+    <p class="hint">Acid is firmly Western 12-TET — but it <i>borrows the flavour</i>: the "exotic/eastern" vibe in a
+    lot of dark acid & psytrance comes from <b>Phrygian dominant</b> / <b>harmonic minor</b>, which mimic maqam
+    Hijaz using only the 12 keys. You get 80% of the mystery with none of the microtones.</p>
+  </div>
+
+  <!-- ── 8 · CHORDS & RHYTHM ───────────────────────────────────── -->
+  <div class="panel" id="chords">
+    <h2><span class="k">Section 8</span>Chords &amp; rhythm (a peek — more later)</h2>
+    <p><b>Chords</b> = several notes at once, usually stacked in thirds. A <b>triad</b> is three notes:
+    <b class="hl">minor</b> = root + 3 + 7 semitones (sad); <b>major</b> = root + 4 + 7 (bright). Acid is mostly
+    <b>monophonic</b> — one note at a time — so chords matter less; but your bassline <i>implies</i> a chord by
+    outlining its notes.</p>
+    <div class="row">
+      <button onclick="playTogether([mf(57),mf(60),mf(64)],1.1)">▶ A minor triad</button>
+      <button onclick="playTogether([mf(57),mf(61),mf(64)],1.1)">▶ A major triad</button>
+    </div>
+    <p style="margin-top:12px"><b>Rhythm</b> gets its own module (10–12), but the vocabulary: music is counted in
+    <b>bars</b> of 4 <b>beats</b> (4/4 time). Split each beat into 4 and you get <b class="hl">16th notes</b> — the
+    grid of a classic 303 line and every step sequencer. <b>Tempo</b> is <b>BPM</b> (beats per minute); acid house
+    sits around <b>120–130 BPM</b>. That's all you need until Module 3.</p>
+  </div>
+
+  <!-- ── 9 · CHEAT SHEET ───────────────────────────────────────── -->
+  <div class="panel" id="acid">
+    <h2><span class="k">Section 9</span>The acid cheat-sheet</h2>
+    <p>If you remember nothing else, remember this and you'll make convincing acid lines:</p>
+    <ul>
+      <li><b class="hl">Key:</b> pick a root, use <b>natural minor</b> or <b>Phrygian</b>. <b>A minor</b> is the
+        friendliest start (all white keys). For darker/eastern, <b>Phrygian dominant</b> or <b>harmonic minor</b>.</li>
+      <li><b class="hl">Safe notes:</b> when in doubt, <b>minor pentatonic</b> (5 notes) — nearly impossible to
+        hit a wrong note. Perfect for the game's auto-generated melodies.</li>
+      <li><b class="hl">Motion:</b> acid lines lean on the <b>root</b> and <b>octave</b>, walk up/down by
+        semitone (chromatic passing notes are welcome), and land back home. Repetition is the point.</li>
+      <li><b class="hl">Feel:</b> 4/4, 16th-note grid, ~125 BPM. The <i>groove</i> comes from accents &amp; slides
+        (Module 2), not from lots of notes.</li>
+    </ul>
+    <p>That's the whole theory budget. Next: <a href="../00-oscillator/index.html" class="kbd">Lesson 00 →</a>
+    build the oscillator whose harmonics you just met.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* Prologue — interactive music-theory primer. Shared one-shot synth voice:
+   each note spawns its own Oscillator→Filter→Gain (a "pluck") and cleans itself
+   up, which gives us free polyphony for chords/intervals.                       */
+
+let ctx, master;
+function ensureAudio(){
+  if(ctx){ if(ctx.state==="suspended") ctx.resume(); return; }
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+}
+const mf = m => 440 * Math.pow(2,(m-69)/12);          // MIDI → frequency
+const cf = (base,cents) => base * Math.pow(2, cents/1200); // apply cents offset
+
+// one-shot pluck voice
+function playFreq(freq, dur=0.45, when, peak=0.20, type="sawtooth"){
+  ensureAudio(); when = when ?? ctx.currentTime;
+  const o=ctx.createOscillator(), g=ctx.createGain(), f=ctx.createBiquadFilter();
+  o.type=type; o.frequency.value=freq;
+  f.type="lowpass"; f.frequency.value=Math.min(freq*7,9000); f.Q.value=1.2;
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.linearRampToValueAtTime(peak, when+0.006);
+  g.gain.exponentialRampToValueAtTime(0.0006, when+dur);
+  o.connect(f).connect(g).connect(master);
+  o.start(when); o.stop(when+dur+0.05);
+}
+function playSeq(freqs, step=0.26, dur=0.30){ ensureAudio(); const t=ctx.currentTime+0.03; freqs.forEach((fr,i)=>playFreq(fr,dur,t+i*step)); }
+function playTogether(freqs, dur=0.9){ ensureAudio(); const t=ctx.currentTime+0.03; freqs.forEach(fr=>playFreq(fr,dur,t,0.16)); }
+
+const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const WHITE = [0,2,4,5,7,9,11];
+const nameOf = m => NAMES[((m%12)+12)%12] + (Math.floor(m/12)-1);
+
+/* ── Keyboard ───────────────────────────────────────────────────── */
+const LO=48, HI=72;                         // C3..C5
+const kbwrap = document.getElementById("kbwrap");
+const keyEls = {};                          // midi → element
+function buildKeyboard(){
+  const whiteCount = [...Array(HI-LO+1).keys()].filter(i=>WHITE.includes((LO+i)%12)).length;
+  const Wk = 100/whiteCount;                 // % width per white key
+  const Wb = Wk*0.62;
+  let wi=0;
+  for(let m=LO;m<=HI;m++){
+    const pc=m%12, el=document.createElement("div");
+    el.dataset.midi=m;
+    if(WHITE.includes(pc)){
+      el.className="wkey"; el.style.left=(wi*Wk)+"%"; el.style.width=Wk+"%";
+      el.textContent = pc===0?nameOf(m):"";
+      wi++;
+    }else{
+      el.className="bkey"; el.style.left=(wi*Wk - Wb/2)+"%"; el.style.width=Wb+"%";
+    }
+    el.addEventListener("pointerdown", e=>{ e.preventDefault(); pressKey(m); });
+    kbwrap.appendChild(el); keyEls[m]=el;
+  }
+}
+function pressKey(m){
+  playFreq(mf(m), 0.6);
+  flash(m);
+  document.getElementById("ro-note").textContent = nameOf(m);
+  document.getElementById("ro-midi").textContent = m;
+  document.getElementById("ro-hz").textContent   = mf(m).toFixed(1)+" Hz";
+  const cents = Math.round(1200*Math.log2(mf(m)/440));
+  document.getElementById("ro-cents").textContent = (cents>=0?"+":"")+cents+"¢";
+}
+function flash(m){ const el=keyEls[m]; if(!el) return; el.classList.add("press"); setTimeout(()=>el.classList.remove("press"),150); }
+
+// computer keyboard: A W S E D F T G Y H U J K → C..C (base 60)
+const KEYMAP={KeyA:60,KeyW:61,KeyS:62,KeyE:63,KeyD:64,KeyF:65,KeyT:66,KeyG:67,KeyY:68,KeyH:69,KeyU:70,KeyJ:71,KeyK:72};
+addEventListener("keydown", e=>{ if(e.repeat) return; const m=KEYMAP[e.code]; if(m!=null){ e.preventDefault(); pressKey(m); }});
+
+/* ── Section 2 demos ────────────────────────────────────────────── */
+function demoOctave(){ playSeq([mf(57),mf(69)],0.5,0.7); }        // A3 → A4
+function demoSemitone(){ playSeq([mf(60),mf(61)],0.45,0.6); }     // C → C#
+function demoChromatic(){ playSeq([...Array(13).keys()].map(i=>mf(60+i)),0.13,0.16); }
+
+/* ── Section 3 harmonics ────────────────────────────────────────── */
+function demoHarmonics(){ const root=mf(45); playSeq([1,2,3,4,5,6,7,8].map(n=>root*n),0.32,0.4); }
+
+/* ── Section 4 intervals ────────────────────────────────────────── */
+const INTERVALS=[
+  {n:"minor 2nd",s:1,tag:"harsh"},{n:"major 2nd",s:2,tag:"mild"},
+  {n:"minor 3rd",s:3,tag:"sad ♪"},{n:"major 3rd",s:4,tag:"happy"},
+  {n:"perfect 4th",s:5,tag:"open"},{n:"tritone",s:6,tag:"tense"},
+  {n:"perfect 5th",s:7,tag:"strong"},{n:"minor 6th",s:8,tag:""},
+  {n:"major 6th",s:9,tag:""},{n:"minor 7th",s:10,tag:"bluesy"},
+  {n:"major 7th",s:11,tag:"jazzy"},{n:"octave",s:12,tag:"same"}
+];
+const irow=document.getElementById("intervalRow");
+INTERVALS.forEach(iv=>{ const b=document.createElement("button");
+  b.innerHTML = iv.s+" · "+iv.n + (iv.tag?` <span style="color:var(--dim)">${iv.tag}</span>`:"");
+  b.onclick=()=>playTogether([mf(60),mf(60+iv.s)],1.0);
+  irow.appendChild(b);
+});
+
+/* ── Section 5 scales ───────────────────────────────────────────── */
+const SCALES=[
+  ["Western core",[
+    ["Major (Ionian)",[0,2,4,5,7,9,11],"bright, happy, resolved","most pop & nursery rhymes"],
+    ["Natural minor (Aeolian)",[0,2,3,5,7,8,10],"dark, sad, serious","THE acid/house/techno default"],
+    ["Harmonic minor",[0,2,3,5,7,8,11],"dramatic, exotic (raised 7th)","neoclassical, psytrance, 'eastern' acid"],
+    ["Melodic minor",[0,2,3,5,7,9,11],"smooth, jazzy","jazz, sophisticated leads"],
+  ]],
+  ["Modes",[
+    ["Dorian",[0,2,3,5,7,9,10],"minor but hopeful, funky","deep/soulful house"],
+    ["Phrygian",[0,1,3,5,7,8,10],"very dark, Spanish, tense","dark techno, flamenco, metal"],
+    ["Phrygian dominant",[0,1,4,5,7,8,10],"exotic, 'Middle-Eastern'","psytrance, flamenco, the eastern acid sound"],
+    ["Lydian",[0,2,4,6,7,9,11],"dreamy, floating, magical","film 'wonder' cues"],
+    ["Mixolydian",[0,2,4,5,7,9,10],"bluesy, dominant","rock & funk vamps"],
+    ["Locrian",[0,1,3,5,6,8,10],"unstable, uneasy","experimental / metal"],
+  ]],
+  ["Pentatonic & blues (foolproof)",[
+    ["Minor pentatonic",[0,3,5,7,10],"safe, punchy — hard to sound wrong","rock/blues solos, generative melodies"],
+    ["Major pentatonic",[0,2,4,7,9],"bright, folky, open","folk, East-Asian flavour"],
+    ["Blues",[0,3,5,6,7,10],"gritty, vocal","blues, funk, acid-jazz"],
+  ]],
+  ["World / Eastern flavour",[
+    ["Hirajoshi (Japanese)",[0,2,3,7,8],"stark, poised","koto — lovely for chiptune/game music"],
+    ["In sen (Japanese)",[0,1,5,7,10],"shadowy, minimal","traditional Japanese"],
+    ["Hungarian minor",[0,2,3,6,7,8,11],"gypsy, dramatic (two augmented 2nds)","folk, cinematic 'eastern' cues"],
+    ["Double harmonic (Byzantine)",[0,1,4,5,7,8,11],"maximally exotic","'Arabian nights' cliché, metal"],
+  ]],
+  ["Other",[
+    ["Whole tone",[0,2,4,6,8,10],"dreamlike, unresolved","dream sequences, Debussy"],
+    ["Chromatic (all 12)",[0,1,2,3,4,5,6,7,8,9,10,11],"no home — pure tension","acid basslines walk this"],
+  ]],
+];
+let rootPc = 9;                              // default A
+let cur = SCALES[0][1][1];                   // default natural minor
+
+const rootRow=document.getElementById("rootRow");
+NAMES.forEach((nm,pc)=>{ const b=document.createElement("button");
+  b.textContent=nm; b.dataset.pc=pc; if(pc===rootPc) b.classList.add("on");
+  b.onclick=()=>{ rootPc=pc; [...rootRow.children].forEach(x=>x.classList.toggle("on",+x.dataset.pc===pc));
+    refreshScale(); playCurrentScale(); };
+  rootRow.appendChild(b);
+});
+
+const scaleList=document.getElementById("scaleList");
+SCALES.forEach(([cat,items])=>{
+  const h=document.createElement("div"); h.className="scalecat"; h.textContent=cat; scaleList.appendChild(h);
+  items.forEach(item=>{ const b=document.createElement("button");
+    b.className="scaleitem"; b.textContent=item[0]; b.dataset.iv=item[1].join(",");
+    if(item===cur) b.classList.add("on");
+    b.onclick=()=>{ cur=item; [...scaleList.querySelectorAll(".scaleitem")].forEach(x=>x.classList.remove("on"));
+      b.classList.add("on"); refreshScale(); playCurrentScale(); };
+    scaleList.appendChild(b);
+  });
+});
+
+function inScale(m){ return cur[1].includes((((m-rootPc)%12)+12)%12); }
+function refreshScale(){
+  // light keyboard
+  for(let m=LO;m<=HI;m++){ const el=keyEls[m], pc=m%12, isRoot=((m-rootPc)%12+12)%12===0;
+    el.classList.toggle("inscale", inScale(m) && !isRoot);
+    el.classList.toggle("root", inScale(m) && isRoot);
+  }
+  // info
+  document.getElementById("sc-name").textContent=cur[0];
+  document.getElementById("sc-root").textContent="root: "+NAMES[rootPc];
+  document.getElementById("sc-mood").innerHTML="<b>mood:</b> "+cur[2];
+  document.getElementById("sc-where").innerHTML="<b>heard in:</b> "+cur[3];
+  // 12-cell mask
+  const mask=document.getElementById("sc-mask"); mask.innerHTML="";
+  for(let i=0;i<12;i++){ const c=document.createElement("div"); c.className="cell";
+    const pc=(rootPc+i)%12; const on=cur[1].includes(i);
+    if(on) c.classList.add(i===0?"rootc":"in"); c.textContent=NAMES[pc]; mask.appendChild(c);
+  }
+  // step formula (W/H)
+  const iv=cur[1]; const steps=[];
+  for(let i=1;i<iv.length;i++){ const d=iv[i]-iv[i-1]; steps.push(d===2?"W":d===1?"H":d+""); }
+  steps.push((12-iv[iv.length-1])===2?"W":(12-iv[iv.length-1])===1?"H":(12-iv[iv.length-1])+"");
+  document.getElementById("sc-formula").innerHTML=
+    "<b>intervals:</b> ["+iv.join(", ")+"] &nbsp; <b>steps:</b> "+steps.join(" - ")+" &nbsp; <b>notes:</b> "+iv.length;
+}
+function playCurrentScale(chord=false){
+  ensureAudio();
+  const rootMidi=57+rootPc;                  // around A3..
+  const notes=cur[1].map(s=>mf(rootMidi+s));
+  if(chord){ playTogether([mf(rootMidi),...cur[1].filter(s=>[0,3,4,7,10,11].includes(s)).slice(0,3).map(s=>mf(rootMidi+s))],1.2); return; }
+  const up=[...cur[1],12].map(s=>mf(rootMidi+s));
+  const down=[...up].reverse().slice(1,-1);
+  playSeq([...up,...down],0.16,0.22);
+}
+
+/* ── Section 7 microtones ───────────────────────────────────────── */
+function demoQuarterTone(){ const base=mf(60); playSeq([base, cf(base,50), cf(base,100)],0.5,0.6); }
+const CENTS={
+  major:[0,200,400,500,700,900,1100,1200],
+  rast: [0,200,350,500,700,900,1050,1200],   // neutral 3rd & 7th (quarter-flat)
+  hijaz:[0,100,400,500,700,800,1100,1200],   // Hijaz: b2 then augmented 2nd — the "desert" sound
+};
+function demoScaleCents(which){ ensureAudio(); const base=mf(60);
+  const seq=CENTS[which].map(c=>cf(base,c)); const down=[...seq].reverse().slice(1);
+  playSeq([...seq,...down],0.22,0.28);
+}
+
+/* ── init ───────────────────────────────────────────────────────── */
+buildKeyboard();
+refreshScale();
+</script>
+</body>
+</html>

@@ -61,6 +61,15 @@ Each lesson is a single folder under `lessons/NN-slug/` with an `index.html`.
 Lessons build on each other but each one *runs on its own*. A lesson is "done"
 when you can open it, hear the concept, and tweak it.
 
+### Prologue — Just enough music theory
+- **P · Music theory for acid** — for a music-theory beginner: the 12 notes &
+  equal temperament (with the MIDI freq formula), octaves/semitones, the
+  harmonics→harmony bridge (ties back to lesson 00's spectrum), intervals, an
+  **interactive index of the classic scales/modes** (playable keyboard that lights
+  the scale), and a West-vs-East section that plays real microtones (quarter
+  tones, maqam Rast/Hijaz). Ends in an "acid cheat-sheet". Vanilla Web Audio.
+  ✅ built
+
 ### Module 0 — Sound & Web Audio primitives
 - **00 · Oscillator & the scope** — what sound *is*: frequency=pitch,
   amplitude=loudness, waveform=timbre. Sine/square/saw/triangle on an

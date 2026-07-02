@@ -11,6 +11,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 
 | # | Lesson | State | Notes |
 |---|--------|-------|-------|
+| P | Music theory for acid (prologue) | ✅ done | playable keyboard, interactive scale index, harmonics→harmony, West vs East microtones, cheat-sheet |
 | 00 | Oscillator & the scope | ✅ done | vanilla Web Audio, scope + spectrum, 4 waveforms |
 | 01 | Gain & envelopes (ADSR) | ✅ done | VCA + ADSR, live envelope graph w/ playhead, presets |
 | 02 | Low-pass filter & cutoff | ⬜ planned | |
@@ -32,7 +33,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 18 | Shipping it | ⬜ planned | for the game |
 
 ## Now / Next
-- **Now:** Module 0 complete (lessons 00 + 01 playable).
+- **Now:** Prologue (theory) + Module 0 (lessons 00 + 01) all playable.
 - **Next:** Lesson 02 (low-pass filter & cutoff) — Module 1, where it starts to
   sound like acid: sweep a filter over the saw and watch harmonics vanish.
 
