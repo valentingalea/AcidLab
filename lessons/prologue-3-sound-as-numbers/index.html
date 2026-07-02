@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P3 · Sound as numbers — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace;padding:32px 18px 100px}
+  .wrap{max-width:900px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0}
+  p{margin:10px 0} b{color:var(--ink)} .hl{color:var(--acid)} .kbd{color:var(--orange)} .east{color:var(--blue)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  pre{background:#0a0c08;border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;
+    font-size:13px;line-height:1.5;color:var(--ink)}
+  pre .c{color:var(--dim)} pre .k2{color:var(--orange)} pre .f{color:var(--acid)}
+  .hint{color:var(--dim);font-size:12.5px}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  canvas{width:100%;height:190px;background:#0a0c08;border:1px solid var(--line);border-radius:8px;display:block;margin:8px 0}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer;font:inherit;font-size:13px;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  input[type=range]{flex:1;min-width:180px;accent-color:var(--acid)}
+  .big{font-size:16px;color:var(--acid)}
+  .readout{display:flex;gap:18px;flex-wrap:wrap;background:#0a0c08;border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px}
+  .readout b{color:var(--acid);font-size:16px}
+  .readout .lbl{color:var(--dim);font-size:11px}
+  .toc{columns:2;font-size:13px;color:var(--dim)} @media(max-width:600px){.toc{columns:1}}
+  .toc a{color:var(--acid);text-decoration:none} .toc a:hover{text-decoration:underline}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">P3</span> · Sound as numbers</h1>
+  <p class="sub">The programmer's half of the prologue: how a computer stores, mangles and <i>invents</i> sound.
+  If you can fill an array, you can synthesize. Click any ▶.</p>
+
+  <div class="panel toc">
+    <b class="hl">On this page:</b><br>
+    <a href="#array">1 · A sound is just an array</a><br>
+    <a href="#nyquist">2 · The speed limit — sample rate &amp; aliasing</a><br>
+    <a href="#bits">3 · Bit depth — how precisely we write numbers down</a><br>
+    <a href="#buffers">4 · Buffers, blocks &amp; latency</a><br>
+    <a href="#code">5 · Make sound from a for-loop ★</a><br>
+    <a href="#recap">6 · Recap</a>
+  </div>
+
+  <!-- ── 1 · ARRAY ─────────────────────────────────────────────── -->
+  <div class="panel" id="array">
+    <h2><span class="k">Section 1</span>A sound is just an array</h2>
+    <p>P1 said sound is air wiggling. A microphone turns that wiggle into a voltage, and the computer
+    <b class="hl">measures that voltage tens of thousands of times per second</b>, storing each measurement as
+    a number between −1 and +1. That's it. That's digital audio:</p>
+    <p style="text-align:center"><code>sound = float[]</code> &nbsp;
+    <span class="hint">(one measurement is called a <b>sample</b>; playback = feed the numbers to the speaker at the same speed)</span></p>
+    <p>Every MP3, every synth plugin, every lesson in this course boils down to producing that array. Below: a
+    real wiggle (green) and the samples the computer actually keeps (dots). Drag to sample it more or less
+    often:</p>
+    <canvas id="cvSamp" width="860" height="190"></canvas>
+    <div class="row">
+      <span class="hint">samples per wiggle</span>
+      <input type="range" id="spcSlider" min="1.1" max="24" step="0.1" value="12">
+      <b class="big" id="spcOut">12.0</b>
+    </div>
+    <p class="hint" id="sampCaption">Plenty of dots per wiggle — the orange reconstruction matches the real wave.</p>
+  </div>
+
+  <!-- ── 2 · NYQUIST ───────────────────────────────────────────── -->
+  <div class="panel" id="nyquist">
+    <h2><span class="k">Section 2</span>The speed limit — sample rate &amp; aliasing</h2>
+    <p>How often you measure is the <b class="hl">sample rate</b>. CDs measure 44,100 times a second
+    (44.1 kHz); pro audio often 48 kHz. Why those numbers? Slide the slider above below <b>2</b> samples per
+    wiggle and watch: the dots still sit on the wave, but they also fit a much <i>slower</i> wave — and the
+    computer, seeing only dots, picks the slow impostor. That failure is called
+    <b class="hl">aliasing</b>.</p>
+    <p>So the rule (the <b>Nyquist limit</b>): you need <b>more than 2 samples per wiggle</b> — a sample rate
+    of 44,100 can only represent wiggles up to 22,050 Hz. Human ears give out around 20,000 Hz, which is
+    exactly why CD chose 44,100: the whole audible range, plus margin. Hear aliasing happen:</p>
+    <div class="row">
+      <button onclick="playSampled(1500,44100)">▶ 1,500 Hz tone @ 44,100 — fine</button>
+      <button onclick="playSampled(1500,8000)">▶ same @ 8,000 — still fine (2×1500 &lt; 8000)</button>
+      <button onclick="playSampled(1500,2000)">▶ same @ 2,000 — comes out as 500 Hz!</button>
+    </div>
+    <div class="row">
+      <button onclick="foldSweep()">▶ the fold: raise a tone past the limit @ 8 kHz (5s)</button>
+    </div>
+    <p class="hint">In the last demo the tone climbs toward 7,500 Hz but the sample rate is 8,000 — past
+    4,000 Hz (the Nyquist limit) the pitch <i>bounces off the ceiling</i> and comes back down. Frequencies
+    over the limit don't disappear; they reflect. This will matter again when we generate waveforms.</p>
+    <div class="nerd"><b>// CS corner:</b> a tone at frequency <code>f</code> sampled at rate <code>fs</code>
+    comes out at <code>f − round(f/fs)·fs</code> — the spectrum wraps around, like integer overflow for pitch.
+    </div>
+  </div>
+
+  <!-- ── 3 · BITS ──────────────────────────────────────────────── -->
+  <div class="panel" id="bits">
+    <h2><span class="k">Section 3</span>Bit depth — how precisely we write numbers down</h2>
+    <p>Sample rate is how <i>often</i> we measure; <b class="hl">bit depth</b> is how <i>precisely</i> we store
+    each measurement. CD quality is 16-bit: each sample is one of 65,536 levels. Store fewer bits and the wave
+    gets rounded to a staircase — you hear the rounding error as grit and hiss:</p>
+    <canvas id="cvBits" width="860" height="190"></canvas>
+    <div class="row">
+      <span class="hint">bits per sample</span>
+      <input type="range" id="bitSlider" min="1" max="6" step="1" value="3">
+      <b class="big" id="bitOut">3 bits = 8 levels</b>
+    </div>
+    <p>Same melody, decreasing precision:</p>
+    <div class="row">
+      <button onclick="playBits(16)">▶ 16-bit (clean)</button>
+      <button onclick="playBits(8)">▶ 8-bit (a little fuzzy)</button>
+      <button onclick="playBits(4)">▶ 4-bit (crunchy)</button>
+      <button onclick="playBits(2)">▶ 2-bit (destroyed)</button>
+    </div>
+    <p class="hint">That crunch is a beloved <i>effect</i> — the "bitcrusher". Old samplers and game consoles
+    (8-bit, hence "chiptune") had it for free. We may abuse it on drums later.</p>
+  </div>
+
+  <!-- ── 4 · BUFFERS ───────────────────────────────────────────── -->
+  <div class="panel" id="buffers">
+    <h2><span class="k">Section 4</span>Buffers, blocks &amp; latency</h2>
+    <p>One last mechanical fact. The sound card doesn't ask for samples one at a time — it asks for a
+    <b class="hl">block</b> of them ("fill this buffer of 128 samples, you have 2.7 ms"). Audio code lives
+    under a hard real-time deadline: miss one block and everyone hears the glitch. This is why audio runs on
+    its own high-priority thread, and why Web Audio's processing graph feels different from normal JS.</p>
+    <div class="readout">
+      <div><span class="lbl">your machine's sample rate</span><br><b id="st-rate">click any ▶ first</b></div>
+      <div><span class="lbl">Web Audio block size</span><br><b>128 samples</b></div>
+      <div><span class="lbl">so one block =</span><br><b id="st-block">—</b></div>
+      <div><span class="lbl">output latency</span><br><b id="st-lat">—</b></div>
+    </div>
+    <p class="hint">Latency = how many blocks are queued between your code and the speaker. A few queued
+    blocks × 2.7 ms is why software instruments feel "instant" below ~10 ms and "mushy" above ~30 ms.</p>
+  </div>
+
+  <!-- ── 5 · CODE ──────────────────────────────────────────────── -->
+  <div class="panel" id="code">
+    <h2><span class="k">Section 5 ★</span>Make sound from a for-loop</h2>
+    <p>The payoff. You know sound is an array of −1..+1 numbers, so: allocate one second of samples, fill it
+    with a sine formula, hand it to the speaker. This is the <i>entire</i> program — and the ▶ buttons below
+    run exactly this loop with different formulas:</p>
+<pre><span class="c">// one second of A-440, from scratch</span>
+<span class="k2">const</span> rate = ctx.sampleRate;                  <span class="c">// e.g. 48000 on this machine</span>
+<span class="k2">const</span> buf  = ctx.createBuffer(<span class="f">1</span>, rate, rate); <span class="c">// 1 channel, 1 second</span>
+<span class="k2">const</span> s    = buf.getChannelData(<span class="f">0</span>);           <span class="c">// a plain Float32Array</span>
+<span class="k2">for</span> (<span class="k2">let</span> n = <span class="f">0</span>; n &lt; s.length; n++)
+  s[n] = Math.sin(<span class="f">2</span> * Math.PI * <span class="f">440</span> * n / rate) * <span class="f">0.2</span>;
+<span class="k2">const</span> src = ctx.createBufferSource();
+src.buffer = buf; src.connect(ctx.destination); src.start();</pre>
+    <div class="row">
+      <button onclick="runLoop('sine')">▶ sine — <code>Math.sin(2πft)</code></button>
+      <button onclick="runLoop('square')">▶ square — <code>Math.sign(sin)</code></button>
+      <button onclick="runLoop('saw')">▶ saw — <code>2·(ft mod 1) − 1</code></button>
+      <button onclick="runLoop('noise')">▶ noise — <code>Math.random()</code></button>
+    </div>
+    <p class="hint">Hear the fizzy edge on the square and saw, especially up high? Their sharp corners contain
+    harmonics <i>above</i> the Nyquist limit from section 2, which fold back down as inharmonic hash — aliasing
+    again. Real synth oscillators (like <code>OscillatorNode</code> in lesson 00) are <b>band-limited</b>: they
+    build the wave only from harmonics below the limit. Build the naive one first, then appreciate the fix.</p>
+    <div class="nerd"><b>// CS corner:</b> what you just did is a <b>lookup-table-free software oscillator</b>.
+    The whole course is variations on this loop: filters transform <code>s[n]</code> using its neighbours,
+    envelopes multiply it by a slowly-changing curve, a sequencer decides which <code>f</code> to use when.
+    In lesson 04 we'll write this loop <i>live</i>, 128 samples at a time, inside an
+    <code>AudioWorklet</code>.</div>
+  </div>
+
+  <!-- ── 6 · RECAP ─────────────────────────────────────────────── -->
+  <div class="panel" id="recap">
+    <h2><span class="k">Section 6</span>Recap — the whole page in five lines</h2>
+    <p>
+    · Digital sound = a <b>Float32Array</b> of −1..+1 samples, played back at a fixed rate.<br>
+    · <b>Sample rate</b> caps the highest wiggle at rate/2 (Nyquist); go over and pitch <b>folds back</b> (aliasing).<br>
+    · <b>Bit depth</b> = precision per sample; fewer bits = staircase = crunch (the bitcrusher / chiptune sound).<br>
+    · Audio is computed in <b>blocks</b> (128 samples) under a real-time deadline; queued blocks = latency.<br>
+    · Therefore: <b>a for-loop with a formula is a synthesizer.</b> Everything else is better formulas.</p>
+    <a class="next" href="../00-oscillator/index.html">Next → Lesson 00 · Oscillator &amp; the scope</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* P3 — digital audio for programmers. Deliberately node-minimal: every sound on
+   this page is computed sample-by-sample into an AudioBuffer by plain JS loops
+   (the point of the lesson), then played through one lowpass "reconstruction"
+   filter — the same smoothing a real DAC applies after the numbers.            */
+
+let ctx, master;
+function ensureAudio(){
+  if(ctx){ if(ctx.state==="suspended") ctx.resume(); return; }
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+  // populate the section-4 readout with this machine's real numbers
+  document.getElementById("st-rate").textContent = ctx.sampleRate.toLocaleString()+" Hz";
+  document.getElementById("st-block").textContent = (128/ctx.sampleRate*1000).toFixed(2)+" ms";
+  document.getElementById("st-lat").textContent =
+    ctx.baseLatency!=null ? (ctx.baseLatency*1000).toFixed(1)+" ms (base)" : "n/a";
+}
+function playBuffer(buf, lpHz){
+  const src=ctx.createBufferSource(); src.buffer=buf;
+  const f=ctx.createBiquadFilter(); f.type="lowpass"; f.Q.value=0.5;
+  f.frequency.value=Math.min(lpHz??20000, 20000);
+  src.connect(f).connect(master); src.start();
+}
+
+/* ── 1+2 · sampling canvas ─────────────────────────────────────── */
+const cvS=document.getElementById("cvSamp"), sctx=cvS.getContext("2d");
+const spcSlider=document.getElementById("spcSlider"), spcOut=document.getElementById("spcOut");
+const sampCaption=document.getElementById("sampCaption");
+function drawSampling(){
+  const spc=+spcSlider.value;                 // samples per wiggle
+  const W=cvS.width, H=cvS.height, mid=H/2, A=H*0.38, F=3;  // 3 wiggles across the view
+  sctx.clearRect(0,0,W,H);
+  sctx.strokeStyle="#2a3320"; sctx.beginPath(); sctx.moveTo(0,mid); sctx.lineTo(W,mid); sctx.stroke();
+  // the real (analog) wave
+  sctx.strokeStyle="#b6ff00"; sctx.globalAlpha=0.5; sctx.lineWidth=2; sctx.beginPath();
+  for(let x=0;x<=W;x++){ const y=mid-A*Math.sin(2*Math.PI*F*x/W); x?sctx.lineTo(x,y):sctx.moveTo(x,y); }
+  sctx.stroke(); sctx.globalAlpha=1;
+  // what the computer reconstructs from the dots: frequency folds around the
+  // sampling rate (fe passes through every sample exactly — see CS corner)
+  const fs=F*spc, fe=F-Math.round(F/fs)*fs;
+  sctx.strokeStyle="#ff7a00"; sctx.lineWidth=2; sctx.beginPath();
+  for(let x=0;x<=W;x++){ const y=mid-A*Math.sin(2*Math.PI*fe*x/W); x?sctx.lineTo(x,y):sctx.moveTo(x,y); }
+  sctx.stroke();
+  // the samples
+  sctx.fillStyle="#e8ffcf";
+  const n=Math.floor(fs);
+  for(let i=0;i<=n;i++){ const x=i*W/fs; if(x>W) break;
+    const y=mid-A*Math.sin(2*Math.PI*F*x/W);
+    sctx.beginPath(); sctx.arc(x,y,3.5,0,7); sctx.fill();
+  }
+  spcOut.textContent=spc.toFixed(1);
+  sampCaption.textContent = spc>=2
+    ? "Plenty of dots per wiggle — the orange reconstruction matches the real wave."
+    : "Under 2 samples per wiggle: the dots also fit a slower wave, and the computer picks the impostor (orange). Aliasing.";
+  sampCaption.style.color = spc>=2 ? "" : "#ff7a00";
+}
+spcSlider.addEventListener("input",drawSampling);
+drawSampling();
+
+/* ── 2 · hear aliasing ─────────────────────────────────────────── */
+// simulate "sampled at fakeRate" inside a normal-rate buffer: hold each fake
+// sample's value until the next one (sample & hold), like a zero-order DAC
+function playSampled(freq, fakeRate, dur=1.2){
+  ensureAudio(); const R=ctx.sampleRate, N=(dur*R)|0;
+  const buf=ctx.createBuffer(1,N,R), s=buf.getChannelData(0);
+  for(let n=0;n<N;n++){
+    const t=Math.floor(n*fakeRate/R)/fakeRate;      // time quantized to the fake grid
+    s[n]=Math.sin(2*Math.PI*freq*t)*0.2;
+  }
+  for(let n=0;n<400;n++){ s[n]*=n/400; s[N-1-n]*=n/400; }   // de-click edges
+  playBuffer(buf, fakeRate*0.45);                   // reconstruction lowpass at ~Nyquist
+}
+function foldSweep(){
+  ensureAudio(); const R=ctx.sampleRate, dur=5, fake=8000, N=(dur*R)|0;
+  const buf=ctx.createBuffer(1,N,R), s=buf.getChannelData(0);
+  let ph=0, lastK=-1, val=0;
+  for(let n=0;n<N;n++){
+    const k=Math.floor(n*fake/R);
+    if(k!==lastK){                                  // one new fake-sample: advance the swept sine
+      const f=500+(7500-500)*(k/fake)/dur;          // 500 Hz → 7500 Hz over 5 s
+      ph+=2*Math.PI*f/fake; val=Math.sin(ph)*0.2; lastK=k;
+    }
+    s[n]=val;
+  }
+  for(let n=0;n<400;n++){ s[n]*=n/400; s[N-1-n]*=n/400; }
+  playBuffer(buf, 3600);
+}
+
+/* ── 3 · bit depth ─────────────────────────────────────────────── */
+const cvB=document.getElementById("cvBits"), bctx=cvB.getContext("2d");
+const bitSlider=document.getElementById("bitSlider"), bitOut=document.getElementById("bitOut");
+function drawBits(){
+  const bits=+bitSlider.value, L=Math.pow(2,bits-1);
+  const W=cvB.width, H=cvB.height, mid=H/2, A=H*0.38;
+  bctx.clearRect(0,0,W,H);
+  bctx.strokeStyle="#2a3320"; bctx.beginPath(); bctx.moveTo(0,mid); bctx.lineTo(W,mid); bctx.stroke();
+  // available levels
+  bctx.strokeStyle="#1e2419";
+  for(let l=-L;l<=L;l++){ const y=mid-A*(l/L);
+    bctx.beginPath(); bctx.moveTo(0,y); bctx.lineTo(W,y); bctx.stroke(); }
+  // real wave (dim) and its quantized staircase (orange)
+  bctx.strokeStyle="#b6ff00"; bctx.globalAlpha=0.5; bctx.lineWidth=2; bctx.beginPath();
+  for(let x=0;x<=W;x++){ const y=mid-A*Math.sin(2*Math.PI*2*x/W); x?bctx.lineTo(x,y):bctx.moveTo(x,y); }
+  bctx.stroke(); bctx.globalAlpha=1;
+  bctx.strokeStyle="#ff7a00"; bctx.lineWidth=2; bctx.beginPath();
+  for(let x=0;x<=W;x++){
+    const v=Math.round(Math.sin(2*Math.PI*2*x/W)*L)/L, y=mid-A*v;
+    x?bctx.lineTo(x,y):bctx.moveTo(x,y);
+  }
+  bctx.stroke();
+  bitOut.textContent=bits+" bit"+(bits>1?"s":"")+" = "+(2*L)+" levels";
+}
+bitSlider.addEventListener("input",drawBits);
+drawBits();
+
+const mf = m => 440 * Math.pow(2,(m-69)/12);
+function playBits(bits){
+  ensureAudio(); const R=ctx.sampleRate;
+  const NOTES=[69,72,67,64,57,64,67,72];            // an acid-ish A-minor-pentatonic bounce
+  const step=0.16, dur=NOTES.length*step+0.4, N=(dur*R)|0;
+  const buf=ctx.createBuffer(1,N,R), s=buf.getChannelData(0);
+  NOTES.forEach((m,i)=>{                            // render sine plucks straight into the array
+    const f=mf(m), n0=(i*step*R)|0, n1=Math.min(N,((i*step+0.3)*R)|0);
+    for(let n=n0;n<n1;n++){ const t=(n-n0)/R;
+      s[n]+=Math.sin(2*Math.PI*f*t)*0.4*Math.exp(-t*9);
+    }
+  });
+  if(bits<16){ const L=Math.pow(2,bits-1);          // the actual bitcrush: one line
+    for(let n=0;n<N;n++) s[n]=Math.round(s[n]*L)/L;
+  }
+  playBuffer(buf);
+}
+
+/* ── 5 · the for-loop synth ────────────────────────────────────── */
+function runLoop(kind){
+  ensureAudio(); const rate=ctx.sampleRate;
+  const buf=ctx.createBuffer(1,rate,rate), s=buf.getChannelData(0);
+  for(let n=0;n<s.length;n++){ const t=n/rate;
+    s[n] = kind==="sine"   ? Math.sin(2*Math.PI*440*t)*0.2
+         : kind==="square" ? Math.sign(Math.sin(2*Math.PI*440*t))*0.1
+         : kind==="saw"    ? (2*((440*t)%1)-1)*0.13
+         :                   (Math.random()*2-1)*0.08;
+  }
+  for(let n=0;n<400;n++){ s[n]*=n/400; s[s.length-1-n]*=n/400; }
+  playBuffer(buf);
+}
+</script>
+</body>
+</html>

@@ -11,7 +11,9 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 
 | # | Lesson | State | Notes |
 |---|--------|-------|-------|
-| P | Music theory for acid (prologue) | ✅ done | playable keyboard, interactive scale index, harmonics→harmony, West vs East microtones, cheat-sheet. 2026-07-02 fix: scale playback now roots on the selected note (was +9 semitones off), arpeggio chord built from actual scale degrees (was collapsing every scale to the same 2 triads), runs land back on the root, keys flash along with playback |
+| P1 | What is sound? (prologue) | ✅ done | ELI5 rewrite of the old one-page prologue: air wiggles → clicks-fuse-into-a-note morph, pitch/loudness sliders, octave ×2, 12 steps, keyboard+MIDI, harmonics stack |
+| P2 | Scales & the acid mood (prologue) | ✅ done | intervals, interactive scale index (w/ 2026-07-02 playback fixes: correct root, per-scale chord, lands home, keys flash), modes, West vs East microtones, cheat-sheet |
+| P3 | Sound as numbers (prologue) | ✅ done | NEW: CS side of audio — sampling canvas, Nyquist fold sweep you can hear, bitcrush demos, buffers/latency readout, synthesize sine/square/saw/noise from a for-loop |
 | 00 | Oscillator & the scope | ✅ done | vanilla Web Audio, scope + spectrum, 4 waveforms |
 | 01 | Gain & envelopes (ADSR) | ✅ done | VCA + ADSR, live envelope graph w/ playhead, presets |
 | 02 | Low-pass filter & cutoff | ⬜ planned | |
@@ -33,7 +35,10 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 18 | Shipping it | ⬜ planned | for the game |
 
 ## Now / Next
-- **Now:** Prologue (theory) + Module 0 (lessons 00 + 01) all playable.
+- **Now:** Prologue rewritten 2026-07-02 as 3 ELI5 parts (P1 sound basics ·
+  P2 scales · P3 digital audio/CS) after feedback that the single theory page
+  was too dense. Old `prologue-theory/` URL redirects to P1. Module 0
+  (lessons 00 + 01) playable.
 - **Next:** Lesson 02 (low-pass filter & cutoff) — Module 1, where it starts to
   sound like acid: sweep a filter over the saw and watch harmonics vanish.
 

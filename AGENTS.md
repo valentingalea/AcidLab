@@ -61,14 +61,22 @@ Each lesson is a single folder under `lessons/NN-slug/` with an `index.html`.
 Lessons build on each other but each one *runs on its own*. A lesson is "done"
 when you can open it, hear the concept, and tweak it.
 
-### Prologue — Just enough music theory
-- **P · Music theory for acid** — for a music-theory beginner: the 12 notes &
-  equal temperament (with the MIDI freq formula), octaves/semitones, the
-  harmonics→harmony bridge (ties back to lesson 00's spectrum), intervals, an
-  **interactive index of the classic scales/modes** (playable keyboard that lights
-  the scale), and a West-vs-East section that plays real microtones (quarter
-  tones, maqam Rast/Hijaz). Ends in an "acid cheat-sheet". Vanilla Web Audio.
-  ✅ built
+### Prologue — From zero: sound, notes & numbers (3 parts, ELI5 pace)
+One idea per panel; hear it before naming it; formulas live in "// CS corner"
+asides so the main flow stays plain-language. Vanilla Web Audio, self-contained.
+- **P1 · What is sound?** — air wiggles → clicks fuse into a note; frequency =
+  pitch, amplitude = loudness; the ×2 octave; 12 equal steps (semitones, equal
+  temperament); note names/MIDI + playable keyboard; harmonics (one note is a
+  stack of wiggles → timbre & harmony teasers).  ✅ built
+- **P2 · Scales & the acid mood** — intervals (friends & enemies, from the
+  harmonic stacks); the **interactive index of the classic scales/modes**
+  (playable keyboard that lights the scale, plays runs & each scale's own
+  chord); modes; West-vs-East with real microtones (quarter tones, maqam
+  Rast/Hijaz); chords & rhythm peek; the "acid cheat-sheet".  ✅ built
+- **P3 · Sound as numbers** — the CS/math side: sound = Float32Array; sampling,
+  sample rate, Nyquist & audible aliasing (fold sweep); bit depth/quantization
+  (bitcrush demos); buffers, 128-sample blocks & latency; synthesizing
+  sine/square/saw/noise from a raw for-loop into an AudioBuffer.  ✅ built
 
 ### Module 0 — Sound & Web Audio primitives
 - **00 · Oscillator & the scope** — what sound *is*: frequency=pitch,
@@ -161,6 +169,10 @@ assets/                images, impulse responses, etc.
   `file://`. We introduce a shared `lib/` only when duplication actually hurts.
 - **Comment for a CS reader who doesn't know audio.** Explain the *audio* idea;
   assume the *programming* is understood.
+- **ELI5 pacing** (feedback from Valentin, 2026-07-02: the original one-page
+  theory prologue was "too much"). One idea per panel; let the reader *hear*
+  a thing before naming it; keep paragraphs short; tuck math/formalism into
+  `// CS corner` asides instead of the main flow.
 - **Visual + audible.** If a lesson changes the sound, it should also change
   something on screen (scope, spectrum, meter).
 
