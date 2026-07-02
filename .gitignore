@@ -10,4 +10,5 @@ Thumbs.db
 
 # scratch
 *.log
+server.pid
 tmp/
