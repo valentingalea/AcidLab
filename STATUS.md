@@ -12,7 +12,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | # | Lesson | State | Notes |
 |---|--------|-------|-------|
 | 00 | Oscillator & the scope | ✅ done | vanilla Web Audio, scope + spectrum, 4 waveforms |
-| 01 | Gain & envelopes (ADSR) | ⬜ planned | |
+| 01 | Gain & envelopes (ADSR) | ✅ done | VCA + ADSR, live envelope graph w/ playhead, presets |
 | 02 | Low-pass filter & cutoff | ⬜ planned | |
 | 03 | Resonance & the squelch | ⬜ planned | |
 | 04 | Ladder filter (AudioWorklet) | ⏭️ optional | |
@@ -32,9 +32,9 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 18 | Shipping it | ⬜ planned | for the game |
 
 ## Now / Next
-- **Now:** Module 0 started. Lesson 00 built and playable.
-- **Next:** Lesson 01 (envelopes) → then Module 1 (the filter), where it starts
-  to sound like acid.
+- **Now:** Module 0 complete (lessons 00 + 01 playable).
+- **Next:** Lesson 02 (low-pass filter & cutoff) — Module 1, where it starts to
+  sound like acid: sweep a filter over the saw and watch harmonics vanish.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?
@@ -48,3 +48,9 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 - 2026-07-02: Raw Web Audio first, Tone.js later (build the scheduler by hand in
   lesson 10 before using Tone). Lessons self-contained until reuse justifies a
   shared `lib/`.
+- 2026-07-02: **Pace = lesson-by-lesson** (build one, Valentin tries it, continue).
+- 2026-07-02: **Filter = chained biquads first** (24 dB/oct), AudioWorklet ladder
+  kept as the optional deep-dive (04).
+- 2026-07-02: **Game target = web** (JS/Canvas/Phaser/Pixi). Big implication: the
+  synth/sequencer engine we build can be embedded live in the game — Module 6
+  favours a reusable JS engine over rendering loops to files.

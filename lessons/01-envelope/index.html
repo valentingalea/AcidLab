@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Gain &amp; envelopes — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  .scopes{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+  @media(max-width:640px){.scopes{grid-template-columns:1fr}}
+  .scopebox{background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .scopebox h3{margin:0 0 8px;font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  canvas{width:100%;display:block}
+  #env{height:200px}
+  #scope{height:200px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  #power{background:var(--orange);color:#0a0c08;border:none;border-radius:8px;padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #trig{
+    background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px;flex:1;min-width:200px;user-select:none;touch-action:none
+  }
+  #trig.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #trig:disabled{opacity:.35;cursor:not-allowed}
+  button.preset{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:20px;padding:7px 14px;cursor:pointer;font:inherit;font-size:13px;transition:.12s}
+  button.preset:hover{border-color:var(--acid)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)} .explain .hl{color:var(--acid)} .kbd{color:var(--orange)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  .stagelabel{color:var(--dim);font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">01</span> · Gain &amp; envelopes — the VCA</h1>
+  <p class="sub">Sound has to start and stop. An <b>envelope</b> shapes loudness over time — pluck vs pad, and the 303's per-note "blip".</p>
+
+  <div class="panel">
+    <div class="scopes">
+      <div class="scopebox">
+        <h3>Envelope · level over time (A·D·S·R)</h3>
+        <canvas id="env"></canvas>
+      </div>
+      <div class="scopebox">
+        <h3>Oscilloscope · what you hear</h3>
+        <canvas id="scope"></canvas>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="trig" disabled>▶ press &amp; hold to play</button>
+    </div>
+
+    <div class="row">
+      <div class="ctrl"><label>Attack <b id="aVal">5 ms</b></label><input id="a" type="range" min="0" max="2000" value="5"></div>
+      <div class="ctrl"><label>Decay <b id="dVal">250 ms</b></label><input id="d" type="range" min="0" max="2000" value="250"></div>
+      <div class="ctrl"><label>Sustain <b id="sVal">0 %</b></label><input id="s" type="range" min="0" max="100" value="0"></div>
+      <div class="ctrl"><label>Release <b id="rVal">120 ms</b></label><input id="r" type="range" min="0" max="3000" value="120"></div>
+    </div>
+
+    <div class="row" style="gap:8px">
+      <span class="stagelabel">presets:</span>
+      <button class="preset" data-a="5"   data-d="250" data-s="0"  data-r="120">303 blip</button>
+      <button class="preset" data-a="2"   data-d="120" data-s="0"  data-r="60">stab</button>
+      <button class="preset" data-a="8"   data-d="400" data-s="35" data-r="200">pluck</button>
+      <button class="preset" data-a="600" data-d="200" data-s="85" data-r="900">pad</button>
+    </div>
+  </div>
+
+  <div class="panel explain">
+    <p><b class="hl">The VCA.</b> Last lesson the note snapped on and off — that click is because we jumped the
+    volume instantly. Real instruments <i>swell and fade</i>. In synth terms, the oscillator runs continuously
+    and its loudness is shaped by a <b>Voltage-Controlled Amplifier</b> — which in Web Audio is just a
+    <b class="hl">GainNode</b> whose <code>gain</code> we automate over time. That automation curve is the
+    <b>envelope</b>.</p>
+
+    <p><b class="hl">A·D·S·R</b> — the four numbers that describe almost any envelope. Move the sliders and watch
+    the left graph; press &amp; hold <span class="kbd">play</span> and watch the dot travel it:</p>
+    <table>
+      <tr><th>stage</th><th>what it is</th><th>ear</th></tr>
+      <tr><td><b>Attack</b></td><td>time to rise from silence to full level after you hit the note</td><td>0 = instant/percussive · long = a slow swell</td></tr>
+      <tr><td><b>Decay</b></td><td>time to fall from full down to the sustain level</td><td>the initial "thump" before it settles</td></tr>
+      <tr><td><b>Sustain</b></td><td>the <i>level</i> it holds at while you keep the note down (not a time!)</td><td>0 = plucky · high = an organ that just holds</td></tr>
+      <tr><td><b>Release</b></td><td>time to fade to silence after you let go</td><td>0 = abrupt · long = a lingering tail</td></tr>
+    </table>
+
+    <p style="margin-top:14px"><b class="hl">Why this matters for acid.</b> Try the <b>303 blip</b> preset: instant
+    attack, <b>zero sustain</b>, short decay. Every note is a short percussive blip — that's literally the 303's
+    amp envelope. So where does all the <i>movement</i> in an acid line come from, if the volume just blips?
+    <b class="hl">A second envelope, identical in shape, aimed at the filter instead of the volume.</b> That's
+    Module 1–2, and it's the whole game. This lesson is you learning the tool; next you learn what it opens
+    (the filter), then we point an envelope at it.</p>
+
+    <p style="color:var(--dim);font-size:12.5px">CS note: we build the curve with <code>AudioParam</code>
+    automation — <code>setValueAtTime</code> to pin "now", then <code>linearRampToValueAtTime</code> for each
+    leg. On note-off we <code>cancelScheduledValues</code> and ramp to 0. Ramping (never jumping) is what
+    kills the click. The dot's <i>height</i> is read straight from the live <code>gain.value</code>, so what
+    you see is exactly what the amplifier is doing.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* Lesson 01 — the VCA & the ADSR envelope. Signal path:
+     Oscillator(saw) ──► GainNode (the VCA we automate) ──► Analyser ──► speakers
+   The envelope is not a node; it's a *schedule of gain values* we write onto the
+   GainNode's `gain` AudioParam each time a note starts and stops.                */
+
+let ctx, osc, vca, analyser;
+const PEAK = 0.8;                 // full-level gain (headroom below clipping)
+const SUS_SHOW = 0.6;             // seconds of "sustain plateau" to draw (sustain is really indefinite)
+
+// envelope params (seconds / 0..1), kept in sync with the sliders
+let A = 0.005, D = 0.25, S = 0.0, R = 0.12;
+
+// playhead state machine (visual only; the audio is driven by AudioParam)
+let phase = "idle";               // "idle" | "ads" | "rel"
+let tNote = 0, tRel = 0, releaseFromX = null, lastPlayX = 0;
+
+const $ = s => document.querySelector(s);
+const powerBtn = $("#power"), trig = $("#trig");
+const envCanvas = $("#env"), scope = $("#scope");
+const clamp01 = v => v<0?0:v>1?1:v;
+
+function powerOn(){
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  osc = ctx.createOscillator();
+  vca = ctx.createGain();
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.5;
+  osc.type = "sawtooth"; osc.frequency.value = 110;   // A2 — a nice acid-bass register
+  vca.gain.value = 0;
+  osc.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start();
+  powerBtn.classList.add("on"); powerBtn.textContent = "⏻ powered";
+  trig.disabled = false; draw();
+}
+
+// ── Envelope scheduling ──
+function noteOn(){
+  const t = ctx.currentTime, g = vca.gain;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(Math.max(g.value, 1e-4), t);      // start from wherever we are (retrigger-safe)
+  g.linearRampToValueAtTime(PEAK, t + A);            // ── Attack: rise to full
+  g.linearRampToValueAtTime(Math.max(S*PEAK,1e-4), t + A + D); // ── Decay: fall to sustain level
+  phase = "ads"; tNote = t; releaseFromX = null;
+  trig.classList.add("on"); trig.textContent = "◉ playing";
+}
+function noteOff(){
+  if(phase === "idle") return;
+  const t = ctx.currentTime, g = vca.gain;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(g.value, t);
+  g.linearRampToValueAtTime(0, t + R);               // ── Release: fade to silence
+  phase = "rel"; tRel = t; releaseFromX = null;
+  trig.classList.remove("on"); trig.textContent = "▶ press & hold to play";
+}
+
+// ── Controls ──
+powerBtn.onclick = () => { if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+
+// press-and-hold (mouse + touch)
+trig.addEventListener("pointerdown", e => { e.preventDefault(); if(ctx) noteOn(); });
+trig.addEventListener("pointerup",   e => { e.preventDefault(); noteOff(); });
+trig.addEventListener("pointerleave",()=> noteOff());
+trig.addEventListener("pointercancel",()=> noteOff());
+
+// spacebar = hold
+let spaceDown = false;
+addEventListener("keydown", e => { if(e.code==="Space" && !spaceDown && ctx && !trig.disabled){ e.preventDefault(); spaceDown=true; noteOn(); }});
+addEventListener("keyup",   e => { if(e.code==="Space"){ e.preventDefault(); spaceDown=false; noteOff(); }});
+
+function bindSlider(id, valId, unit, scale, set){
+  const el = $("#"+id), out = $("#"+valId);
+  const upd = () => { const raw=+el.value; set(raw*scale); out.textContent = unit(raw); };
+  el.oninput = upd; upd();
+}
+bindSlider("a","aVal", v=>v+" ms", 0.001, v=>A=v);
+bindSlider("d","dVal", v=>v+" ms", 0.001, v=>D=v);
+bindSlider("s","sVal", v=>v+" %",  0.01,  v=>S=v);
+bindSlider("r","rVal", v=>v+" ms", 0.001, v=>R=v);
+
+document.querySelectorAll(".preset").forEach(b => b.onclick = () => {
+  const set=(id,val)=>{ $("#"+id).value=val; $("#"+id).dispatchEvent(new Event("input")); };
+  set("a",b.dataset.a); set("d",b.dataset.d); set("s",b.dataset.s); set("r",b.dataset.r);
+});
+
+// ── Drawing ──
+function fitCanvas(c){
+  const dpr = window.devicePixelRatio||1, r = c.getBoundingClientRect();
+  c.width = r.width*dpr; c.height = r.height*dpr;
+  const g = c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return [g, r.width, r.height];
+}
+
+function drawEnv(){
+  const [g,W,H] = fitCanvas(envCanvas);
+  g.clearRect(0,0,W,H);
+  const pad=14, x0=pad, x1=W-pad, yBot=H-pad, yTop=pad;
+  const total = A + D + SUS_SHOW + R;
+  const X = t => x0 + (t/total)*(x1-x0);
+  const Y = lvl => yBot - lvl*(yBot-yTop);
+
+  // grid
+  g.strokeStyle="#1c2416"; g.lineWidth=1;
+  for(let i=0;i<=4;i++){ const y=yTop+(yBot-yTop)*i/4; g.beginPath(); g.moveTo(x0,y); g.lineTo(x1,y); g.stroke(); }
+
+  // key breakpoints
+  const P0=[X(0),Y(0)], PA=[X(A),Y(1)], PD=[X(A+D),Y(S)], PS=[X(A+D+SUS_SHOW),Y(S)], PE=[X(total),Y(0)];
+
+  // filled area under the curve
+  g.beginPath(); g.moveTo(P0[0],yBot);
+  g.lineTo(...P0); g.lineTo(...PA); g.lineTo(...PD); g.lineTo(...PS); g.lineTo(...PE);
+  g.lineTo(PE[0],yBot); g.closePath();
+  g.fillStyle="rgba(182,255,0,.10)"; g.fill();
+
+  // the curve
+  g.lineWidth=2.5; g.strokeStyle="#b6ff00"; g.beginPath();
+  g.moveTo(...P0); g.lineTo(...PA); g.lineTo(...PD); g.lineTo(...PS); g.lineTo(...PE); g.stroke();
+
+  // stage separators + labels
+  g.setLineDash([3,4]); g.strokeStyle="#3a4a26"; g.lineWidth=1;
+  [PA[0],PD[0],PS[0]].forEach(x=>{ g.beginPath(); g.moveTo(x,yTop); g.lineTo(x,yBot); g.stroke(); });
+  g.setLineDash([]);
+  g.fillStyle="#7c8a6a"; g.font="11px ui-monospace,monospace"; g.textAlign="center";
+  const lbl=(x1_,x2_,t)=>{ if(x2_-x1_>14) g.fillText(t,(x1_+x2_)/2,H-2); };
+  lbl(P0[0],PA[0],"A"); lbl(PA[0],PD[0],"D"); lbl(PD[0],PS[0],"S"); lbl(PS[0],PE[0],"R");
+
+  // ── playhead ── height comes from the LIVE gain value; x from the phase clock
+  const yLive = vca ? clamp01(vca.gain.value/PEAK) : 0;
+  let px=null;
+  if(phase==="ads"){
+    const e = ctx.currentTime - tNote;
+    px = X(Math.min(e, A + D + SUS_SHOW));   // travel A→D→sustain, then park on the plateau
+    lastPlayX = px;
+  } else if(phase==="rel"){
+    const er = ctx.currentTime - tRel;
+    if(er>=R){ phase="idle"; }
+    else { if(releaseFromX==null) releaseFromX=lastPlayX;
+           px = releaseFromX + (X(total)-releaseFromX)*(er/R); lastPlayX=px; }
+  }
+  if(px!=null){
+    const py=Y(yLive);
+    g.strokeStyle="rgba(255,122,0,.5)"; g.lineWidth=1;
+    g.beginPath(); g.moveTo(px,yTop); g.lineTo(px,yBot); g.stroke();
+    g.fillStyle="#ff7a00"; g.beginPath(); g.arc(px,py,5,0,7); g.fill();
+    g.strokeStyle="#fff"; g.lineWidth=1.5; g.beginPath(); g.arc(px,py,5,0,7); g.stroke();
+  }
+}
+
+function drawScope(){
+  const [g,W,H] = fitCanvas(scope);
+  g.clearRect(0,0,W,H);
+  g.strokeStyle="#1c2416"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
+  if(!analyser) return;
+  const buf = new Uint8Array(analyser.fftSize);
+  analyser.getByteTimeDomainData(buf);
+  const period = ctx.sampleRate/osc.frequency.value;
+  const span = Math.max(2, Math.min(buf.length, Math.round(period*3)));
+  g.lineWidth=2; g.strokeStyle="#b6ff00"; g.beginPath();
+  for(let i=0;i<span;i++){ const x=(i/span)*W, y=H-(buf[i]/255)*H; i===0?g.moveTo(x,y):g.lineTo(x,y); }
+  g.stroke();
+}
+
+function draw(){ requestAnimationFrame(draw); drawEnv(); drawScope(); }
+</script>
+</body>
+</html>
