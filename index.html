@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acid Lab 🧪</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink); font:15px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:48px 20px 80px;
+  }
+  .wrap{max-width:820px;margin:0 auto}
+  h1{font-size:34px;margin:0 0 4px;letter-spacing:-.5px}
+  h1 .dot{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 32px}
+  .mod{margin:26px 0 10px;color:var(--orange);font-size:13px;letter-spacing:2px;text-transform:uppercase}
+  a.card{
+    display:flex;gap:14px;align-items:center;text-decoration:none;color:inherit;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:12px 16px;margin:8px 0;transition:.15s;
+  }
+  a.card:hover{border-color:var(--acid);transform:translateX(3px)}
+  a.card.todo{opacity:.5;pointer-events:none}
+  .num{font-size:20px;color:var(--acid);min-width:34px;font-weight:700}
+  .title{font-weight:600}
+  .desc{color:var(--dim);font-size:13px}
+  .badge{margin-left:auto;font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid var(--line)}
+  .badge.done{color:var(--acid);border-color:var(--acid)}
+  .badge.todo{color:var(--dim)}
+  footer{margin-top:48px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:16px}
+  code{color:var(--acid)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Acid Lab<span class="dot">.</span></h1>
+  <p class="sub">Building a TB-303 from first principles — one oscillator, one filter, one envelope at a time.</p>
+
+  <div class="mod">Module 0 · Sound &amp; primitives</div>
+  <a class="card" href="lessons/00-oscillator/index.html">
+    <span class="num">00</span>
+    <span><span class="title">Oscillator &amp; the scope</span><br>
+      <span class="desc">Pitch, loudness, timbre. See sine/square/saw/triangle. Why saw is the acid osc.</span></span>
+    <span class="badge done">done</span>
+  </a>
+  <a class="card todo" href="#">
+    <span class="num">01</span>
+    <span><span class="title">Gain &amp; envelopes (ADSR)</span><br>
+      <span class="desc">Shaping loudness over time — pluck vs pad. The VCA.</span></span>
+    <span class="badge todo">planned</span>
+  </a>
+
+  <div class="mod">Module 1 · The filter (heart of acid)</div>
+  <a class="card todo" href="#"><span class="num">02</span><span><span class="title">Low-pass filter &amp; cutoff</span><br><span class="desc">Subtractive synthesis: start bright, carve harmonics away.</span></span><span class="badge todo">planned</span></a>
+  <a class="card todo" href="#"><span class="num">03</span><span><span class="title">Resonance &amp; the squelch</span><br><span class="desc">Q, self-oscillation, 24 dB/oct — the acid whistle.</span></span><span class="badge todo">planned</span></a>
+
+  <div class="mod">Module 2 · The 303 voice</div>
+  <a class="card todo" href="#"><span class="num">05</span><span><span class="title">The voice · Env Mod · Accent · Slide</span><br><span class="desc">Wire the whole panel: Tuning, Cutoff, Reso, Env Mod, Decay, Accent, Slide.</span></span><span class="badge todo">planned</span></a>
+
+  <div class="mod">Module 3–5 · Rhythm, sequencer, groovebox</div>
+  <a class="card todo" href="#"><span class="num">10</span><span><span class="title">The clock problem &amp; drums &amp; the DS-10 clone</span><br><span class="desc">Lookahead scheduler, synthesized 909 drums, step sequencer, capstone groovebox.</span></span><span class="badge todo">planned</span></a>
+
+  <footer>
+    See <code>AGENTS.md</code> for the full curriculum and <code>STATUS.md</code> for progress.<br>
+    Tip: run <code>python3 -m http.server</code> here for the later lessons.
+  </footer>
+</div>
+</body>
+</html>

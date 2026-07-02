@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>00 · Oscillator &amp; the scope — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  .scopes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.scopes{grid-template-columns:1fr}}
+  .scopebox{background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .scopebox h3{margin:0 0 8px;font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  canvas{width:100%;height:150px;display:block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  button.wave{
+    background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s
+  }
+  button.wave:hover{border-color:var(--acid)}
+  button.wave.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  #power{
+    background:var(--orange);color:#0a0c08;border:none;border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px
+  }
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #gate{
+    background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px;flex:1;min-width:160px
+  }
+  #gate.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #gate:disabled{opacity:.35;cursor:not-allowed}
+  .note{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px;text-align:center}
+  .note .nm{font-size:22px;color:var(--acid);font-weight:700}
+  .note .hz{font-size:12px;color:var(--dim)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .explain .hl{color:var(--acid)}
+  .kbd{color:var(--orange)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left}
+  th{color:var(--orange);font-weight:600}
+  .cur td{background:rgba(182,255,0,.07)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">00</span> · Oscillator &amp; the scope</h1>
+  <p class="sub">What sound actually *is*, and why the sawtooth is the acid oscillator.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="scopes">
+      <div class="scopebox">
+        <h3>Oscilloscope · waveform (time)</h3>
+        <canvas id="scope"></canvas>
+      </div>
+      <div class="scopebox">
+        <h3>Spectrum · harmonics (frequency)</h3>
+        <canvas id="spectrum"></canvas>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="gate" disabled>▶ hold note</button>
+      <div class="note"><div class="nm" id="noteName">—</div><div class="hz" id="noteHz">off</div></div>
+    </div>
+
+    <div class="row" id="waves">
+      <button class="wave on" data-w="sawtooth">◿ sawtooth</button>
+      <button class="wave" data-w="square">▨ square</button>
+      <button class="wave" data-w="triangle">△ triangle</button>
+      <button class="wave" data-w="sine">∿ sine</button>
+    </div>
+
+    <div class="row">
+      <div class="ctrl">
+        <label>frequency (pitch) <b id="freqVal">220 Hz</b></label>
+        <input id="freq" type="range" min="0" max="1000" value="500">
+      </div>
+      <div class="ctrl">
+        <label>level (loudness) <b id="levVal">30%</b></label>
+        <input id="lev" type="range" min="0" max="100" value="30">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── The lesson ─────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <p><b class="hl">Three properties of any sound.</b> Press <span class="kbd">power on</span>,
+    then <span class="kbd">hold note</span> and play:</p>
+    <ul>
+      <li><b>Frequency → pitch.</b> How fast the wave repeats (Hz = cycles/sec). Higher = higher note.
+        On the scope, higher frequency = the pattern repeats more times across the window.</li>
+      <li><b>Amplitude → loudness.</b> How tall the wave is. That's the <i>level</i> knob.</li>
+      <li><b>Waveform → timbre (tone colour).</b> The <i>shape</i> of one cycle. Same pitch, same loudness,
+        totally different character — because of its <b class="hl">harmonics</b>.</li>
+    </ul>
+    <p><b class="hl">Harmonics are the secret.</b> Any repeating wave is secretly a stack of pure sine
+    waves (the <b>fundamental</b> at the pitch you hear, plus <b>overtones</b> at 2×, 3×, 4×… that
+    frequency). The right-hand <b>spectrum</b> shows them as spikes. Switch waveforms and watch:</p>
+    <table>
+      <tr><th>wave</th><th>harmonics present</th><th>sound</th><th>spectrum</th></tr>
+      <tr id="row-sine"><td>sine</td><td>fundamental only</td><td>pure, hollow, "flute-y"</td><td>one lone spike</td></tr>
+      <tr id="row-triangle"><td>triangle</td><td>odd only, fall off fast (1/n²)</td><td>soft, mellow</td><td>few small spikes</td></tr>
+      <tr id="row-square"><td>square</td><td>odd only (1/n)</td><td>hollow, buzzy, "8-bit"</td><td>tall odd spikes</td></tr>
+      <tr id="row-sawtooth"><td>sawtooth</td><td><b class="hl">all</b> harmonics (1/n)</td><td>bright, brassy, rich</td><td>full comb of spikes</td></tr>
+    </table>
+    <p style="margin-top:14px"><b class="hl">Why saw = acid.</b> The TB-303's oscillator is basically just
+    saw or square. A synth <i>subtracts</i>: you start with the most harmonically-rich source and carve it
+    with a filter. The <b>sawtooth</b> has the most harmonics to carve, so it gives the filter the most to
+    "bite" into — that's why sweeping a filter over a saw makes that liquid, vocal, squelchy acid sound.
+    Next lesson (<b>01</b>) we shape it in <i>time</i> with an envelope; then Module 1 adds the filter and it
+    starts to sound like acid.</p>
+    <p style="color:var(--dim);font-size:12.5px">Note: these built-in oscillators are <i>band-limited</i>
+    (anti-aliased), so the spectrum stops cleanly below the Nyquist limit instead of folding back as garbage —
+    a nicety Web Audio handles for us.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ─────────────────────────────────────────────────────────────────────────
+   Lesson 00 — pure Web Audio, no libraries. Signal path:
+
+     OscillatorNode  ──►  GainNode (VCA / "level")  ──►  AnalyserNode  ──► speakers
+
+   The AnalyserNode is a passive tap: it copies the signal into arrays we can
+   draw, without changing the sound. We read it two ways:
+     • time domain  (getByteTimeDomainData)  → the oscilloscope
+     • frequency domain (getByteFrequencyData, an FFT) → the spectrum / harmonics
+   ───────────────────────────────────────────────────────────────────────── */
+
+let ctx, osc, vca, analyser;
+let playing = false;
+let waveform = "sawtooth";
+let level = 0.30;
+
+// Log-scaled frequency slider: musical pitch is logarithmic, so a linear slider
+// feels wrong. Map slider 0..1000 → ~27.5 Hz (A0) .. ~3520 Hz (A7) exponentially.
+const F_MIN = 27.5, F_MAX = 3520;
+function sliderToFreq(v){ return F_MIN * Math.pow(F_MAX / F_MIN, v / 1000); }
+function freqToNote(f){
+  const midi = Math.round(69 + 12 * Math.log2(f / 440));
+  const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+  return names[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
+}
+
+// ── DOM ──
+const $ = s => document.querySelector(s);
+const powerBtn = $("#power"), gateBtn = $("#gate");
+const freqEl = $("#freq"), levEl = $("#lev");
+const freqVal = $("#freqVal"), levVal = $("#levVal");
+const noteName = $("#noteName"), noteHz = $("#noteHz");
+const scope = $("#scope"), spectrum = $("#spectrum");
+
+let curFreq = sliderToFreq(+freqEl.value);
+
+// ── Audio graph (built lazily on first user gesture — browsers require it) ──
+function powerOn(){
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  osc = ctx.createOscillator();
+  vca = ctx.createGain();
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 2048;                 // 1024 frequency bins
+  analyser.smoothingTimeConstant = 0.6;
+
+  osc.type = waveform;
+  osc.frequency.value = curFreq;
+  vca.gain.value = 0;                       // silent until we "gate" a note
+
+  osc.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start();                             // the osc runs forever; the VCA gates it
+
+  powerBtn.classList.add("on");
+  powerBtn.textContent = "⏻ powered";
+  gateBtn.disabled = false;
+  draw();
+}
+
+// Gate = open/close the VCA. Ramp (don't jump) to avoid a click/pop.
+function setGate(on){
+  playing = on;
+  const t = ctx.currentTime;
+  vca.gain.cancelScheduledValues(t);
+  vca.gain.setValueAtTime(vca.gain.value, t);
+  vca.gain.linearRampToValueAtTime(on ? level : 0, t + 0.012);
+  gateBtn.classList.toggle("on", on);
+  gateBtn.textContent = on ? "■ stop" : "▶ hold note";
+  noteHz.textContent = on ? curFreq.toFixed(1) + " Hz" : "off";
+  noteName.textContent = on ? freqToNote(curFreq) : "—";
+}
+
+// ── Controls ──
+powerBtn.onclick = () => { if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+gateBtn.onclick  = () => setGate(!playing);
+
+document.querySelectorAll(".wave").forEach(b => b.onclick = () => {
+  waveform = b.dataset.w;
+  document.querySelectorAll(".wave").forEach(x => x.classList.toggle("on", x===b));
+  if(osc) osc.type = waveform;
+  document.querySelectorAll("tr[id^=row-]").forEach(r => r.classList.remove("cur"));
+  $("#row-" + waveform).classList.add("cur");
+});
+$("#row-sawtooth").classList.add("cur");
+
+freqEl.oninput = () => {
+  curFreq = sliderToFreq(+freqEl.value);
+  freqVal.textContent = Math.round(curFreq) + " Hz";
+  if(osc) osc.frequency.setTargetAtTime(curFreq, ctx.currentTime, 0.01);
+  if(playing){ noteHz.textContent = curFreq.toFixed(1) + " Hz"; noteName.textContent = freqToNote(curFreq); }
+};
+levEl.oninput = () => {
+  level = +levEl.value / 100;
+  levVal.textContent = levEl.value + "%";
+  if(playing && vca) vca.gain.setTargetAtTime(level, ctx.currentTime, 0.01);
+};
+freqVal.textContent = Math.round(curFreq) + " Hz";
+
+// ── Visualization ──
+function fitCanvas(c){
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  const g = c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return [g, r.width, r.height];
+}
+function draw(){
+  requestAnimationFrame(draw);
+  if(!analyser) return;
+
+  // Oscilloscope — raw waveform over time
+  {
+    const [g,W,H] = fitCanvas(scope);
+    const buf = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(buf);       // 0..255, 128 = silence
+    g.clearRect(0,0,W,H);
+    g.strokeStyle="#2a3320"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
+    g.lineWidth=2; g.strokeStyle="#b6ff00"; g.beginPath();
+    // Window to ~2 cycles of the current pitch so the trace stands roughly still.
+    const period = ctx.sampleRate / curFreq;
+    const span = Math.max(2, Math.min(buf.length, Math.round(period*2)));
+    for(let i=0;i<span;i++){
+      const x = (i/span)*W;
+      const y = H - (buf[i]/255)*H;   // sample 0..255 → bottom..top; 128 = centre
+      i===0 ? g.moveTo(x,y) : g.lineTo(x,y);
+    }
+    g.stroke();
+  }
+
+  // Spectrum — the harmonics (FFT magnitude)
+  {
+    const [g,W,H] = fitCanvas(spectrum);
+    const bins = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(bins);       // 0..255 dB-ish per bin
+    g.clearRect(0,0,W,H);
+    const shown = Math.floor(bins.length * 0.28);  // low ~6 kHz — where harmonics live
+    const bw = W / shown;
+    for(let i=0;i<shown;i++){
+      const h = (bins[i]/255)*H;
+      const t = i/shown;
+      g.fillStyle = `rgb(${Math.round(120+135*t)},255,0)`;
+      g.fillRect(i*bw, H-h, Math.max(bw-1,1), h);
+    }
+  }
+}
+
+// keyboard: space = hold note
+addEventListener("keydown", e => {
+  if(e.code==="Space" && ctx && !gateBtn.disabled){ e.preventDefault(); setGate(!playing); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# deps (we pin into vendor/ instead)
+node_modules/
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# scratch
+*.log
+tmp/
