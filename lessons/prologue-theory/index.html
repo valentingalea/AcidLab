@@ -456,12 +456,20 @@ function refreshScale(){
 }
 function playCurrentScale(chord=false){
   ensureAudio();
-  const rootMidi=57+rootPc;                  // around A3..
-  const notes=cur[1].map(s=>mf(rootMidi+s));
-  if(chord){ playTogether([mf(rootMidi),...cur[1].filter(s=>[0,3,4,7,10,11].includes(s)).slice(0,3).map(s=>mf(rootMidi+s))],1.2); return; }
-  const up=[...cur[1],12].map(s=>mf(rootMidi+s));
-  const down=[...up].reverse().slice(1,-1);
-  playSeq([...up,...down],0.16,0.22);
+  const rootMidi=48+rootPc;                  // C3..B3 — same pitch class as the lit root key
+  if(chord){
+    // The scale's own chord: stack every other scale note (degrees 1-3-5-7).
+    // Built from the scale itself so each keeps its colour — natural vs harmonic
+    // minor differ (m7 vs minMaj7), whole tone goes augmented, etc.
+    const chordSemis=[0,2,4,6].filter(i=>i<cur[1].length).map(i=>cur[1][i]);
+    chordSemis.forEach(s=>flash(rootMidi+s));
+    playTogether(chordSemis.map(s=>mf(rootMidi+s)),1.2);
+    return;
+  }
+  const up=[...cur[1],12];
+  const semis=[...up,...[...up].reverse().slice(1)];  // up, then down to land back home
+  playSeq(semis.map(s=>mf(rootMidi+s)),0.16,0.22);
+  semis.forEach((s,i)=>setTimeout(()=>flash(rootMidi+s),30+i*160)); // mirror it on the keys
 }
 
 /* ── Section 7 microtones ───────────────────────────────────────── */

@@ -11,7 +11,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 
 | # | Lesson | State | Notes |
 |---|--------|-------|-------|
-| P | Music theory for acid (prologue) | ✅ done | playable keyboard, interactive scale index, harmonics→harmony, West vs East microtones, cheat-sheet |
+| P | Music theory for acid (prologue) | ✅ done | playable keyboard, interactive scale index, harmonics→harmony, West vs East microtones, cheat-sheet. 2026-07-02 fix: scale playback now roots on the selected note (was +9 semitones off), arpeggio chord built from actual scale degrees (was collapsing every scale to the same 2 triads), runs land back on the root, keys flash along with playback |
 | 00 | Oscillator & the scope | ✅ done | vanilla Web Audio, scope + spectrum, 4 waveforms |
 | 01 | Gain & envelopes (ADSR) | ✅ done | VCA + ADSR, live envelope graph w/ playhead, presets |
 | 02 | Low-pass filter & cutoff | ⬜ planned | |
