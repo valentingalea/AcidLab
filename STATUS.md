@@ -16,7 +16,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | P3 | Sound as numbers (prologue) | ✅ done | NEW: CS side of audio — sampling canvas, Nyquist fold sweep you can hear, bitcrush demos, buffers/latency readout, synthesize sine/square/saw/noise from a for-loop |
 | 00 | Oscillator & the scope | ✅ done | vanilla Web Audio, scope + spectrum, 4 waveforms |
 | 01 | Gain & envelopes (ADSR) | ✅ done | VCA + ADSR, live envelope graph w/ playhead, presets |
-| 02 | Low-pass filter & cutoff | ⬜ planned | |
+| 02 | Low-pass filter & cutoff | ✅ done | single biquad lowpass (Q=0.707, reso saved for 03), live getFrequencyResponse curve + cutoff marker on log spectrum, bypass A/B, auto-sweep, saw/square/noise sources |
 | 03 | Resonance & the squelch | ⬜ planned | |
 | 04 | Ladder filter (AudioWorklet) | ⏭️ optional | |
 | 05 | The 303 voice | ⬜ planned | |
@@ -35,12 +35,11 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 18 | Shipping it | ⬜ planned | for the game |
 
 ## Now / Next
-- **Now:** Prologue rewritten 2026-07-02 as 3 ELI5 parts (P1 sound basics ·
-  P2 scales · P3 digital audio/CS) after feedback that the single theory page
-  was too dense. Old `prologue-theory/` URL redirects to P1. Module 0
-  (lessons 00 + 01) playable.
-- **Next:** Lesson 02 (low-pass filter & cutoff) — Module 1, where it starts to
-  sound like acid: sweep a filter over the saw and watch harmonics vanish.
+- **Now:** Prologue (3 ELI5 parts, rewritten 2026-07-02), Module 0
+  (lessons 00 + 01) and lesson 02 (first filter lesson, Module 1) all playable.
+  Old `prologue-theory/` URL redirects to P1.
+- **Next:** Lesson 03 (resonance & the squelch) — Q, self-oscillation, and
+  stacking two biquads for the 303's 24 dB/oct slope.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?

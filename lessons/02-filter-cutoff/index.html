@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Low-pass filter &amp; cutoff — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .scopes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.scopes{grid-template-columns:1fr}}
+  .scopebox{background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .scopebox h3{margin:0 0 8px;font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  canvas{width:100%;height:150px;display:block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  .ctrl.hero label b{color:var(--orange);font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  .ctrl.hero input[type=range]{accent-color:var(--orange);height:34px}
+  #power{background:var(--orange);color:#0a0c08;border:none;border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #gate{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px;flex:1;min-width:160px}
+  #gate.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #gate:disabled{opacity:.35;cursor:not-allowed}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left}
+  th{color:var(--orange);font-weight:600}
+  ul{margin:8px 0;padding-left:22px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">02</span> · Low-pass filter &amp; cutoff</h1>
+  <p class="sub">Start too bright, then carve the top away. One knob on this page — it's the knob that <i>is</i> acid.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="scopes">
+      <div class="scopebox">
+        <h3>Oscilloscope · waveform (time)</h3>
+        <canvas id="scope"></canvas>
+      </div>
+      <div class="scopebox">
+        <h3>Spectrum · harmonics + the filter's curve</h3>
+        <canvas id="spectrum"></canvas>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="gate" disabled>▶ hold note</button>
+      <button id="bypass" disabled>filter: ON</button>
+      <button id="sweep" disabled>∿ auto-sweep</button>
+    </div>
+
+    <div class="row">
+      <div class="ctrl hero">
+        <label>CUTOFF — carve everything above this <b id="cutVal">12000 Hz (wide open)</b></label>
+        <input id="cut" type="range" min="0" max="1000" value="1000">
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="hint" style="margin-right:2px">source:</span>
+      <button class="src on" data-s="sawtooth">◿ saw (110 Hz)</button>
+      <button class="src" data-s="square">▨ square</button>
+      <button class="src" data-s="noise">▒ noise</button>
+      <div class="ctrl" style="max-width:220px">
+        <label>level <b id="levVal">30%</b></label>
+        <input id="lev" type="range" min="0" max="100" value="30">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── The muffle knob ────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>You already know this sound — it's the "next room" effect</h2>
+    <p>Music behind a closed door. A party heard from the street. Someone talking with a hand over their
+    mouth. In every case the sound gets <b>muffled</b>: the boomy lows survive, the crisp highs die.
+    Walls are a filter — they <b class="hl">let low wiggles pass and block fast ones</b>. That's exactly
+    what a <b>low-pass filter</b> is, as a circuit (or 5 lines of code) instead of a wall.</p>
+    <p><b class="hl">Try it:</b> <span class="kbd">⏻ power on</span> → <span class="kbd">▶ hold note</span> →
+    drag the big orange <b>CUTOFF</b> slider all the way down and back up. You just walked in and out of the
+    party. Now click <span class="kbd">filter: ON</span> to bypass it — that's the raw, unfiltered saw from
+    lesson 00.</p>
+  </div>
+
+  <!-- ── Subtractive synthesis ──────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>Subtractive synthesis — sculpt by removing</h2>
+    <p>From P1 and lesson 00: a saw wave is a <b>stack of harmonics</b> — the note you hear plus overtones at
+    2×, 3×, 4×… all the way up. The spectrum on the right shows the stack as green spikes.</p>
+    <p>A synth works like a sculptor: <b class="hl">start with a block that has too much, and carve</b>.
+    The saw is the marble block (every harmonic present); the filter is the chisel; the
+    <b>cutoff</b> sets where you start carving. Watch the spectrum while you drag: spikes above the orange
+    line vanish, right to left. The <i>shape</i> on the left rounds off too — remove the fast wiggles from a
+    jagged wave and only the smooth swing remains.</p>
+    <p>Compare the blocks: the <b>square</b> has only the odd harmonics (hollower — and its low end survives
+    filtering as a fat sub-bass), and <b>noise</b> is <i>every frequency at once</i> — filtered noise stops
+    being "shhh" and becomes wind, surf, distant rain. All three respond to the same knob.</p>
+  </div>
+
+  <!-- ── The slope ──────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Cutoff isn't a wall — it's a slope</h2>
+    <p>The orange curve on the spectrum is the filter's real answer to "how much of each frequency do you let
+    through?" (drawn live from the actual filter). Notice it doesn't drop like a cliff at the cutoff — it
+    <b>rolls off</b>, a ski slope, not a wall. Harmonics just above the cutoff are quieter; ones far above are
+    gone.</p>
+    <p>How steep that slope is becomes <i>the</i> sound-design decision: this single filter rolls off gently
+    (12 dB per octave). The TB-303's famous filter is <b class="hl">twice as steep</b> (24 dB/oct — it stacks
+    two of these), which is a big part of why it sounds so focused and rubbery. We build that in
+    lesson 03, along with the filter's party trick: <b>resonance</b>, a boost right at the cutoff edge that
+    this page keeps switched off.</p>
+    <div class="nerd"><b>// CS corner:</b> the whole filter is <code>BiquadFilterNode</code> — a 5-multiply
+    recurrence over the P3 sample array: <code>y[n] = b0·x[n] + b1·x[n−1] + b2·x[n−2] − a1·y[n−1] −
+    a2·y[n−2]</code>. Feedback of past <i>outputs</i> is what makes it an IIR filter — each sample remembers a
+    decaying echo of everything before, and fast changes can't get through. "12 dB/oct" means: go up one
+    octave (×2 frequency) past the cutoff and the filter outputs ~¼ the amplitude.</div>
+  </div>
+
+  <!-- ── The acid connection ────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>A still filter is tone control. A <i>moving</i> filter is acid</h2>
+    <p>Parked in one spot, a low-pass filter is just the "treble" knob on an old stereo. The magic is
+    <b class="hl">motion</b>: sweep the cutoff while a note plays and the sound goes
+    <i>wow&nbsp;→&nbsp;ooh&nbsp;→&nbsp;wow</i> — the same trick your mouth does when you change its shape
+    while humming. Press <span class="kbd">∿ auto-sweep</span> and just listen (works great on all three
+    sources; the slider rides along).</p>
+    <p>Every classic acid line is this: a plucky note repeating while <i>something</i> turns the cutoff knob.
+    In lesson 06 that "something" stops being your hand and becomes an <b>envelope</b> — the ADSR from
+    lesson 01 aimed at the filter instead of the volume. That's the squelch. You now know all the parts;
+    what's left is wiring them together.</p>
+    <p><b class="hl">Experiments before you leave:</b></p>
+    <ul>
+      <li><b>Ocean:</b> source <span class="kbd">noise</span> + <span class="kbd">auto-sweep</span> — instant waves on a beach.</li>
+      <li><b>Dub bass:</b> source <span class="kbd">square</span>, cutoff down to ~200 Hz — a warm sub with no edge.</li>
+      <li><b>Radio voice:</b> saw, cutoff ~800 Hz — thin and boxy, like a cheap speaker.</li>
+      <li><b>The carve:</b> saw, drag slowly from open to closed and try to hear individual spikes drop off the top.</li>
+    </ul>
+    <a class="next" href="../../index.html">Next → 03 · Resonance &amp; the squelch (soon)</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* Lesson 02 — the low-pass filter. Signal path:
+
+     saw/square osc ─┐
+                     ├─► source select ──► BiquadFilter(lowpass) ──► VCA ──► Analyser ──► out
+     noise loop ─────┘                        ▲ (or bypassed)
+                                            cutoff
+
+   The spectrum view overlays the filter's true transfer curve, read with
+   getFrequencyResponse(), on top of the live FFT — so the "slope" the ear
+   hears is the same curve the eye sees.                                        */
+
+let ctx, osc, noise, oscGain, noiseGain, filter, vca, analyser;
+let playing=false, bypassed=false, sweeping=false, sweepTimer=null;
+let source="sawtooth", level=0.30;
+const FREQ=110;                                   // A2 — acid bass register
+
+// cutoff slider: log map 40 Hz .. 12 kHz
+const C_MIN=40, C_MAX=12000;
+const sliderToCut = v => C_MIN*Math.pow(C_MAX/C_MIN, v/1000);
+const cutToSlider = f => 1000*Math.log(f/C_MIN)/Math.log(C_MAX/C_MIN);
+
+const $ = s => document.querySelector(s);
+const powerBtn=$("#power"), gateBtn=$("#gate"), bypassBtn=$("#bypass"), sweepBtn=$("#sweep");
+const cutEl=$("#cut"), cutVal=$("#cutVal"), levEl=$("#lev"), levVal=$("#levVal");
+const scope=$("#scope"), spectrum=$("#spectrum");
+let curCut = sliderToCut(+cutEl.value);
+
+function powerOn(){
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  osc = ctx.createOscillator();
+  osc.type="sawtooth"; osc.frequency.value=FREQ;
+  // noise = 2 s of Math.random, looped — the P3 for-loop, used as an instrument
+  const nb = ctx.createBuffer(1, 2*ctx.sampleRate, ctx.sampleRate);
+  const d = nb.getChannelData(0);
+  for(let n=0;n<d.length;n++) d[n]=(Math.random()*2-1)*0.6;
+  noise = ctx.createBufferSource(); noise.buffer=nb; noise.loop=true;
+
+  oscGain=ctx.createGain(); noiseGain=ctx.createGain();
+  oscGain.gain.value=1; noiseGain.gain.value=0;     // source select: osc by default
+
+  filter=ctx.createBiquadFilter();
+  filter.type="lowpass"; filter.frequency.value=curCut;
+  filter.Q.value=0.707;                             // flattest slope — resonance is lesson 03
+
+  vca=ctx.createGain(); vca.gain.value=0;
+  analyser=ctx.createAnalyser();
+  analyser.fftSize=4096; analyser.smoothingTimeConstant=0.6;
+
+  osc.connect(oscGain); noise.connect(noiseGain);
+  oscGain.connect(filter); noiseGain.connect(filter);
+  filter.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start(); noise.start();
+
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  gateBtn.disabled=bypassBtn.disabled=sweepBtn.disabled=false;
+  draw();
+}
+
+function setGate(on){
+  playing=on;
+  const t=ctx.currentTime;
+  vca.gain.cancelScheduledValues(t);
+  vca.gain.setValueAtTime(vca.gain.value,t);
+  vca.gain.linearRampToValueAtTime(on?level:0, t+0.012);
+  gateBtn.classList.toggle("on",on);
+  gateBtn.textContent = on ? "■ stop" : "▶ hold note";
+}
+
+// bypass = reroute the sources straight past the filter (A/B the carving)
+function setBypass(b){
+  bypassed=b;
+  if(sweeping) setSweep(false);
+  oscGain.disconnect(); noiseGain.disconnect();
+  const dest = b ? vca : filter;
+  oscGain.connect(dest); noiseGain.connect(dest);
+  bypassBtn.classList.toggle("on",b);
+  bypassBtn.textContent = b ? "filter: BYPASSED" : "filter: ON";
+}
+
+// auto-sweep: ride the cutoff down to 80 Hz and back up, 6 s per lap,
+// as AudioParam automation (the draw loop mirrors it onto the slider)
+function sweepLap(){
+  const f=filter.frequency, t=ctx.currentTime;
+  f.cancelScheduledValues(t);
+  f.setValueAtTime(Math.max(f.value,C_MIN), t);
+  f.exponentialRampToValueAtTime(80, t+3);
+  f.exponentialRampToValueAtTime(8000, t+6);
+}
+function setSweep(on){
+  sweeping=on;
+  sweepBtn.classList.toggle("on",on);
+  if(on){ if(!playing) setGate(true); sweepLap(); sweepTimer=setInterval(sweepLap,6000); }
+  else{
+    clearInterval(sweepTimer);
+    const t=ctx.currentTime, f=filter.frequency;
+    f.cancelScheduledValues(t); f.setValueAtTime(f.value,t);
+    f.setTargetAtTime(curCut,t,0.05);               // glide back to the slider
+  }
+}
+
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+gateBtn.onclick=()=>setGate(!playing);
+bypassBtn.onclick=()=>setBypass(!bypassed);
+sweepBtn.onclick=()=>setSweep(!sweeping);
+
+document.querySelectorAll(".src").forEach(b=>b.onclick=()=>{
+  source=b.dataset.s;
+  document.querySelectorAll(".src").forEach(x=>x.classList.toggle("on",x===b));
+  if(!ctx) return;
+  const t=ctx.currentTime;
+  if(source==="noise"){
+    oscGain.gain.setTargetAtTime(0,t,0.01);
+    noiseGain.gain.setTargetAtTime(1,t,0.01);
+  }else{
+    osc.type=source;
+    oscGain.gain.setTargetAtTime(1,t,0.01);
+    noiseGain.gain.setTargetAtTime(0,t,0.01);
+  }
+});
+
+function fmtCut(f){
+  const lbl = f>=10000 ? "wide open" : f>=3000 ? "bright" : f>=800 ? "warm" : f>=250 ? "muffled" : "underwater";
+  return Math.round(f)+" Hz ("+lbl+")";
+}
+cutEl.oninput=()=>{
+  if(sweeping) setSweep(false);                     // hand on the knob overrides the robot
+  curCut=sliderToCut(+cutEl.value);
+  cutVal.textContent=fmtCut(curCut);
+  if(filter) filter.frequency.setTargetAtTime(curCut,ctx.currentTime,0.01);
+};
+levEl.oninput=()=>{
+  level=+levEl.value/100; levVal.textContent=levEl.value+"%";
+  if(playing) vca.gain.setTargetAtTime(level,ctx.currentTime,0.01);
+};
+cutVal.textContent=fmtCut(curCut);
+
+/* ── Visualization ─────────────────────────────────────────────── */
+function fitCanvas(c){
+  const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect();
+  c.width=r.width*dpr; c.height=r.height*dpr;
+  const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return [g,r.width,r.height];
+}
+// log-frequency x axis shared by spectrum bars, response curve and cutoff line
+const V_MIN=40, V_MAX=16000;
+const fx = (f,W) => W*Math.log(f/V_MIN)/Math.log(V_MAX/V_MIN);
+
+const RESP_N=160;
+const respFreqs=new Float32Array(RESP_N), respMag=new Float32Array(RESP_N), respPhase=new Float32Array(RESP_N);
+for(let i=0;i<RESP_N;i++) respFreqs[i]=V_MIN*Math.pow(V_MAX/V_MIN,i/(RESP_N-1));
+
+function draw(){
+  requestAnimationFrame(draw);
+  if(!analyser) return;
+  const liveCut=filter.frequency.value;             // true value (automation-aware)
+  if(sweeping){ cutEl.value=cutToSlider(liveCut); cutVal.textContent=fmtCut(liveCut); }
+
+  // Oscilloscope
+  {
+    const [g,W,H]=fitCanvas(scope);
+    const buf=new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(buf);
+    g.clearRect(0,0,W,H);
+    g.strokeStyle="#2a3320"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
+    g.lineWidth=2; g.strokeStyle="#b6ff00"; g.beginPath();
+    const span = source==="noise" ? 1024 : Math.max(2,Math.min(buf.length,Math.round(ctx.sampleRate/FREQ*2)));
+    for(let i=0;i<span;i++){
+      const x=(i/span)*W, y=H-(buf[i]/255)*H;
+      i===0?g.moveTo(x,y):g.lineTo(x,y);
+    }
+    g.stroke();
+  }
+
+  // Spectrum (log f) + filter response + cutoff line
+  {
+    const [g,W,H]=fitCanvas(spectrum);
+    const bins=new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(bins);
+    g.clearRect(0,0,W,H);
+    // axis ticks at 100 / 1k / 10k
+    g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace";
+    [[100,"100"],[1000,"1k"],[10000,"10k"]].forEach(([f,l])=>{
+      const x=fx(f,W);
+      g.fillRect(x,0,1,H); g.fillText(l+"Hz",x+3,H-4);
+    });
+    // FFT bars, bucketed into log-spaced columns
+    const binHz=ctx.sampleRate/2/bins.length, COLS=Math.floor(W/3);
+    for(let i=0;i<COLS;i++){
+      const f0=V_MIN*Math.pow(V_MAX/V_MIN,i/COLS), f1=V_MIN*Math.pow(V_MAX/V_MIN,(i+1)/COLS);
+      let v=0;
+      for(let b=Math.floor(f0/binHz); b<=Math.min(bins.length-1,Math.floor(f1/binHz)); b++) v=Math.max(v,bins[b]);
+      const h=(v/255)*H, t=i/COLS;
+      g.fillStyle=`rgb(${Math.round(120+135*t)},255,0)`;
+      g.fillRect(i*(W/COLS), H-h, Math.max(W/COLS-1,1), h);
+    }
+    if(!bypassed){
+      // the filter's actual transfer curve
+      filter.getFrequencyResponse(respFreqs,respMag,respPhase);
+      g.lineWidth=2; g.strokeStyle="#ff7a00"; g.beginPath();
+      for(let i=0;i<RESP_N;i++){
+        const x=fx(respFreqs[i],W), y=H-Math.min(respMag[i],1.1)/1.1*H*0.92-2;
+        i===0?g.moveTo(x,y):g.lineTo(x,y);
+      }
+      g.stroke();
+      // cutoff marker
+      const cx=fx(liveCut,W);
+      g.strokeStyle="#ff7a00"; g.setLineDash([4,4]); g.beginPath();
+      g.moveTo(cx,0); g.lineTo(cx,H); g.stroke(); g.setLineDash([]);
+      g.fillStyle="#ff7a00"; g.fillText("cutoff",Math.min(cx+4,W-42),10);
+    }else{
+      g.fillStyle="#7c8a6a"; g.fillText("filter bypassed — raw source",8,10);
+    }
+  }
+}
+
+// space = hold note
+addEventListener("keydown",e=>{
+  if(e.code==="Space" && ctx && !gateBtn.disabled){ e.preventDefault(); setGate(!playing); }
+});
+</script>
+</body>
+</html>
