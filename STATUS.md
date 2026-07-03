@@ -29,7 +29,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 09 | Drive / saturation | ✅ done | (was optional; built on request) WaveShaperNode drive stage after the voice: DRIVE pre-gain + clean/soft(tanh)/hard(clamp)/fold(sin) curves, 4× oversample; live transfer-curve viz w/ signal dots + output scope; drive×resonance = the hard-acid scream (Hardfloor/Josh Wink framing) |
 | 10 | The clock problem (scheduler) | ✅ done | CS centrepiece: A/B 16th-note metronome — naïve recursive setTimeout (plays on callback, drifts/jitters) vs lookahead scheduler (queues onto ctx.currentTime ~100ms ahead); 💣 main-thread busy-loop stressor exposes the difference; live beat-spacing-error bar viz + worst-jitter readout; "two clocks" framing |
 | 11 | Synthesizing drums | ✅ done | 808/909 kit from scratch: kick (sine + pitch-drop env), snare (2 triangles body + HP noise snap), closed/open hat (HP noise, short/long decay), clap (4 stutter noise bursts + tail via bandpass). Playable pads (+A S D F G keys), scope, tune/decay/snap/brightness knobs, demo beat on the lesson-10 scheduler |
-| 12 | The drum machine | ⬜ planned | |
+| 12 | The drum machine | ✅ done | 16-step × 5-drum grid (pattern = {drum:bool[16]}) firing lesson-11 voices on the lesson-10 scheduler; playhead via scheduled-time queue, tempo + swing (odd-step delay), house/techno/breaks/clear presets, tap-name row mute. Completes the rhythm half |
 | 13 | 303 step sequencer | ⬜ planned | |
 | 14 | Scales & melody | ⬜ planned | |
 | 15 | Pattern chaining | ⏭️ optional | |
@@ -42,9 +42,10 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
   Module 2 complete (05–08, the full 303 voice), the 303-story interlude, and
   Module 3's opener (10 — the clock/scheduler) all live.
   Old `prologue-theory/` URL redirects to P1.
-- **Next:** Lesson 11 (synthesizing drums — 909 kick/snare/hats from scratch),
-  then 12 (the 16-step drum machine on the new clock). Lesson 09 (drive) and 04
-  (AudioWorklet ladder) stay optional.
+- **Next:** Module 4 — lesson 13 (the 303 step sequencer: pitch/accent/slide per
+  step wired to the 303 voice), then the DS-10-style groovebox capstone (16) that
+  locks the drum machine + the acid line to one clock. Lesson 04 (AudioWorklet
+  ladder) stays optional.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?

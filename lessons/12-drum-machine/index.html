@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>12 · The drum machine — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:13px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 13px;cursor:pointer;font:inherit;font-size:13px;transition:.1s}
+  button:hover{border-color:var(--acid)}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:16px;padding:12px 22px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #play{font-weight:700;font-size:15px;padding:11px 20px}
+  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #play:disabled{opacity:.35;cursor:not-allowed}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px;max-width:230px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+
+  /* the step grid */
+  .grid{display:grid;grid-template-columns:60px repeat(16,1fr);gap:4px;margin:6px 0}
+  .lbl{font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;cursor:pointer;user-select:none}
+  .lbl:hover{color:var(--acid)}
+  .lbl.muted{color:#3d4a30;text-decoration:line-through}
+  .cell{height:30px;border-radius:5px;background:#0f140b;border:1px solid var(--line);cursor:pointer}
+  .cell.beat{background:#141a0e}
+  .cell.on{background:linear-gradient(#e9ffc0,#b6ff00);border-color:var(--acid)}
+  .cell.on.kick{background:linear-gradient(#ffd9a8,#ff7a00);border-color:var(--orange)}
+  .cell.mutedrow.on{filter:grayscale(.7);opacity:.4}
+  .cell.cur{box-shadow:0 0 0 2px var(--blue) inset}
+  .stepnums{display:grid;grid-template-columns:60px repeat(16,1fr);gap:4px;margin-bottom:2px}
+  .stepnums span{text-align:center;font-size:10px;color:#3d4a30}
+  .stepnums span.b{color:var(--dim)}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  ul{margin:8px 0;padding-left:22px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">12</span> · The drum machine</h1>
+  <p class="sub">The synth drums (lesson 11) + the rock-solid clock (lesson 10) + a grid you can draw on. This little interface built house, techno and hip-hop.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="play" disabled>▶ play</button>
+      <div class="ctrl"><label>tempo <b id="bpmVal">124 BPM</b></label><input id="bpm" type="range" min="90" max="150" value="124"></div>
+      <div class="ctrl"><label>swing <b id="swVal">0%</b></label><input id="sw" type="range" min="0" max="70" value="0"></div>
+    </div>
+
+    <div class="stepnums" id="stepnums"></div>
+    <div class="grid" id="grid"></div>
+
+    <div class="row">
+      <span class="hint">patterns:</span>
+      <button class="preset" data-p="house">house</button>
+      <button class="preset" data-p="techno">techno</button>
+      <button class="preset" data-p="breaks">breaks</button>
+      <button class="preset" data-p="clear">clear</button>
+    </div>
+    <p class="hint">Tap cells to place hits. Tap a drum <b>name</b> to mute its row. Load a preset, hit
+      <span class="kbd">▶ play</span>, then draw over it while it loops. Nudge <span class="kbd">swing</span> up
+      for groove.</p>
+  </div>
+
+  <!-- ── idea 1 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>A grid of time</h2>
+    <p>Read the grid like a spreadsheet of a single bar. <b class="hl">Left→right is time</b> — 16 steps, the
+    16th-note grid from lesson 10 (four beats, four steps each; the darker columns are the beats 1·2·3·4).
+    <b class="hl">Top→bottom is the kit</b> — one row per drum. A <b>lit cell</b> means "fire this drum on this
+    step." The blue playhead sweeps left to right and loops forever, triggering whatever's lit as it passes.</p>
+    <p>That's the entire idea, and it's genuinely how a TR-808 or TR-909 works. Before this, programming a
+    rhythm meant playing it in real time or splicing tape. Turning the beat into a <b>grid you draw on</b> —
+    visual, editable, loopable — is one of the most consequential interfaces in music.</p>
+  </div>
+
+  <!-- ── idea 2 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>Building a beat is a few rules of thumb</h2>
+    <p>You already have everything to make real grooves. The classic moves:</p>
+    <table>
+      <tr><th>put…</th><th>on steps…</th><th>and you get</th></tr>
+      <tr><td><b class="hl">kick</b></td><td>1, 5, 9, 13 (every beat)</td><td>"four-on-the-floor" — the house/techno pulse</td></tr>
+      <tr><td><b class="hl">snare / clap</b></td><td>5 and 13 (beats 2 & 4)</td><td>the <b>backbeat</b> — the "off" that makes you nod</td></tr>
+      <tr><td><b class="hl">closed hats</b></td><td>the in-betweens (8ths or 16ths)</td><td>the shimmer that fills the gaps and drives it forward</td></tr>
+      <tr><td><b class="hl">open hat</b></td><td>the off-beats (3, 7, 11, 15)</td><td>the pumping "tss" between kicks — pure house</td></tr>
+    </table>
+    <p>Load <span class="kbd">house</span>, <span class="kbd">techno</span> and <span class="kbd">breaks</span>
+    and compare how the cells sit — then move things one step and hear the feel change. Kick landing a step
+    early or late completely changes the groove; that's the whole craft.</p>
+  </div>
+
+  <!-- ── idea 3 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Swing — why a machine can still groove</h2>
+    <p>A perfectly-quantised beat can feel stiff. <b class="hl">Swing</b> (a.k.a. shuffle) fixes that by nudging
+    every <i>other</i> 16th step slightly <b>late</b> — so the grid stops being perfectly even and starts to
+    lope. It's the difference between a drum machine sounding robotic and sounding like it's <i>playing</i>.
+    Push the <span class="kbd">swing</span> knob up with hats running and feel it start to shuffle.</p>
+    <div class="nerd"><b>// CS corner:</b> swing is a scheduling tweak, not a data change. The pattern grid
+    stays a clean 16-step array; when the scheduler places step <code>s</code>, it just adds a delay to the
+    odd ones: <code>when = stepTime + (s % 2 ? swing · stepDur : 0)</code>. Everything else — the pattern
+    (a <code>{drum: bool[16]}</code> map), the per-step loop firing lesson-11 voices, the lookahead from lesson
+    10 — is exactly what you've already built. The whole machine is ~20 lines around code you wrote.</div>
+  </div>
+
+  <!-- ── idea 4 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>Half a groovebox</h2>
+    <p>Stand back: you now have a real, programmable drum machine — synthesised voices, a step grid, solid
+    timing, swing — built entirely from parts you understand. Pair it with the <b>303 voice</b> (lessons
+    05–09) and you're one step from the capstone: a <b class="hl">groovebox</b> where a drum pattern and an
+    acid bassline lock to the same clock. That's the sequencer &amp; DS-10-style build coming next — the drums
+    are half of it, and they're done.</p>
+    <a class="next" href="../../index.html">← back to the lab</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Lesson 12 — the drum machine. Pattern = {drum: bool[16]}. The lesson-10
+   lookahead scheduler walks 16 steps; each step fires every lit, un-muted
+   lesson-11 drum voice (swing delays the odd steps). A blue playhead tracks
+   the audio via a queue of scheduled step times.                              */
+
+let ctx, master, noiseBuf;
+let bpm=124, swing=0, playing=false, timer=null, nextT=0, stepIx=0;
+const DRUMS=[{k:"kick",l:"KICK"},{k:"snare",l:"SNARE"},{k:"chat",l:"CL HAT"},{k:"ohat",l:"OP HAT"},{k:"clap",l:"CLAP"}];
+const pattern={}, muted={};
+DRUMS.forEach(d=>{ pattern[d.k]=new Array(16).fill(false); muted[d.k]=false; });
+
+const PRESETS={
+  house:{ kick:[0,4,8,12], clap:[4,12], ohat:[2,6,10,14], chat:[], snare:[] },
+  techno:{ kick:[0,4,8,12], chat:[0,2,4,6,8,10,12,14], clap:[4,12], ohat:[14], snare:[] },
+  breaks:{ kick:[0,6,10], snare:[4,12], chat:[0,2,4,6,8,10,12,14], ohat:[], clap:[] },
+  clear:{ kick:[], snare:[], chat:[], ohat:[], clap:[] },
+};
+
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), playBtn=$("#play"), gridEl=$("#grid"), stepnumsEl=$("#stepnums");
+
+/* ── build the UI grid ─────────────────────────────────────────── */
+const cells={};                                     // drum → [16 cell els]
+stepnumsEl.appendChild(document.createElement("span"));
+for(let i=0;i<16;i++){ const s=document.createElement("span"); if(i%4===0){ s.className="b"; s.textContent=i/4+1; } stepnumsEl.appendChild(s); }
+DRUMS.forEach(d=>{
+  const lbl=document.createElement("div"); lbl.className="lbl"; lbl.textContent=d.l;
+  lbl.onclick=()=>{ muted[d.k]=!muted[d.k]; lbl.classList.toggle("muted",muted[d.k]); repaintMute(d.k); };
+  gridEl.appendChild(lbl);
+  cells[d.k]=[];
+  for(let i=0;i<16;i++){
+    const c=document.createElement("div"); c.className="cell"+(i%4===0?" beat":""); c.dataset.k=d.k; c.dataset.i=i;
+    c.addEventListener("pointerdown", e=>{ e.preventDefault(); pattern[d.k][i]=!pattern[d.k][i]; paintCell(d.k,i); });
+    gridEl.appendChild(c); cells[d.k].push(c);
+  }
+});
+function paintCell(k,i){ const c=cells[k][i]; c.classList.toggle("on", pattern[k][i]); c.classList.toggle("kick", k==="kick"); }
+function repaintMute(k){ cells[k].forEach(c=>c.classList.toggle("mutedrow", muted[k])); }
+function repaintAll(){ DRUMS.forEach(d=>{ for(let i=0;i<16;i++) paintCell(d.k,i); }); }
+function loadPreset(name){
+  const p=PRESETS[name]; DRUMS.forEach(d=>{ pattern[d.k]=new Array(16).fill(false); (p[d.k]||[]).forEach(i=>pattern[d.k][i]=true); });
+  repaintAll();
+}
+loadPreset("house");
+
+/* ── drum voices (from lesson 11) ──────────────────────────────── */
+const noiseSrc=()=>{ const s=ctx.createBufferSource(); s.buffer=noiseBuf; return s; };
+function kick(t){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type="sine";
+  o.frequency.setValueAtTime(168,t); o.frequency.exponentialRampToValueAtTime(48,t+0.05);
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.95,t+0.003); g.gain.exponentialRampToValueAtTime(0.0004,t+0.42);
+  o.connect(g).connect(master); o.start(t); o.stop(t+0.45); }
+function snare(t){ const bg=ctx.createGain(); bg.gain.setValueAtTime(0.5,t); bg.gain.exponentialRampToValueAtTime(0.001,t+0.11); bg.connect(master);
+  [190,295].forEach(f=>{ const o=ctx.createOscillator(); o.type="triangle"; o.frequency.value=f; o.connect(bg); o.start(t); o.stop(t+0.14); });
+  const n=noiseSrc(),hp=ctx.createBiquadFilter(),ng=ctx.createGain(); hp.type="highpass"; hp.frequency.value=1400; hp.Q.value=0.7;
+  ng.gain.setValueAtTime(0.6,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.16); n.connect(hp).connect(ng).connect(master); n.start(t); n.stop(t+0.2); }
+function hat(t,open){ const n=noiseSrc(),hp=ctx.createBiquadFilter(),g=ctx.createGain(),dec=open?0.30:0.045;
+  hp.type="highpass"; hp.frequency.value=8500; g.gain.setValueAtTime(0.32,t); g.gain.exponentialRampToValueAtTime(0.001,t+dec);
+  n.connect(hp).connect(g).connect(master); n.start(t); n.stop(t+dec+0.02); }
+function clap(t){ const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1100; bp.Q.value=1.0; bp.connect(master);
+  [[0,.5],[0.012,.5],[0.024,.5],[0.038,.4]].forEach(([o,a])=>{ const n=noiseSrc(),g=ctx.createGain(); g.gain.setValueAtTime(a,t+o); g.gain.exponentialRampToValueAtTime(0.001,t+o+0.02); n.connect(g).connect(bp); n.start(t+o); n.stop(t+o+0.05); });
+  const n=noiseSrc(),g=ctx.createGain(); g.gain.setValueAtTime(0.3,t+0.05); g.gain.exponentialRampToValueAtTime(0.001,t+0.22); n.connect(g).connect(bp); n.start(t+0.05); n.stop(t+0.26); }
+function fire(k,t){ k==="kick"?kick(t):k==="snare"?snare(t):k==="chat"?hat(t,false):k==="ohat"?hat(t,true):clap(t); }
+
+/* ── transport: lookahead scheduler + swing ────────────────────── */
+let schedQ=[], playStep=-1;
+function tick(){
+  const stepDur=60/bpm/4;
+  while(nextT < ctx.currentTime+0.12){
+    const s=stepIx%16, swingDelay=(s%2===1? swing*stepDur : 0), when=nextT+swingDelay;
+    for(const d of DRUMS) if(pattern[d.k][s] && !muted[d.k]) fire(d.k, when);
+    schedQ.push({s, t:nextT});
+    stepIx++; nextT+=stepDur;
+  }
+}
+function setPlay(on){
+  playing=on; playBtn.classList.toggle("on",on); playBtn.textContent=on?"■ stop":"▶ play";
+  if(on){ stepIx=0; nextT=ctx.currentTime+0.06; schedQ=[]; clearInterval(timer); timer=setInterval(tick,25); tick(); }
+  else{ clearInterval(timer); if(playStep>=0){ setCol(playStep,false); playStep=-1; } }
+}
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  master=ctx.createGain(); master.gain.value=0.45; master.connect(ctx.destination);
+  noiseBuf=ctx.createBuffer(1,2*ctx.sampleRate,ctx.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered"; playBtn.disabled=false; draw();
+}
+
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+playBtn.onclick=()=>{ if(ctx) setPlay(!playing); };
+$("#bpm").oninput=e=>{ bpm=+e.target.value; $("#bpmVal").textContent=bpm+" BPM"; };
+$("#sw").oninput=e=>{ swing=+e.target.value/100*0.5; $("#swVal").textContent=e.target.value+"%"; };
+document.querySelectorAll(".preset").forEach(b=>b.onclick=()=>loadPreset(b.dataset.p));
+
+/* ── playhead ──────────────────────────────────────────────────── */
+function setCol(s,on){ for(const d of DRUMS) cells[d.k][s].classList.toggle("cur",on); }
+function draw(){
+  requestAnimationFrame(draw);
+  if(!ctx) return;
+  if(playing){
+    let ns=playStep;
+    while(schedQ.length && schedQ[0].t<=ctx.currentTime){ ns=schedQ.shift().s; }
+    if(ns!==playStep){ if(playStep>=0) setCol(playStep,false); if(ns>=0) setCol(ns,true); playStep=ns; }
+  }
+}
+</script>
+</body>
+</html>
