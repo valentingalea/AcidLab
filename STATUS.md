@@ -68,3 +68,6 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
   Mudline: body is NOT pinned (`touch-action:pan-x pan-y`, no `overflow:hidden`)
   so the lesson text still scrolls. Side effect: lesson text is no longer
   selectable — revisit if copy/zoom accessibility is wanted on the reading pages.
+  `touch-action:pan-x pan-y` lives on the `*` selector (touch-action doesn't
+  inherit, so an `auto` `<p>` would still double-tap-zoom); sliders + `#kbwrap`
+  override to `none`.

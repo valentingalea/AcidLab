@@ -14,11 +14,11 @@
   /* ===== iOS/touch: these are instruments, not documents =====
      Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
      long-press text loupe + selection, the touch-callout sheet, the grey tap
-     flash, and pinch / double-tap zoom. Vertical scrolling of the lesson text
-     is deliberately preserved (pan-y; the body is NOT pinned). ===== */
-  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-  html,body{touch-action:pan-x pan-y;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
-  button,label,a{touch-action:manipulation}
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   input[type=range]{touch-action:none}
   body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
     color:var(--ink);font:15px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace;padding:32px 18px 100px}
