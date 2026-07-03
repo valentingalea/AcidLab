@@ -99,7 +99,7 @@ Will later get its own DNS/host (M7). Spec agreed with Valentin 2026-07-03.
 | M4 | WAV export | ⬜ planned | faithful offline render of the groovebox graph (drums + reverb included, unlike lesson 18's slim engine) via OfflineAudioContext → dependency-free WAV download |
 | M5 | Generators & clear | ⬜ planned | split the single 🎲 into per-instrument **[generate · clear]** for 303 and drums; wire in the lesson-17 algos (Euclidean drums, scale-locked random-walk melody) each with its own small (collapsible) generator control group |
 | M6 | Floating control surface | ⬜ planned | **(stretch)** the control clusters become a draggable/dockable "area" that floats & repositions to suit grip/orientation — additive on M2's area architecture |
-| M7 | Deploy | ⬜ planned | AcidBox gets its own DNS/host (separate from the lessons site); see `DEPLOY.md` for the existing Caddy path |
+| M7 | Deploy | 🟨 partial | **Live now** at `https://acidlab.duckdns.org/acidbox/` — whitelisted in the live Caddyfile's `acidlab` block (`redir /acidbox` + `/acidbox/*` on `@allowed`, same `:8083` origin, cf. puckline's `/legacy`); ufw unchanged (no new port); runbook synced in `DEPLOY.md`. **TODO:** its own DNS/subdomain (Valentin will add) + matching Caddy vhost |
 
 ### Requests → milestones (from Valentin's spec, 2026-07-03)
 1 self-contained root dir → M1 · 2 localStorage save/load → M3 · 3 WAV download → M4 ·

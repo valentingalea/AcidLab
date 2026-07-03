@@ -2,7 +2,7 @@
 
 How to recreate the public AcidLab deployment on a fresh VPS. Follow top to bottom — each step assumes the previous ones succeeded.
 
-Target setup: a public subdomain (`acidlab.duckdns.org`) proxying to a localhost-bound Python server serving `/`, `/index.html`, and the `/lessons/*` subpages.
+Target setup: a public subdomain (`acidlab.duckdns.org`) proxying to a localhost-bound Python server serving `/`, `/index.html`, the `/lessons/*` subpages, and the standalone `/acidbox/` app.
 
 > **If you already deployed another site on this VPS** (e.g. GolfWar, Puckline, Mudline), the Caddy install / DuckDNS / firewall steps (sections 1–5) are already done. Skip ahead to section **3a** to add AcidLab as another site to the existing Caddyfile, then start the AcidLab origin on its own port.
 
@@ -80,7 +80,11 @@ Replace the default `/etc/caddy/Caddyfile` with the allowlist config below. **Ch
 acidlab.duckdns.org {
 	encode gzip zstd
 
-	@allowed path / /index.html /lessons/*
+	# /acidbox → the standalone groovebox app (acidbox/index.html in the repo),
+	# same :8083 origin — cf. puckline's /legacy. Own subdomain later (STATUS M7).
+	redir /acidbox /acidbox/ 308
+
+	@allowed path / /index.html /lessons/* /acidbox/*
 	handle @allowed {
 		reverse_proxy 127.0.0.1:8083
 	}
@@ -97,7 +101,8 @@ acidlab.duckdns.org {
 
 What this does:
 - TLS is implicit — Caddy fetches a Let's Encrypt cert on first request.
-- `@allowed path` is a named matcher listing the only paths that get proxied through to Python: `/`, `/index.html`, and anything under `/lessons/` (each lesson is its own self-contained `lessons/<slug>/index.html`, linked from the root page).
+- `@allowed path` is a named matcher listing the only paths that get proxied through to Python: `/`, `/index.html`, anything under `/lessons/` (each lesson is its own self-contained `lessons/<slug>/index.html`), and anything under `/acidbox/` (the standalone app; `acidbox/index.html`).
+- `redir /acidbox /acidbox/ 308` sends the bare directory path to its trailing-slash form (the `/acidbox/*` glob only matches paths *under* `/acidbox/`), same convention the sibling sub-apps use. AcidBox rides the **same** `:8083` origin and the **same** vhost/log — no new port and **no ufw change** (cf. puckline's `/legacy`). It'll move to its own subdomain later.
 - The catch-all `handle { respond 404 }` returns 404 for everything else — `.git/`, dotfiles, `start.sh`, `server.log`, `README.md` etc. never reach the origin.
 - Every lesson page is fully self-contained (no external JS/CSS imports), so the origin only ever serves static HTML.
 - Access log goes to `/var/log/caddy/acidlab-access.log`.
@@ -192,6 +197,8 @@ From your laptop (or anywhere not localhost):
 curl -sI https://acidlab.duckdns.org/                                          # expect 200
 curl -sI https://acidlab.duckdns.org/index.html                                # expect 200
 curl -sI https://acidlab.duckdns.org/lessons/00-oscillator/index.html          # expect 200
+curl -sI https://acidlab.duckdns.org/acidbox/                                   # expect 200
+curl -sI https://acidlab.duckdns.org/acidbox                                    # expect 308 -> /acidbox/
 curl -sI https://acidlab.duckdns.org/.git/config                               # expect 404 at Caddy
 curl -sI https://acidlab.duckdns.org/server.log                                # expect 404 at Caddy
 curl -sI https://acidlab.duckdns.org/start.sh                                  # expect 404 at Caddy
