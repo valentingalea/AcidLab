@@ -13,125 +13,151 @@
   *{box-sizing:border-box}
   /* ===== iOS/touch: this is an instrument, not a document =====
      Kill the Safari gestures that fight the sliders & grids on iPhone: the
-     long-press text loupe + selection, the touch-callout sheet, the grey tap
-     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
-     *every* element (touch-action doesn't inherit). The body is NOT pinned, so
-     vertical scroll survives. */
+     long-press loupe + selection, the touch-callout sheet, the grey tap flash,
+     and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on *every*
+     element (touch-action doesn't inherit). The body is NOT pinned, so scroll
+     survives. */
   *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
   html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   input[type=range]{touch-action:none}
   body{
     margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
-    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    padding:22px 16px 90px;
+    color:var(--ink);font:15px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   }
-  .wrap{max-width:900px;margin:0 auto}
 
-  /* app header / footer */
-  .apphdr{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:2px 0 2px}
-  .brand{font-size:26px;font-weight:700;letter-spacing:.5px}
+  /* ── sticky app bar (transport) ─────────────────────────────── */
+  .appbar{position:sticky;top:0;z-index:20;background:#12160fee;border-bottom:1px solid var(--line);
+    backdrop-filter:blur(6px);padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .brand{font-size:17px;font-weight:700;letter-spacing:.5px;margin-right:2px}
   .brand .n{color:var(--acid)}
-  .links{display:flex;gap:14px}
-  a.back{color:var(--dim);text-decoration:none;font-size:13px}
-  a.back:hover{color:var(--acid)}
-  .sub{color:var(--dim);margin:0 0 18px;font-size:13.5px}
-  .foot{margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
-  .foot a{color:var(--acid);text-decoration:none}
-  .foot a:hover{text-decoration:underline}
+  .spacer{flex:1}
+  a.hlp{color:var(--dim);text-decoration:none;font-size:12px}
+  a.hlp:hover{color:var(--acid)}
 
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0}
-  .sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin:0 0 8px}
-  .sec .lo{color:var(--dim);text-transform:none;letter-spacing:0}
-  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:10px 0}
-  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit;font-size:13px;transition:.1s}
+  /* ── buttons ────────────────────────────────────────────────── */
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:8px 12px;cursor:pointer;font:inherit;font-size:13px;transition:.1s}
   button:hover{border-color:var(--acid)}
   button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
-  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:16px;padding:11px 20px}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button:disabled:hover{border-color:var(--line)}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700}
   #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
-  #play{font-weight:700;font-size:15px;padding:10px 18px}
+  #play{font-weight:700;min-width:74px}
   #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
-  #play:disabled{opacity:.35;cursor:not-allowed}
+  #play:disabled{opacity:.35}
   #rnd{border-color:var(--orange);color:var(--orange);font-weight:700}
-  .ctrl{display:flex;flex-direction:column;gap:3px;flex:1;min-width:96px}
-  .ctrl label{font-size:11px;color:var(--dim);display:flex;justify-content:space-between}
-  .ctrl label b{color:var(--acid);font-weight:600}
-  .ctrl.fx label b{color:var(--blue)}
-  input[type=range]{width:100%;accent-color:var(--acid);height:22px}
-  .ctrl.fx input[type=range]{accent-color:var(--blue)}
+  .io{border-color:var(--blue);color:var(--blue);padding:8px 10px}
+  .sm{padding:6px 9px;font-size:12px}
+  .soon{position:relative}
+  .soon::after{content:attr(data-tag);position:absolute;top:-7px;right:-7px;background:var(--panel);
+    border:1px solid var(--line);color:var(--dim);font-size:8px;border-radius:8px;padding:0 4px;letter-spacing:1px}
 
-  .seq{display:grid;grid-template-columns:40px repeat(16,1fr);gap:3px;margin:4px 0}
+  /* ── card deck (portrait stacks; ≥640px pairs up) ───────────── */
+  .deck{display:grid;gap:12px;padding:12px 12px 80px;grid-template-columns:1fr;max-width:1080px;margin:0 auto}
+  @media (min-width:640px){ .deck{grid-template-columns:1fr 1fr;align-items:start} }
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .ctitle{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin:0 0 10px;display:flex;gap:8px;align-items:center}
+  .ctitle .drag{color:#3d4a30;font-size:15px;letter-spacing:0;cursor:grab}
+  .ctitle .sub{color:var(--dim);text-transform:none;letter-spacing:0;font-size:11px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 2px}
+  .hint{color:var(--dim);font-size:12px}
+
+  /* ── the DJ faders (full-length, long-throw) ────────────────── */
+  .fader{display:flex;flex-direction:column;gap:3px;margin:15px 0}
+  .fader .top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--dim)}
+  .fader .top b{color:var(--acid);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+  .fader.fx .top b{color:var(--blue)}
+  input[type=range].dj{-webkit-appearance:none;appearance:none;width:100%;height:38px;background:transparent;cursor:pointer;margin:0}
+  input[type=range].dj::-webkit-slider-runnable-track{height:16px;border-radius:9px;background:linear-gradient(90deg,#1e2a12,#0a0c08);border:1px solid var(--line)}
+  input[type=range].dj::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:34px;margin-top:-10px;border-radius:8px;
+    background:linear-gradient(#e9ffc0,#b6ff00);border:1px solid #0a0c08;box-shadow:0 2px 6px rgba(0,0,0,.55),0 0 0 1px #ffffff22 inset}
+  input[type=range].dj::-moz-range-track{height:16px;border-radius:9px;background:#0f140b;border:1px solid var(--line)}
+  input[type=range].dj::-moz-range-thumb{width:28px;height:34px;border-radius:8px;background:#b6ff00;border:1px solid #0a0c08}
+  input[type=range].dj.fx::-webkit-slider-thumb{background:linear-gradient(#bfeaff,#5cc8ff)}
+  input[type=range].dj.fx::-moz-range-thumb{background:#5cc8ff}
+
+  /* mini sliders (generator placeholder) */
+  .mini{display:flex;flex-direction:column;gap:2px;flex:1;min-width:88px}
+  .mini label{font-size:10px;color:var(--dim);display:flex;justify-content:space-between}
+  .mini label b{color:var(--acid)}
+  .mini input[type=range]{width:100%;accent-color:var(--acid);height:20px}
+  .ph{opacity:.55}
+  .ph .ctitle{color:var(--dim)}
+
+  /* ── sequencer grids (unchanged from lesson 16 — the script builds these) ── */
+  .seq{display:grid;grid-template-columns:38px repeat(16,1fr);gap:3px;margin:4px 0}
   .seq .lbl{font-size:9.5px;color:var(--dim);display:flex;align-items:center;cursor:pointer}
   .seq .lbl.mut{cursor:pointer}
   .seq .lbl.mut.muted{color:#3d4a30;text-decoration:line-through}
   .stepnum{text-align:center;font-size:9px;color:#3d4a30}
   .stepnum.b{color:var(--dim)}
-  .pcol{height:74px;background:#0f140b;border:1px solid var(--line);border-radius:5px;position:relative;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;overflow:hidden}
+  .pcol{height:70px;background:#0f140b;border:1px solid var(--line);border-radius:5px;position:relative;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;overflow:hidden}
   .pcol.beat{background:#141a0e}
   .pcol .bar{width:100%;background:linear-gradient(#e9ffc0,#b6ff00);height:0%;display:flex;align-items:flex-start;justify-content:center;padding-top:1px;font-size:9px;color:#0a3a00;font-weight:700}
   .pcol .rst{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#2a3320;font-size:14px}
   .pcol.note .rst{display:none}
-  .tog{height:22px;background:#0f140b;border:1px solid var(--line);border-radius:4px;cursor:pointer}
+  .tog{height:21px;background:#0f140b;border:1px solid var(--line);border-radius:4px;cursor:pointer}
   .tog.beat{background:#141a0e}
   .tog.acc.on{background:linear-gradient(#ffd9a8,#ff7a00);border-color:var(--orange)}
   .tog.sld.on{background:linear-gradient(#bfeaff,#5cc8ff);border-color:var(--blue)}
   .tog.oct{display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;color:#3d4a30}
   .tog.oct.up{color:#0a0c08;background:linear-gradient(#e9ffc0,#b6ff00);border-color:var(--acid)}
   .tog.oct.dn{color:#0a0c08;background:linear-gradient(#bfeaff,#5cc8ff);border-color:var(--blue)}
-  .dcell{height:26px;background:#0f140b;border:1px solid var(--line);border-radius:4px;cursor:pointer}
+  .dcell{height:24px;background:#0f140b;border:1px solid var(--line);border-radius:4px;cursor:pointer}
   .dcell.beat{background:#141a0e}
   .dcell.on{background:linear-gradient(#e9ffc0,#b6ff00);border-color:var(--acid)}
   .dcell.on.kick{background:linear-gradient(#ffd9a8,#ff7a00);border-color:var(--orange)}
   .dcell.mutedrow.on{filter:grayscale(.7);opacity:.4}
   .cur{box-shadow:0 0 0 2px var(--blue) inset}
-  .hint{color:var(--dim);font-size:12.5px}
+
+  /* ── footer + toast ─────────────────────────────────────────── */
+  .foot{max-width:1080px;margin:0 auto;padding:6px 14px 40px}
+  .foot .hint a{color:var(--acid);text-decoration:none}
+  .foot .hint a:hover{text-decoration:underline}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);z-index:60;
+    background:#0a0c08;border:1px solid var(--acid);color:var(--acid);border-radius:10px;padding:9px 16px;
+    font-size:13px;opacity:0;pointer-events:none;transition:.2s}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="apphdr">
-    <div class="brand"><span class="n">▮</span> AcidBox</div>
-    <nav class="links">
-      <a class="back" href="../index.html">← Acid Lab</a>
-      <a class="back" href="../lessons/16-groovebox/index.html">how it works →</a>
-    </nav>
-  </header>
-  <p class="sub">A pocket acid groovebox — TB-303 + drum machine on one clock, glued with dub delay &amp; reverb. Power on, then press play.</p>
+<div class="appbar">
+  <span class="brand"><span class="n">▮</span> AcidBox</span>
+  <button id="power">⏻ power</button>
+  <button id="play" disabled>▶ play</button>
+  <button id="rnd" disabled>🎲 jam</button>
+  <span class="spacer"></span>
+  <button class="io soon" data-soon="Save to this browser — M3" data-tag="M3">💾</button>
+  <button class="io soon" data-soon="Copy a share link — M3" data-tag="M3">🔗</button>
+  <button class="io soon" data-soon="Render a .wav — M4" data-tag="M4">⬇</button>
+  <a class="hlp" href="../lessons/16-groovebox/index.html">how it works →</a>
+</div>
 
-  <!-- ── transport + master ─────────────────────────────────────── -->
-  <div class="panel">
-    <div class="row">
-      <button id="power">⏻ power on</button>
-      <button id="play" disabled>▶ play</button>
-      <button id="rnd" disabled>🎲 new jam</button>
-      <div class="ctrl"><label>tempo <b id="bpmVal">126</b></label><input id="bpm" type="range" min="90" max="150" value="126"></div>
-      <div class="ctrl"><label>swing <b id="swVal">12%</b></label><input id="sw" type="range" min="0" max="65" value="12"></div>
-    </div>
-    <div class="row">
-      <span class="sec" style="margin:0">master glue</span>
-      <div class="ctrl fx"><label>delay <b id="dlVal">28%</b></label><input id="dl" type="range" min="0" max="90" value="28"></div>
-      <div class="ctrl fx"><label>feedback <b id="fbVal">40%</b></label><input id="fb" type="range" min="0" max="80" value="40"></div>
-      <div class="ctrl fx"><label>reverb <b id="rvVal">14%</b></label><input id="rv" type="range" min="0" max="80" value="14"></div>
-    </div>
-  </div>
-
-  <!-- ── acid 303 ───────────────────────────────────────────────── -->
-  <div class="panel">
-    <div class="sec">acid · tb-303 <span class="lo">— tap NOTE to cycle · accent / slide / octave ▲▼ · the scale button unlocks 'Arabic' acid</span></div>
+<div class="deck">
+  <!-- 1 · 303 sequencer -->
+  <div class="card">
+    <div class="ctitle"><span class="drag">⠿</span> acid · tb-303 <span class="sub">tap NOTE to cycle · ACC / SLD / OCT ▲▼</span></div>
     <div class="seq" id="acidgrid"></div>
     <div class="row">
       <button id="wave" disabled>◿ saw</button>
       <button id="scale">scale: Min pent</button>
-      <div class="ctrl"><label>cutoff <b id="cutVal">200</b></label><input id="cut" type="range" min="0" max="1000" value="286"></div>
-      <div class="ctrl"><label>reso <b id="resVal">16</b></label><input id="res" type="range" min="0" max="26" value="16" step="0.5"></div>
-      <div class="ctrl"><label>env <b id="envVal">80</b></label><input id="env-mod" type="range" min="0" max="100" value="80"></div>
-      <div class="ctrl"><label>decay <b id="decVal">300</b></label><input id="dec" type="range" min="30" max="1000" value="300"></div>
-      <div class="ctrl"><label>accent <b id="accVal">70</b></label><input id="acc" type="range" min="0" max="100" value="70"></div>
     </div>
   </div>
 
-  <!-- ── drums ──────────────────────────────────────────────────── -->
-  <div class="panel">
-    <div class="sec">drums <span class="lo">— tap cells · tap a name to mute</span></div>
+  <!-- 2 · filter (pairs with the 303 grid in landscape) -->
+  <div class="card">
+    <div class="ctitle"><span class="drag">⠿</span> filter · 303 voice</div>
+    <div class="fader"><div class="top"><span>cutoff</span><b id="cutVal">200</b></div><input id="cut" class="dj" type="range" min="0" max="1000" value="286"></div>
+    <div class="fader"><div class="top"><span>reso</span><b id="resVal">16</b></div><input id="res" class="dj" type="range" min="0" max="26" value="16" step="0.5"></div>
+    <div class="fader"><div class="top"><span>env mod</span><b id="envVal">80</b></div><input id="env-mod" class="dj" type="range" min="0" max="100" value="80"></div>
+    <div class="fader"><div class="top"><span>decay</span><b id="decVal">300</b></div><input id="dec" class="dj" type="range" min="30" max="1000" value="300"></div>
+    <div class="fader"><div class="top"><span>accent</span><b id="accVal">70</b></div><input id="acc" class="dj" type="range" min="0" max="100" value="70"></div>
+  </div>
+
+  <!-- 3 · drums -->
+  <div class="card">
+    <div class="ctitle"><span class="drag">⠿</span> drums <span class="sub">tap cells · tap a name to mute</span></div>
     <div class="seq" id="drumgrid"></div>
     <div class="row">
       <span class="hint">kit:</span>
@@ -142,10 +168,46 @@
     </div>
   </div>
 
-  <footer class="foot">
-    <span class="hint">AcidBox is the standalone instrument from <a href="../lessons/16-groovebox/index.html">Acid Lab · lesson 16</a> — the same 303 voice, drum kit, clock and effects, no lesson text. Pure Web Audio, no samples.</span>
-  </footer>
+  <!-- 4 · space / master (pairs with drums) -->
+  <div class="card">
+    <div class="ctitle"><span class="drag">⠿</span> space · master</div>
+    <div class="fader fx"><div class="top"><span>delay</span><b id="dlVal">28%</b></div><input id="dl" class="dj fx" type="range" min="0" max="90" value="28"></div>
+    <div class="fader fx"><div class="top"><span>feedback</span><b id="fbVal">40%</b></div><input id="fb" class="dj fx" type="range" min="0" max="80" value="40"></div>
+    <div class="fader fx"><div class="top"><span>reverb</span><b id="rvVal">14%</b></div><input id="rv" class="dj fx" type="range" min="0" max="80" value="14"></div>
+    <div class="fader"><div class="top"><span>volume</span><b id="volVal">50%</b></div><input id="vol" class="dj" type="range" min="0" max="100" value="50"></div>
+  </div>
+
+  <!-- 5 · transport -->
+  <div class="card">
+    <div class="ctitle"><span class="drag">⠿</span> transport</div>
+    <div class="fader"><div class="top"><span>tempo</span><b id="bpmVal">126</b></div><input id="bpm" class="dj" type="range" min="90" max="150" value="126"></div>
+    <div class="fader"><div class="top"><span>swing</span><b id="swVal">12%</b></div><input id="sw" class="dj" type="range" min="0" max="65" value="12"></div>
+  </div>
+
+  <!-- 6 · generate (placeholder — the algorithmic composer arrives in M5) -->
+  <div class="card ph">
+    <div class="ctitle"><span class="drag">⠿</span> generate <span class="sub">random-walk 303 · euclidean drums — arrives in M5</span></div>
+    <div class="row">
+      <div class="mini"><label>density <b>70</b></label><input type="range" min="0" max="100" value="70" disabled></div>
+      <div class="mini"><label>wander <b>40</b></label><input type="range" min="0" max="100" value="40" disabled></div>
+      <div class="mini"><label>octaves <b>18</b></label><input type="range" min="0" max="100" value="18" disabled></div>
+    </div>
+    <div class="row">
+      <div class="mini"><label>kick <b>4</b></label><input type="range" min="0" max="8" value="4" disabled></div>
+      <div class="mini"><label>hats <b>7</b></label><input type="range" min="0" max="16" value="7" disabled></div>
+      <div class="mini"><label>clap <b>2</b></label><input type="range" min="0" max="8" value="2" disabled></div>
+    </div>
+    <div class="row">
+      <button disabled>🎲 303</button><button disabled>clear</button>
+      <button disabled>🎲 drums</button><button disabled>clear</button>
+      <span class="hint">for now, use 🎲 jam up top</span>
+    </div>
+  </div>
 </div>
+
+<footer class="foot">
+  <span class="hint">AcidBox — the standalone instrument from <a href="../lessons/16-groovebox/index.html">Acid Lab · lesson 16</a>. Pure Web Audio, no samples. <a href="../index.html">← all lessons</a></span>
+</footer>
 
 <script>
 "use strict";
@@ -159,7 +221,8 @@ addEventListener("contextmenu", e=>e.preventDefault());
 /* AcidBox — the lesson-16 capstone as a standalone instrument. The lesson-13
    acid voice + the lesson-12 drum kit, both fired by ONE lesson-10 scheduler,
    both routed dry + through a shared tempo-synced delay and a synthesised
-   reverb into a master bus. (Ported verbatim; M1 = foundation.)               */
+   reverb into a master bus. (M2 = card layout + full-length DJ faders; engine
+   unchanged from M1.)                                                          */
 
 let ctx, master, acidBus, drumBus, delay, delayFb, delayWet, conv, revWet, noiseBuf;
 let osc, f1, f2, vca;                                   // the 303 voice
@@ -198,7 +261,7 @@ const powerBtn=$("#power"), playBtn=$("#play"), rndBtn=$("#rnd"), waveBtn=$("#wa
 
 function powerOn(){
   ctx=new (window.AudioContext||window.webkitAudioContext)();
-  master=ctx.createGain(); master.gain.value=0.5; master.connect(ctx.destination);
+  master=ctx.createGain(); master.gain.value=(+$("#vol").value)/100; master.connect(ctx.destination);
   acidBus=ctx.createGain(); drumBus=ctx.createGain(); acidBus.connect(master); drumBus.connect(master);
   // tempo-synced dub delay (feedback loop)
   delay=ctx.createDelay(1.0); delayFb=ctx.createGain(); delayWet=ctx.createGain();
@@ -277,7 +340,7 @@ function el(tag,cls,txt){ const e=document.createElement(tag); if(cls)e.classNam
 function pnum(i){ const s=el("div","stepnum"+(i%4===0?" b":"")); s.textContent=i%4===0?(i/4+1):""; return s; }
 const pcols=[], accs=[], slds=[], octs=[], dcells={};
 const acidGrid=$("#acidgrid"), drumGrid=$("#drumgrid");
-// acid: header + NOTE/ACC/SLD rows
+// acid: header + NOTE/ACC/SLD/OCT rows
 acidGrid.appendChild(el("div","lbl","")); for(let i=0;i<16;i++) acidGrid.appendChild(pnum(i));
 acidGrid.appendChild(el("div","lbl","NOTE"));
 for(let i=0;i<16;i++){ const c=el("div","pcol"+(i%4===0?" beat":"")); c.innerHTML=`<div class="rst">·</div><div class="bar"></div>`;
@@ -323,12 +386,19 @@ $("#sw").oninput=e=>{ swing=+e.target.value/100*0.5; $("#swVal").textContent=e.t
 $("#dl").oninput=e=>{ $("#dlVal").textContent=e.target.value+"%"; if(delayWet) delayWet.gain.setTargetAtTime(+e.target.value/100,ctx.currentTime,0.02); };
 $("#fb").oninput=e=>{ $("#fbVal").textContent=e.target.value+"%"; if(delayFb) delayFb.gain.setTargetAtTime(+e.target.value/100,ctx.currentTime,0.02); };
 $("#rv").oninput=e=>{ $("#rvVal").textContent=e.target.value+"%"; if(revWet) revWet.gain.setTargetAtTime(+e.target.value/100,ctx.currentTime,0.02); };
+$("#vol").oninput=e=>{ $("#volVal").textContent=e.target.value+"%"; if(master) master.gain.setTargetAtTime(+e.target.value/100,ctx.currentTime,0.02); };
 $("#cut").oninput=e=>{ curCut=sliderToCut(+e.target.value); $("#cutVal").textContent=Math.round(curCut); };
 $("#res").oninput=e=>{ reso=+e.target.value; $("#resVal").textContent=reso; if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01); };
 $("#env-mod").oninput=e=>{ envMod=+e.target.value/100; $("#envVal").textContent=e.target.value; };
 $("#dec").oninput=e=>{ decay=+e.target.value/1000; $("#decVal").textContent=e.target.value; };
 $("#acc").oninput=e=>{ accentAmt=+e.target.value/100; $("#accVal").textContent=e.target.value; };
 $("#cutVal").textContent=Math.round(curCut);
+
+/* placeholder buttons (💾 🔗 ⬇) — flag the milestone that lights them up */
+let toastEl,toastT;
+function toast(m){ if(!toastEl){ toastEl=el("div"); toastEl.id="toast"; document.body.appendChild(toastEl); }
+  toastEl.textContent=m; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove("show"),1700); }
+document.querySelectorAll("[data-soon]").forEach(b=>b.addEventListener("click",()=>toast(b.dataset.soon)));
 
 /* ── init grids + playhead ─────────────────────────────────────── */
 loadDrums("house"); repaintAcid();
