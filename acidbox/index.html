@@ -141,7 +141,7 @@
   <span class="spacer"></span>
   <button class="io" id="saveBtn" title="save / load patterns">💾</button>
   <button class="io" id="shareBtn" title="copy a share link">🔗</button>
-  <button class="io soon" data-soon="Render a .wav — M4" data-tag="M4">⬇</button>
+  <button class="io" id="dlBtn" title="render + download a .wav">⬇</button>
   <a class="hlp" href="../lessons/16-groovebox/index.html">how it works →</a>
 </div>
 
@@ -249,8 +249,8 @@ addEventListener("contextmenu", e=>e.preventDefault());
    reverb into a master bus. (M2 = card layout + full-length DJ faders; engine
    unchanged from M1.)                                                          */
 
-let ctx, master, acidBus, drumBus, delay, delayFb, delayWet, conv, revWet, noiseBuf;
-let osc, f1, f2, vca;                                   // the 303 voice
+let ctx, master, acidBus, drumBus, delay, delayFb, delayWet, conv, revWet, noiseBuf, LIVE;
+let osc, f1, f2, vca;                                   // the 303 voice (live engine's nodes; === LIVE.*)
 const level=0.30, C_MIN=40, C_MAX=12000, ROOT=45, slideTime=0.055;
 let waveform="sawtooth", reso=16, envMod=0.80, decay=0.30, curCut, accentAmt=0.70;
 let bpm=126, swing=0.06, playing=false, timer=null, nextT=0, stepIx=0, schedQ=[], playStep=-1;
@@ -284,72 +284,82 @@ const DPRE={
 const $=s=>document.querySelector(s);
 const powerBtn=$("#power"), playBtn=$("#play"), rndBtn=$("#rnd"), waveBtn=$("#wave"), scaleBtn=$("#scale");
 
+/* Build the WHOLE groovebox graph on ANY context — the live AudioContext or an
+   OfflineAudioContext for WAV export — so the render is exactly what you hear
+   (drums + reverb included). Reads the current params + slider positions and
+   returns the node bundle. */
+function buildGraph(A,out){
+  const g={A};
+  g.master=A.createGain(); g.master.gain.value=(+$("#vol").value)/100; g.master.connect(out);
+  g.acidBus=A.createGain(); g.drumBus=A.createGain(); g.acidBus.connect(g.master); g.drumBus.connect(g.master);
+  // tempo-synced dub delay (feedback loop)
+  g.delay=A.createDelay(1.0); g.delayFb=A.createGain(); g.delayWet=A.createGain();
+  g.delayFb.gain.value=(+$("#fb").value)/100; g.delayWet.gain.value=(+$("#dl").value)/100;   // read sliders
+  g.delay.connect(g.delayFb); g.delayFb.connect(g.delay); g.delay.connect(g.delayWet); g.delayWet.connect(g.master);
+  g.acidBus.connect(g.delay);                            // the acid line trails into the delay
+  g.delay.delayTime.value=3*(60/bpm/4);                  // dotted-8th
+  // synthesised reverb
+  g.conv=A.createConvolver(); g.conv.buffer=makeIR(A); g.revWet=A.createGain(); g.revWet.gain.value=(+$("#rv").value)/100;
+  g.conv.connect(g.revWet); g.revWet.connect(g.master); g.acidBus.connect(g.conv); g.drumBus.connect(g.conv);
+  // the 303 voice
+  g.osc=A.createOscillator(); g.osc.type=waveform; g.osc.frequency.value=mf(ROOT);
+  g.f1=A.createBiquadFilter(); g.f1.type="lowpass"; g.f1.Q.value=-3; g.f1.frequency.value=curCut;
+  g.f2=A.createBiquadFilter(); g.f2.type="lowpass"; g.f2.Q.value=reso; g.f2.frequency.value=curCut;
+  g.vca=A.createGain(); g.vca.gain.value=0.0001;
+  g.osc.connect(g.f1); g.f1.connect(g.f2); g.f2.connect(g.vca).connect(g.acidBus); g.osc.start();
+  // per-context noise for the drums
+  g.noiseBuf=A.createBuffer(1,2*A.sampleRate,A.sampleRate); const nd=g.noiseBuf.getChannelData(0); for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+  return g;
+}
 function powerOn(){
   ctx=new (window.AudioContext||window.webkitAudioContext)();
-  master=ctx.createGain(); master.gain.value=(+$("#vol").value)/100; master.connect(ctx.destination);
-  acidBus=ctx.createGain(); drumBus=ctx.createGain(); acidBus.connect(master); drumBus.connect(master);
-  // tempo-synced dub delay (feedback loop)
-  delay=ctx.createDelay(1.0); delayFb=ctx.createGain(); delayWet=ctx.createGain();
-  delayFb.gain.value=(+$("#fb").value)/100; delayWet.gain.value=(+$("#dl").value)/100;   // read sliders (restore-safe)
-  delay.connect(delayFb); delayFb.connect(delay); delay.connect(delayWet); delayWet.connect(master);
-  acidBus.connect(delay);                               // the acid line trails into the delay
-  delay.delayTime.value=3*(60/bpm/4);                   // dotted-8th, exact from the first hit
-  // synthesised reverb
-  conv=ctx.createConvolver(); conv.buffer=makeIR(); revWet=ctx.createGain(); revWet.gain.value=(+$("#rv").value)/100;
-  conv.connect(revWet); revWet.connect(master); acidBus.connect(conv); drumBus.connect(conv);
-  // the 303 voice
-  osc=ctx.createOscillator(); osc.type=waveform; osc.frequency.value=mf(ROOT);
-  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.Q.value=-3; f1.frequency.value=curCut;
-  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.Q.value=reso; f2.frequency.value=curCut;
-  vca=ctx.createGain(); vca.gain.value=0.0001;
-  osc.connect(f1); f1.connect(f2); f2.connect(vca).connect(acidBus); osc.start();
-  // noise for drums
-  noiseBuf=ctx.createBuffer(1,2*ctx.sampleRate,ctx.sampleRate); const nd=noiseBuf.getChannelData(0); for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+  LIVE=buildGraph(ctx, ctx.destination);
+  ({master,acidBus,drumBus,delay,delayFb,delayWet,conv,revWet,osc,f1,f2,vca,noiseBuf}=LIVE);  // expose nodes to the control handlers
   powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
   playBtn.disabled=rndBtn.disabled=waveBtn.disabled=false; draw();
 }
-function makeIR(){ const len=(ctx.sampleRate*1.8)|0, b=ctx.createBuffer(2,len,ctx.sampleRate);
+function makeIR(A){ const len=(A.sampleRate*1.8)|0, b=A.createBuffer(2,len,A.sampleRate);
   for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5); } return b; }
 function setDelayTime(){ if(delay) delay.delayTime.setTargetAtTime(3*(60/bpm/4), ctx.currentTime, 0.05); }  // dotted 8th
 
-/* ── the 303 voice (lesson 08/13) → acidBus ────────────────────── */
-function filterEnv(t,acc){ const a=accentAmt,fl=curCut,pk=Math.min(fl*Math.pow(2,envMod*4)*(acc?1+a:1),C_MAX),dc=decay*(acc?1-0.45*a:1),atk=0.003;
-  [f1.frequency,f2.frequency].forEach(p=>{ p.cancelScheduledValues(t); p.setValueAtTime(fl,t); if(pk>fl*1.01) p.linearRampToValueAtTime(pk,t+atk); p.exponentialRampToValueAtTime(Math.max(fl,C_MIN),t+atk+dc); }); }
-function ampShape(t,acc,slidInto,tie,sd){ const L=outBase()*(acc?1+0.9*accentAmt:1)*0.62,g=vca.gain; g.cancelScheduledValues(t);
+/* ── the 303 voice (lesson 08/13) → E.acidBus ──────────────────── */
+function filterEnv(E,t,acc){ const a=accentAmt,fl=curCut,pk=Math.min(fl*Math.pow(2,envMod*4)*(acc?1+a:1),C_MAX),dc=decay*(acc?1-0.45*a:1),atk=0.003;
+  [E.f1.frequency,E.f2.frequency].forEach(p=>{ p.cancelScheduledValues(t); p.setValueAtTime(fl,t); if(pk>fl*1.01) p.linearRampToValueAtTime(pk,t+atk); p.exponentialRampToValueAtTime(Math.max(fl,C_MIN),t+atk+dc); }); }
+function ampShape(E,t,acc,slidInto,tie,sd){ const L=outBase()*(acc?1+0.9*accentAmt:1)*0.62,g=E.vca.gain; g.cancelScheduledValues(t);
   if(slidInto) g.linearRampToValueAtTime(L,t+0.03); else { g.setValueAtTime(1e-4,t); g.linearRampToValueAtTime(L,t+0.005); }
   if(tie) g.exponentialRampToValueAtTime(0.6*L,t+sd*0.98); else { g.exponentialRampToValueAtTime(0.26*L,t+sd*0.9); g.exponentialRampToValueAtTime(0.0006,t+sd*0.99); } }
-function step303(t,s,sd){
+function step303(E,t,s,sd){
   const pv=PITCH[s];
-  if(pv===0){ const g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.03); return; }
+  if(pv===0){ const g=E.vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.03); return; }
   const thisF=mf(ROOT+SCALE[pv-1]+12*OCT[s]), ps=(s+15)%16, prevRest=PITCH[ps]===0;
   const slidInto=SLIDE[ps]&&!prevRest, prevF=prevRest?thisF:mf(ROOT+SCALE[PITCH[ps]-1]+12*OCT[ps]), tie=!!SLIDE[s], acc=!!ACCENT[s];
-  osc.frequency.cancelScheduledValues(t);
-  if(slidInto){ osc.frequency.setValueAtTime(prevF,t); osc.frequency.exponentialRampToValueAtTime(thisF,t+Math.min(slideTime,sd*0.9)); }
-  else osc.frequency.setValueAtTime(thisF,t);
-  if(!slidInto) filterEnv(t,acc);
-  ampShape(t,acc,slidInto,tie,sd);
+  E.osc.frequency.cancelScheduledValues(t);
+  if(slidInto){ E.osc.frequency.setValueAtTime(prevF,t); E.osc.frequency.exponentialRampToValueAtTime(thisF,t+Math.min(slideTime,sd*0.9)); }
+  else E.osc.frequency.setValueAtTime(thisF,t);
+  if(!slidInto) filterEnv(E,t,acc);
+  ampShape(E,t,acc,slidInto,tie,sd);
 }
 
-/* ── drum voices (lessons 11/12) → drumBus ─────────────────────── */
-const nSrc=()=>{ const s=ctx.createBufferSource(); s.buffer=noiseBuf; return s; };
-function kick(t){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type="sine"; o.frequency.setValueAtTime(168,t); o.frequency.exponentialRampToValueAtTime(48,t+0.05);
-  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.95,t+0.003); g.gain.exponentialRampToValueAtTime(0.0004,t+0.42); o.connect(g).connect(drumBus); o.start(t); o.stop(t+0.45); }
-function snare(t){ const bg=ctx.createGain(); bg.gain.setValueAtTime(0.5,t); bg.gain.exponentialRampToValueAtTime(0.001,t+0.11); bg.connect(drumBus);
-  [190,295].forEach(f=>{ const o=ctx.createOscillator(); o.type="triangle"; o.frequency.value=f; o.connect(bg); o.start(t); o.stop(t+0.14); });
-  const n=nSrc(),hp=ctx.createBiquadFilter(),ng=ctx.createGain(); hp.type="highpass"; hp.frequency.value=1400; hp.Q.value=0.7; ng.gain.setValueAtTime(0.6,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.16); n.connect(hp).connect(ng).connect(drumBus); n.start(t); n.stop(t+0.2); }
-function hat(t,open){ const n=nSrc(),hp=ctx.createBiquadFilter(),g=ctx.createGain(),dec=open?0.30:0.045; hp.type="highpass"; hp.frequency.value=8500; g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+dec); n.connect(hp).connect(g).connect(drumBus); n.start(t); n.stop(t+dec+0.02); }
-function clap(t){ const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1100; bp.Q.value=1.0; bp.connect(drumBus);
-  [[0,.5],[0.012,.5],[0.024,.5],[0.038,.4]].forEach(([o,a])=>{ const n=nSrc(),g=ctx.createGain(); g.gain.setValueAtTime(a,t+o); g.gain.exponentialRampToValueAtTime(0.001,t+o+0.02); n.connect(g).connect(bp); n.start(t+o); n.stop(t+o+0.05); });
-  const n=nSrc(),g=ctx.createGain(); g.gain.setValueAtTime(0.3,t+0.05); g.gain.exponentialRampToValueAtTime(0.001,t+0.22); n.connect(g).connect(bp); n.start(t+0.05); n.stop(t+0.26); }
-function fireDrum(k,t){ k==="kick"?kick(t):k==="snare"?snare(t):k==="chat"?hat(t,false):k==="ohat"?hat(t,true):clap(t); }
+/* ── drum voices (lessons 11/12) → E.drumBus ───────────────────── */
+const nSrc=E=>{ const s=E.A.createBufferSource(); s.buffer=E.noiseBuf; return s; };
+function kick(E,t){ const o=E.A.createOscillator(),g=E.A.createGain(); o.type="sine"; o.frequency.setValueAtTime(168,t); o.frequency.exponentialRampToValueAtTime(48,t+0.05);
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.95,t+0.003); g.gain.exponentialRampToValueAtTime(0.0004,t+0.42); o.connect(g).connect(E.drumBus); o.start(t); o.stop(t+0.45); }
+function snare(E,t){ const bg=E.A.createGain(); bg.gain.setValueAtTime(0.5,t); bg.gain.exponentialRampToValueAtTime(0.001,t+0.11); bg.connect(E.drumBus);
+  [190,295].forEach(f=>{ const o=E.A.createOscillator(); o.type="triangle"; o.frequency.value=f; o.connect(bg); o.start(t); o.stop(t+0.14); });
+  const n=nSrc(E),hp=E.A.createBiquadFilter(),ng=E.A.createGain(); hp.type="highpass"; hp.frequency.value=1400; hp.Q.value=0.7; ng.gain.setValueAtTime(0.6,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.16); n.connect(hp).connect(ng).connect(E.drumBus); n.start(t); n.stop(t+0.2); }
+function hat(E,t,open){ const n=nSrc(E),hp=E.A.createBiquadFilter(),g=E.A.createGain(),dec=open?0.30:0.045; hp.type="highpass"; hp.frequency.value=8500; g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+dec); n.connect(hp).connect(g).connect(E.drumBus); n.start(t); n.stop(t+dec+0.02); }
+function clap(E,t){ const bp=E.A.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1100; bp.Q.value=1.0; bp.connect(E.drumBus);
+  [[0,.5],[0.012,.5],[0.024,.5],[0.038,.4]].forEach(([o,a])=>{ const n=nSrc(E),g=E.A.createGain(); g.gain.setValueAtTime(a,t+o); g.gain.exponentialRampToValueAtTime(0.001,t+o+0.02); n.connect(g).connect(bp); n.start(t+o); n.stop(t+o+0.05); });
+  const n=nSrc(E),g=E.A.createGain(); g.gain.setValueAtTime(0.3,t+0.05); g.gain.exponentialRampToValueAtTime(0.001,t+0.22); n.connect(g).connect(bp); n.start(t+0.05); n.stop(t+0.26); }
+function fireDrum(E,k,t){ k==="kick"?kick(E,t):k==="snare"?snare(E,t):k==="chat"?hat(E,t,false):k==="ohat"?hat(E,t,true):clap(E,t); }
 
 /* ── one shared scheduler ──────────────────────────────────────── */
 function tick(){
   const sd=60/bpm/4;
   while(nextT < ctx.currentTime+0.12){
     const s=stepIx%16, when=nextT+(s%2?swing*sd:0);
-    for(const d of DRUMS) if(DP[d.k][s] && !dmute[d.k]) fireDrum(d.k, when);
-    step303(when, s, sd);
+    for(const d of DRUMS) if(DP[d.k][s] && !dmute[d.k]) fireDrum(LIVE, d.k, when);
+    step303(LIVE, when, s, sd);
     schedQ.push({s, t:nextT});
     stepIx++; nextT+=sd;
   }
@@ -520,6 +530,36 @@ function initState(){
     history.replaceState(null,"",location.pathname+location.search); return; }
   const a=localStorage.getItem("acidbox:auto"); if(a){ try{ applyState(decodeState(a)); }catch(e){} }
 }
+
+/* ══ M4 · WAV export ══════════════════════════════════════════════
+   Render the SAME buildGraph() offline (faster than realtime), encode the
+   buffer to a .wav and download it. Works without powering on the live engine. */
+async function renderWav(bars){
+  const sr=44100, sd=60/bpm/4, tail=1.3, dur=bars*16*sd+tail;
+  const A=new OfflineAudioContext(2, Math.ceil(dur*sr), sr);
+  const E=buildGraph(A, A.destination);
+  for(let step=0; step<bars*16; step++){ const s=step%16, when=0.06+step*sd+(s%2?swing*sd:0);
+    for(const d of DRUMS) if(DP[d.k][s] && !dmute[d.k]) fireDrum(E, d.k, when);
+    step303(E, when, s, sd);
+  }
+  return await A.startRendering();
+}
+function bufToWav(buf){                                  // 44-byte header + interleaved int16 PCM
+  const nCh=buf.numberOfChannels, len=buf.length, sr=buf.sampleRate, ab=new ArrayBuffer(44+len*nCh*2), v=new DataView(ab); let p=0;
+  const wS=s=>{ for(let i=0;i<s.length;i++) v.setUint8(p++,s.charCodeAt(i)); }, w32=x=>{ v.setUint32(p,x,true); p+=4; }, w16=x=>{ v.setUint16(p,x,true); p+=2; };
+  wS("RIFF"); w32(36+len*nCh*2); wS("WAVE"); wS("fmt "); w32(16); w16(1); w16(nCh); w32(sr); w32(sr*nCh*2); w16(nCh*2); w16(16); wS("data"); w32(len*nCh*2);
+  const ch=[]; for(let c=0;c<nCh;c++) ch.push(buf.getChannelData(c));
+  for(let i=0;i<len;i++) for(let c=0;c<nCh;c++){ const x=Math.max(-1,Math.min(1,ch[c][i])); v.setInt16(p, x<0?x*0x8000:x*0x7FFF, true); p+=2; }
+  return new Blob([ab],{type:"audio/wav"});
+}
+function download(buf){ const a=document.createElement("a"); a.href=URL.createObjectURL(bufToWav(buf)); a.download="acidbox-loop.wav"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
+const dlBtn=$("#dlBtn");
+dlBtn.onclick=async()=>{ if(dlBtn.dataset.busy) return; dlBtn.dataset.busy="1"; const old=dlBtn.textContent; dlBtn.textContent="…";
+  try{ const t0=performance.now(); const buf=await renderWav(2); const ms=Math.round(performance.now()-t0);
+    download(buf); const secs=(buf.length/buf.sampleRate).toFixed(1), kb=Math.round((44+buf.length*2*2)/1024);
+    toast("⬇ acidbox-loop.wav · "+secs+"s · "+kb+"KB · "+ms+"ms"); }
+  catch(e){ console.error(e); toast("export failed"); }
+  finally{ dlBtn.textContent=old; delete dlBtn.dataset.busy; } };
 
 /* ── init grids + playhead ─────────────────────────────────────── */
 loadDrums("house"); repaintAcid(); initState();
