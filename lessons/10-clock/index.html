@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>10 · The clock problem — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff; --red:#ff5a5a;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  canvas{width:100%;height:150px;display:block;background:#0a0c08;border:1px solid var(--line);border-radius:10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:13px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:16px;padding:12px 22px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #play{font-weight:700;font-size:15px;padding:11px 20px}
+  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #play:disabled,.mode:disabled,#stress:disabled{opacity:.35;cursor:not-allowed}
+  .mode.naive.on{background:var(--red);color:#0a0c08;border-color:var(--red)}
+  .mode.sched.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #stress.on{background:var(--red);color:#0a0c08;border-color:var(--red)}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  .readout{display:flex;gap:20px;flex-wrap:wrap;background:#0a0c08;border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:13px;margin-top:4px}
+  .readout .lbl{color:var(--dim);font-size:11px}
+  .readout b{font-size:17px}
+  .jgood{color:var(--acid)} .jbad{color:var(--red)}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)} .bad{color:var(--red)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  pre{background:#0a0c08;border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:13px;line-height:1.5;color:var(--ink)}
+  pre .c{color:var(--dim)} pre .k2{color:var(--orange)} pre .f{color:var(--acid)}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  ul{margin:8px 0;padding-left:22px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">10</span> · The clock problem</h1>
+  <p class="sub">Every note you've made was a one-shot. Now we need a <i>metronome that never flinches</i> — and it turns out computers are terrible at that. Here's the fix that every sequencer uses.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <canvas id="jit"></canvas>
+    <div class="readout">
+      <div><span class="lbl">clock</span><br><b id="ro-mode" style="color:var(--dim)">—</b></div>
+      <div><span class="lbl">tempo</span><br><b id="ro-bpm" style="color:var(--acid)">128 BPM</b></div>
+      <div><span class="lbl">worst spacing error (last 2 bars)</span><br><b id="ro-jit">—</b></div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="play" disabled>▶ start clock</button>
+      <span class="hint" style="margin-left:4px">clock type:</span>
+      <button class="mode naive on" data-m="naive" disabled>setTimeout (naïve)</button>
+      <button class="mode sched" data-m="sched" disabled>lookahead scheduler</button>
+      <button id="stress" disabled>💣 stress the CPU</button>
+    </div>
+    <div class="row">
+      <div class="ctrl"><label>tempo <b id="bpmVal">128 BPM</b></label><input id="bpm" type="range" min="60" max="180" value="128"></div>
+    </div>
+    <p class="hint">Start the clock — it ticks 16th notes (the acid grid), accenting each beat. It sounds steady…
+      until you hit <span class="bad">💣 stress the CPU</span>, which jams the main thread with busy-work.
+      On <b class="bad">setTimeout</b> the rhythm turns drunk. Switch to <b class="hl">lookahead scheduler</b>
+      and stress it again — rock solid. The bars above are how far each tick lands off the grid.</p>
+  </div>
+
+  <!-- ── idea 1 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>Music is unforgiving about time</h2>
+    <p>Your ear can hear a note that's <b>a few milliseconds</b> out of place. A drummer who wobbles by 20 ms
+    sounds drunk; by 50 ms, broken. So a sequencer's single most important job is to fire notes at
+    <b class="hl">exactly</b> the right instant, over and over, for hours, without ever drifting or flinching.</p>
+    <p>You'd think that's easy — "play a note every 117 ms" — and you'd write <code>setInterval(playNote,
+    117)</code>. It even sounds fine… right up until the computer gets busy. Then it falls apart, and
+    understanding <i>why</i> is the whole lesson.</p>
+  </div>
+
+  <!-- ── idea 2 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>Why <code>setTimeout</code> can't keep time</h2>
+    <p>The trap: <code>setTimeout</code> and <code>setInterval</code> run your callback on the
+    <b class="hl">main thread</b> — the same single thread doing layout, painting, garbage collection, and
+    every other bit of JavaScript on the page. When that thread is busy, your "play now" callback simply
+    <b>waits its turn</b>. The note fires late — whenever the thread gets around to it.</p>
+    <p>Worse, the errors <b>accumulate</b>: <code>setTimeout(fn, 117)</code> means "at least 117 ms", never
+    exactly, and each late start pushes the next one later still. Try it: with <b class="bad">setTimeout</b>
+    selected, hit <span class="bad">💣 stress the CPU</span> and watch the bars scatter and the rhythm
+    stumble. That's not a bug in your code — it's the wrong clock.</p>
+    <table>
+      <tr><th>problem</th><th>cause</th></tr>
+      <tr><td>jitter (uneven spacing)</td><td>callbacks queue behind other main-thread work</td></tr>
+      <tr><td>drift (slowly speeds/slows)</td><td>timer error compounds every tick</td></tr>
+      <tr><td>coarse resolution</td><td>browsers clamp timers to ~4 ms (more in background tabs)</td></tr>
+    </table>
+  </div>
+
+  <!-- ── idea 3 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Two clocks — and one of them is perfect</h2>
+    <p>Here's the key realisation. There are <b class="hl">two different clocks</b> in the browser:</p>
+    <table>
+      <tr><th>clock</th><th>lives on</th><th>quality</th></tr>
+      <tr><td><b class="bad">JavaScript</b> — <code>setTimeout</code>, <code>Date.now()</code></td><td>the busy main thread</td><td>sloppy, jittery, drifts</td></tr>
+      <tr><td><b class="hl">Web Audio</b> — <code>ctx.currentTime</code></td><td>a dedicated real-time audio thread</td><td><b>sample-accurate</b>, rock-solid</td></tr>
+    </table>
+    <p>And crucially: Web Audio lets you <b class="hl">schedule a sound in the future</b>. Every start and
+    every parameter ramp takes a <i>when</i>: <code>osc.start(when)</code>,
+    <code>gain.setValueAtTime(v, when)</code> — you've used this in every lesson. That <code>when</code> is
+    honoured on the audio thread with sample precision, <b>no matter what the main thread is doing</b>. So the
+    plan writes itself: stop trying to play notes "now", and instead <b>tell the audio clock exactly when to
+    play them</b>, ahead of time.</p>
+  </div>
+
+  <!-- ── idea 4 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>The lookahead scheduler (the fix)</h2>
+    <p>The pattern is "A Tale of Two Clocks", and it's what Tone.js, every DAW, and this course have used since
+    lesson 03. A <b>lazy, imprecise timer</b> wakes up every so often and, each time, <b>schedules every note
+    that falls in the next little window</b> onto the <b class="hl">precise</b> audio clock:</p>
+<pre><span class="k2">const</span> LOOKAHEAD = <span class="f">0.1</span>;    <span class="c">// schedule 100 ms into the future</span>
+<span class="k2">let</span> nextNoteTime = ctx.currentTime;
+setInterval(() =&gt; {                <span class="c">// a sloppy timer — its jitter doesn't matter</span>
+  <span class="k2">while</span> (nextNoteTime &lt; ctx.currentTime + LOOKAHEAD) {
+    playClick(nextNoteTime);        <span class="c">// ← scheduled at an EXACT audio-clock time</span>
+    nextNoteTime += beatDur;        <span class="c">// advance the grid: 60/BPM/4 for 16ths</span>
+  }
+}, <span class="f">25</span>);                          <span class="c">// wake ~40×/sec; only needs to beat LOOKAHEAD</span></pre>
+    <p>The trick is a <b class="hl">division of labour</b>: the sloppy <code>setInterval</code> only decides
+    <i>when to think about scheduling</i> — if it fires late, it just catches up on the next wake-up. It never
+    decides when a sound actually plays; the audio clock does, precisely. As long as the timer wakes up more
+    often than the lookahead window (100 ms) is long, notes are always queued before they're due. Select
+    <span class="hl">lookahead scheduler</span> above, hit <span class="bad">💣 stress the CPU</span>, and the
+    bars stay flat. The main thread is on fire and the beat doesn't care.</p>
+    <div class="nerd"><b>// CS corner:</b> two independent time bases. <code>ctx.currentTime</code> advances on
+    the audio render thread (128-sample blocks, from lesson P3); your JS reads it but can't stall it. The
+    scheduler is a producer filling a queue ~100 ms ahead of a consumer that drains it in real time — a classic
+    lock-free-ish double-buffer. Tune two numbers: the <b>interval</b> (how often you wake) and the
+    <b>lookahead</b> (how far you queue). Bigger lookahead = more jank-proof but laggier response to tempo
+    changes; that trade-off is why a live knob feels a beat behind on some software.</div>
+  </div>
+
+  <!-- ── recap ──────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">so</span>You now have a transport</h2>
+    <p>That's <b class="hl">BPM → beat duration → a steady grid of instants</b>, immune to whatever the page is
+    doing. It's the heartbeat every sequencer needs. With a rock-solid clock in hand, the next lessons hang
+    <i>things</i> on it: first <b>drums</b> synthesised from scratch (kick, snare, hats), then a
+    <b>16-step drum machine</b> — and eventually the whole 303 voice you built, sequenced and grooving.</p>
+    <a class="next" href="../../index.html">Next → 11 · Synthesizing drums (soon)</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Lesson 10 — the clock problem, A/B. Two ways to run a 16th-note metronome:
+   NAÏVE — recursive setTimeout that plays a click "now" in its callback (fires
+     late whenever the main thread is busy; error compounds).
+   SCHED — a lookahead scheduler: a coarse setInterval that queues clicks onto
+     the precise audio clock ~100 ms ahead (immune to main-thread jank).
+   We plot each click's beat-spacing error (actual gap − ideal gap) so you can
+   SEE the difference; the 💣 button janks the main thread to expose it.        */
+
+let ctx, master;
+let running=false, mode="naive", stressing=false, bpm=128;
+let beatIndex=0, prevOnset=null;
+let naiveTimer=null, schedTimer=null, stressTimer=null, nextNoteTime=0;
+const LOOKAHEAD=0.1, INTERVAL=25;
+const beatDur=()=>60/bpm/4;                          // 16th note
+
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), playBtn=$("#play"), stressBtn=$("#stress"), jitC=$("#jit");
+const bpmEl=$("#bpm"), bpmVal=$("#bpmVal"), roMode=$("#ro-mode"), roBpm=$("#ro-bpm"), roJit=$("#ro-jit");
+const modeBtns=[...document.querySelectorAll(".mode")];
+
+const errs=[];                                       // {err (ms), bad} recent spacing errors
+function record(errMs){ errs.push(errMs); if(errs.length>64) errs.shift(); }
+
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  master=ctx.createGain(); master.gain.value=0.9; master.connect(ctx.destination);
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  playBtn.disabled=false; stressBtn.disabled=false; modeBtns.forEach(b=>b.disabled=false);
+  draw();
+}
+function playClick(when, accent){
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type="sine"; o.frequency.value=accent?2600:1650;
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.linearRampToValueAtTime(accent?0.5:0.3, when+0.001);
+  g.gain.exponentialRampToValueAtTime(0.0001, when+0.05);
+  o.connect(g).connect(master); o.start(when); o.stop(when+0.06);
+}
+
+/* ── NAÏVE: recursive setTimeout, plays on the callback ────────── */
+function naiveLoop(){
+  if(!running || mode!=="naive") return;
+  const now=ctx.currentTime;
+  playClick(now, beatIndex%4===0);                   // play NOW — as late as this callback is
+  if(prevOnset!=null) record((now-prevOnset-beatDur())*1000);
+  prevOnset=now; beatIndex++;
+  naiveTimer=setTimeout(naiveLoop, beatDur()*1000);  // reschedule a full beat from *now* → drifts
+}
+/* ── SCHED: lookahead, queues onto the audio clock ─────────────── */
+function schedTick(){
+  if(!running || mode!=="sched") return;
+  while(nextNoteTime < ctx.currentTime + LOOKAHEAD){
+    playClick(nextNoteTime, beatIndex%4===0);        // scheduled at an EXACT time
+    record(0);                                       // gaps are exactly beatDur → perfect
+    nextNoteTime += beatDur(); beatIndex++;
+  }
+}
+function startClock(){
+  beatIndex=0; prevOnset=null;
+  if(mode==="naive"){ naiveTimer=setTimeout(naiveLoop, beatDur()*1000); }
+  else { nextNoteTime=ctx.currentTime+0.06; schedTimer=setInterval(schedTick, INTERVAL); schedTick(); }
+}
+function stopClock(){ clearTimeout(naiveTimer); clearInterval(schedTimer); naiveTimer=schedTimer=null; }
+function setPlay(on){
+  if(!ctx) return;
+  running=on; playBtn.classList.toggle("on",on); playBtn.textContent=on?"■ stop":"▶ start clock";
+  if(on) startClock(); else stopClock();
+  roMode.textContent = on ? (mode==="naive"?"setTimeout":"scheduler") : "—";
+  roMode.style.color = mode==="naive" ? "var(--red)" : "var(--acid)";
+}
+function setMode(m){
+  mode=m; modeBtns.forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+  errs.length=0;
+  if(running){ stopClock(); startClock(); roMode.textContent=m==="naive"?"setTimeout":"scheduler"; roMode.style.color=m==="naive"?"var(--red)":"var(--acid)"; }
+}
+
+/* ── the CPU-stresser: busy-loop the main thread ~26 ms / 32 ms ── */
+function stressLoop(){
+  if(!stressing) return;
+  const end=performance.now()+26;
+  while(performance.now()<end){ /* deliberately jam the main thread */ }
+  stressTimer=setTimeout(stressLoop, 6);
+}
+function setStress(on){
+  stressing=on; stressBtn.classList.toggle("on",on);
+  stressBtn.textContent = on ? "💣 stressing! (stop)" : "💣 stress the CPU";
+  if(on) stressLoop(); else clearTimeout(stressTimer);
+}
+
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+playBtn.onclick=()=>setPlay(!running);
+stressBtn.onclick=()=>setStress(!stressing);
+modeBtns.forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+bpmEl.oninput=()=>{ bpm=+bpmEl.value; bpmVal.textContent=bpm+" BPM"; roBpm.textContent=bpm+" BPM"; };
+
+/* ── jitter visualization ──────────────────────────────────────── */
+function fit(c){ const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect(); c.width=r.width*dpr; c.height=r.height*dpr; const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); return [g,r.width,r.height]; }
+const FS=60;                                          // full-scale ±60 ms
+function draw(){
+  requestAnimationFrame(draw);
+  const [g,W,H]=fit(jitC), mid=H/2;
+  g.clearRect(0,0,W,H);
+  // grid: center (perfect) + ±20ms guides
+  g.strokeStyle="#25301c"; g.setLineDash([4,4]);
+  [-40,-20,20,40].forEach(ms=>{ const y=mid-ms/FS*mid; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); });
+  g.setLineDash([]); g.strokeStyle="#3a4530"; g.beginPath(); g.moveTo(0,mid); g.lineTo(W,mid); g.stroke();
+  g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace";
+  g.fillText("on the grid ▸ perfect", 6, mid-3); g.fillText("late ↓", 6, mid+FS/FS*mid-6); g.fillText("early ↑", 6, 12);
+  // bars
+  const n=errs.length, bw=W/64;
+  for(let i=0;i<n;i++){
+    const e=errs[i], x=i*bw, mag=Math.min(Math.abs(e),FS);
+    const h=mag/FS*mid, y = e>=0 ? mid : mid-h;      // late (positive) grows down
+    const col = mag<4?"#b6ff00":mag<18?"#ff7a00":"#ff5a5a";
+    g.fillStyle=col; g.fillRect(x+1, e>=0?mid:mid-h, Math.max(bw-1.5,1), Math.max(h,1));
+  }
+  // worst jitter over last 2 bars (32 sixteenths)
+  const recent=errs.slice(-32).map(Math.abs);
+  const worst=recent.length?Math.max(...recent):0;
+  roJit.textContent = running ? worst.toFixed(1)+" ms" : "—";
+  roJit.className = worst<8 ? "jgood" : "jbad";
+}
+</script>
+</body>
+</html>

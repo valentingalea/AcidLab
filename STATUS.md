@@ -25,7 +25,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 07 | Accent | ✅ done | ACCENT amount knob + clickable 16-step accent grid; accented steps scale 3 things by amount (amp ×(1+0.9a) louder, filter-env peak ×(1+a) brighter, filter decay ×(1−0.45a) snappier); playhead, live spectrum. Reuses 06 voice |
 | 08 | Slide / glide | ✅ done | per-step slide flag → osc.frequency exp-ramp (portamento) into next note + legato tie (slid-into note skips amp attack & filter-env retrigger; note before a slide holds gate open); SLIDE TIME knob; pitch-over-time graph (diagonal=glide, vertical=jump) w/ gliding playhead; completes the 303 voice |
 | 09 | Drive / saturation | ⏭️ optional | |
-| 10 | The clock problem (scheduler) | ⬜ planned | CS centrepiece |
+| 10 | The clock problem (scheduler) | ✅ done | CS centrepiece: A/B 16th-note metronome — naïve recursive setTimeout (plays on callback, drifts/jitters) vs lookahead scheduler (queues onto ctx.currentTime ~100ms ahead); 💣 main-thread busy-loop stressor exposes the difference; live beat-spacing-error bar viz + worst-jitter readout; "two clocks" framing |
 | 11 | Synthesizing drums | ⬜ planned | |
 | 12 | The drum machine | ⬜ planned | |
 | 13 | 303 step sequencer | ⬜ planned | |
@@ -37,12 +37,12 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 
 ## Now / Next
 - **Now:** Prologue (3 ELI5 parts), Module 0 (00 + 01), Module 1 (02 + 03),
-  Module 2 complete (05 voice, 06 filter env, 07 accent, 08 slide), and the
-  303-story interlude all live. **The full 303 voice is built** — every knob and
-  the two per-note tricks. Old `prologue-theory/` URL redirects to P1.
-- **Next:** Module 3 — lesson 10 (the clock problem / lookahead scheduler, the
-  CS centrepiece), then 11 (synth drums) + 12 (drum machine). Lesson 09 (drive)
-  and 04 (AudioWorklet ladder) stay optional.
+  Module 2 complete (05–08, the full 303 voice), the 303-story interlude, and
+  Module 3's opener (10 — the clock/scheduler) all live.
+  Old `prologue-theory/` URL redirects to P1.
+- **Next:** Lesson 11 (synthesizing drums — 909 kick/snare/hats from scratch),
+  then 12 (the 16-step drum machine on the new clock). Lesson 09 (drive) and 04
+  (AudioWorklet ladder) stay optional.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?
