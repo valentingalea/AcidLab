@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>07 · Accent — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  canvas{width:100%;height:120px;display:block;background:#0a0c08;border:1px solid var(--line);border-radius:10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:13px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:16px;padding:12px 22px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #play{font-weight:700;font-size:15px;padding:11px 20px}
+  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #play:disabled{opacity:.35;cursor:not-allowed}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  .ctrl.hero label b{color:var(--orange);font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  .ctrl.hero input[type=range]{accent-color:var(--orange);height:32px}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  ul{margin:8px 0;padding-left:22px}
+
+  /* accent step grid */
+  .seqhint{font-size:12px;color:var(--dim);margin:6px 0 4px}
+  .seq{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin:6px 0 2px}
+  .cell{background:#0a0c08;border:1px solid var(--line);border-radius:5px;padding:6px 0 5px;text-align:center;position:relative;min-height:56px;cursor:pointer}
+  .cell.rest{cursor:default;opacity:.55}
+  .cell .beat{position:absolute;top:1px;left:3px;font-size:8px;color:#3d4a30}
+  .cell .pn{font-size:12px;color:var(--ink);font-weight:600;margin-top:6px}
+  .cell.rest .pn{color:#3d4a30}
+  .cell .amp{height:20px;display:flex;align-items:flex-end;justify-content:center;margin-top:4px}
+  .cell .amp i{display:block;width:8px;background:var(--dim);border-radius:2px 2px 0 0;height:7px}
+  .cell.acc{border-color:var(--orange);background:#241605}
+  .cell.acc .pn{color:var(--orange)}
+  .cell.acc .amp i{background:var(--orange);height:18px}
+  .cell.play{box-shadow:0 0 0 2px var(--acid) inset}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">07</span> · Accent — the per-note punch</h1>
+  <p class="sub">Same notes, but some of them <i>hit</i>. The one trick that turns a robotic loop into a groove.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <canvas id="spectrum"></canvas>
+    <p class="seqhint">Tap a step to accent / un-accent it (bar height = how hard the note hits). Accented steps are <b style="color:var(--orange)">orange</b>.</p>
+    <div class="seq" id="seq"></div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="play" disabled>▶ play loop</button>
+      <div class="ctrl hero">
+        <label>ACCENT — how hard accented notes punch <b id="accVal">70%</b></label>
+        <input id="acc" type="range" min="0" max="100" value="70">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="ctrl"><label>cutoff (floor) <b id="cutVal">220 Hz</b></label><input id="cut" type="range" min="0" max="1000" value="299"></div>
+      <div class="ctrl"><label>resonance <b id="resVal">13 dB</b></label><input id="res" type="range" min="0" max="26" value="13" step="0.5"></div>
+      <div class="ctrl"><label>env mod <b id="envVal">70%</b></label><input id="env-mod" type="range" min="0" max="100" value="70"></div>
+      <div class="ctrl"><label>decay <b id="decVal">240 ms</b></label><input id="dec" type="range" min="30" max="1200" value="240"></div>
+    </div>
+    <p class="hint">Start the loop, then drag <span class="kbd">ACCENT</span> from 0 to full. At 0 every note is
+      identical — a robot. Turn it up and the accented steps leap out. Then move the accents around and hear the
+      groove change.</p>
+  </div>
+
+  <!-- ── idea 1 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>Not every note is equal</h2>
+    <p>Play a drummer a steady stream of identical hits and it's a machine. Let a few land <b>harder</b> and
+    suddenly there's a <i>groove</i> — your body finds the beat. Music lives in that unevenness. The 303's
+    version of it is <b class="hl">Accent</b>: a single per-step switch that marks certain notes to
+    <b>punch</b>.</p>
+    <p>You already heard this — the hands-free riff back in lesson 06 had accents baked in (that's why it
+    grooved instead of marching). Now you get the knob. Set <span class="kbd">ACCENT</span> to 0 above and
+    listen: dead flat, every note the same, robotic. That flatness is what accent cures.</p>
+  </div>
+
+  <!-- ── idea 2 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>Accent does three things at once</h2>
+    <p>Here's the clever bit. Flipping one switch doesn't just turn a note up — on a 303 an accented note is
+    louder <b>and</b> brighter <b>and</b> snappier, all together. That combination is why an accented note
+    doesn't just sound "up in volume", it sounds like it was <i>hit harder</i> — exactly like a real player
+    digging in:</p>
+    <table>
+      <tr><th>accent adds…</th><th>how</th><th>why it reads as "harder"</th></tr>
+      <tr><td><b class="hl">louder</b></td><td>a boost to the amp (VCA)</td><td>the obvious one — more volume</td></tr>
+      <tr><td><b class="hl">brighter</b></td><td>extra kick to the filter envelope — the cutoff flies higher on that note</td><td>a hard-plucked string is brighter; your ear reads brightness as force</td></tr>
+      <tr><td><b class="hl">snappier</b></td><td>a faster filter decay on accented notes</td><td>the punch is quick and tight, not a slow swell</td></tr>
+    </table>
+    <p>Watch the <b>spectrum</b> as the loop plays: on accented steps the whole curve leaps up and open, then
+    snaps shut. The <span class="kbd">ACCENT</span> knob scales all three at once — that's the single "amount"
+    a 303 gives you.</p>
+  </div>
+
+  <!-- ── idea 3 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Placement is the performance</h2>
+    <p>Two controls, and between them they <i>are</i> the groove:</p>
+    <ul>
+      <li><b class="hl">the ACCENT knob</b> — <i>how much</i> extra punch (the amount, global);</li>
+      <li><b class="hl">the step grid</b> — <i>which</i> notes get it (tap the steps).</li>
+    </ul>
+    <p>Move the accents onto the downbeats (steps 1, 5, 9, 13) for a driving, four-on-the-floor push. Shove
+    them <i>off</i> the beat for something syncopated and rolling. Accent the high notes to make them scream,
+    or the low root to make it stomp. Same twelve notes, a dozen different feels — all from where the punches
+    land. This is most of what a 303 player actually does with their hands: not changing notes, but changing
+    <i>emphasis</i>.</p>
+    <div class="nerd"><b>// CS corner:</b> accent is one boolean per step. On an accented step we scale three
+    numbers by the accent amount <code>a</code>: amp gain <code>×(1+0.9a)</code>, filter-envelope peak
+    <code>×(1+1.0a)</code> (brighter), and filter decay <code>×(1−0.45a)</code> (snappier). Un-accented notes
+    stay at the base. One flag, three multiplies, live per step in the scheduler — that's the whole feature.</div>
+  </div>
+
+  <!-- ── idea 4 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>Accent × resonance = the acid bark</h2>
+    <p>Turn <b>resonance</b> up and accent gets vicious: because accented notes fling the cutoff higher, the
+    resonant peak streaks further up the harmonics on exactly those notes — so accents don't just punch, they
+    <b class="hl">bark and scream</b> while the quiet notes stay dark and rubbery underneath. That contrast —
+    a few screaming notes over a mumbling bassline — is the signature acid dynamic.</p>
+    <p><b class="hl">Experiments:</b></p>
+    <ul>
+      <li><b>Feel the cure:</b> loop running, sweep ACCENT 0 → 100% — robot → groove in one knob.</li>
+      <li><b>Downbeat drive:</b> accent only steps 1 / 5 / 9 / 13 — a steady four-on-the-floor push.</li>
+      <li><b>Off-beat roll:</b> accent only the off-beats — same notes, a rolling syncopated feel.</li>
+      <li><b>The bark:</b> resonance ~18, accent ~90%, accent the octave jumps — those notes scream.</li>
+    </ul>
+    <p>One trick left: <b>Slide</b> — gluing notes together with a pitch glide — and the 303 voice is complete.</p>
+    <a class="next" href="../../index.html">Next → 08 · Slide / glide (soon)</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Lesson 07 — Accent. The lesson-06 voice + a 16-step loop where each step
+   carries an accent flag. An accented step scales three things by the ACCENT
+   amount `a`: amp louder, filter-env peak higher (brighter), filter decay
+   shorter (snappier) — so one switch reads as "hit harder".                    */
+
+let ctx, osc, f1, f2, vca, analyser;
+const level=0.30, C_MIN=40, C_MAX=12000;
+let reso=13, envMod=0.70, decay=0.24, curCut, accentAmt=0.70;
+const sliderToCut=v=>C_MIN*Math.pow(C_MAX/C_MIN,v/1000);
+const mf=m=>440*Math.pow(2,(m-69)/12);
+const NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const nameOf=m=>NAMES[((m%12)+12)%12];
+
+const ROOT=45, STEP=0.13;                            // A2, ~16ths
+const PITCH =[0,null,0,12, 0,3,0,null, 7,0,10,0, 0,12,3,0];
+const ACCENT=[1,0,0,1, 0,0,1,0, 1,0,0,0, 1,0,1,0];  // user-editable
+
+let playing=false, timer=null, nextT=0, stepIx=0, startT=0;
+
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), playBtn=$("#play"), spectrum=$("#spectrum");
+const accEl=$("#acc"), accVal=$("#accVal"), cutEl=$("#cut"), cutVal=$("#cutVal");
+const resEl=$("#res"), resVal=$("#resVal"), envEl=$("#env-mod"), envVal=$("#envVal"), decEl=$("#dec"), decVal=$("#decVal");
+curCut=sliderToCut(+cutEl.value);
+const outBase=()=>level/(1+0.14*(Math.pow(10,reso/20)-1));   // resonance make-up
+
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  osc=ctx.createOscillator(); osc.type="sawtooth"; osc.frequency.value=mf(ROOT);
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.Q.value=-3; f1.frequency.value=curCut;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.Q.value=reso; f2.frequency.value=curCut;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  analyser=ctx.createAnalyser(); analyser.fftSize=4096; analyser.smoothingTimeConstant=0.6;
+  osc.connect(f1); f1.connect(f2); f2.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start();
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered"; playBtn.disabled=false;
+  draw();
+}
+
+// one step. accent scales louder + brighter + snappier by accentAmt.
+function strike(t, midi, accented){
+  osc.frequency.setValueAtTime(mf(midi), t);
+  const a=accentAmt, floor=curCut;
+  const peak=Math.min(floor*Math.pow(2,envMod*4)*(accented?1+1.0*a:1), C_MAX);
+  const dec=decay*(accented?1-0.45*a:1);            // snappier
+  const atk=0.003;
+  [f1.frequency,f2.frequency].forEach(p=>{ p.cancelScheduledValues(t); p.setValueAtTime(floor,t);
+    if(peak>floor*1.01) p.linearRampToValueAtTime(peak,t+atk);
+    p.exponentialRampToValueAtTime(Math.max(floor,C_MIN),t+atk+dec); });
+  const L=outBase()*(accented?1+0.9*a:1)*0.62, g=vca.gain;   // louder
+  g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t);
+  g.linearRampToValueAtTime(L,t+0.005);
+  g.exponentialRampToValueAtTime(0.26*L, t+STEP*0.9);        // ring across the step
+  g.exponentialRampToValueAtTime(0.0006, t+STEP*0.99);
+}
+function tick(){
+  while(nextT < ctx.currentTime+0.15){
+    const s=stepIx%16, semi=PITCH[s];
+    if(semi!==null) strike(nextT, ROOT+semi, !!ACCENT[s]);
+    stepIx++; nextT+=STEP;
+  }
+}
+function setPlay(on){
+  if(!ctx) return;
+  playing=on; playBtn.classList.toggle("on",on); playBtn.textContent=on?"■ stop":"▶ play loop";
+  if(on){ stepIx=0; startT=ctx.currentTime+0.06; nextT=startT; clearInterval(timer); timer=setInterval(tick,30); tick(); }
+  else{ clearInterval(timer); const t=ctx.currentTime,g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.06); }
+}
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+playBtn.onclick=()=>setPlay(!playing);
+
+/* ── accent step grid ──────────────────────────────────────────── */
+const seqEl=$("#seq"), cells=[];
+function cellHTML(i){ const rest=PITCH[i]===null; const note=rest?"·":nameOf(ROOT+PITCH[i]);
+  return `<div class="beat">${i%4===0?(i/4+1):""}</div><div class="pn">${note}</div><div class="amp"><i></i></div>`; }
+for(let i=0;i<16;i++){
+  const c=document.createElement("div"); c.dataset.i=i;
+  c.className="cell"+(PITCH[i]===null?" rest":"")+(ACCENT[i]&&PITCH[i]!==null?" acc":"");
+  c.innerHTML=cellHTML(i);
+  c.addEventListener("pointerdown", e=>{ e.preventDefault(); if(PITCH[i]===null) return;
+    ACCENT[i]=ACCENT[i]?0:1; c.classList.toggle("acc",!!ACCENT[i]); });
+  seqEl.appendChild(c); cells.push(c);
+}
+
+/* ── controls ──────────────────────────────────────────────────── */
+function fmtCut(f){ const l=f>=10000?"wide open":f>=3000?"bright":f>=800?"warm":f>=250?"muffled":"underwater"; return Math.round(f)+" Hz ("+l+")"; }
+function fmtRes(q){ const l=q<1?"off":q<6?"gentle":q<12?"peaky":q<19?"whistly":"screaming"; return q+" dB ("+l+")"; }
+accEl.oninput=()=>{ accentAmt=+accEl.value/100; accVal.textContent=accEl.value+"%"; };
+cutEl.oninput=()=>{ curCut=sliderToCut(+cutEl.value); cutVal.textContent=fmtCut(curCut); };
+resEl.oninput=()=>{ reso=+resEl.value; resVal.textContent=fmtRes(reso); if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01); };
+envEl.oninput=()=>{ envMod=+envEl.value/100; envVal.textContent=envEl.value+"%"; };
+decEl.oninput=()=>{ decay=+decEl.value/1000; decVal.textContent=decEl.value+" ms"; };
+cutVal.textContent=fmtCut(curCut); resVal.textContent=fmtRes(reso);
+
+/* ── spectrum + playhead ───────────────────────────────────────── */
+function fit(c){ const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect(); c.width=r.width*dpr; c.height=r.height*dpr; const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); return [g,r.width,r.height]; }
+const V_MIN=40,V_MAX=16000, fx=(f,W)=>W*Math.log(f/V_MIN)/Math.log(V_MAX/V_MIN);
+const DB_TOP=30,DB_BOT=-42, dby=(db,H)=>H*(1-(Math.min(Math.max(db,DB_BOT),DB_TOP)-DB_BOT)/(DB_TOP-DB_BOT));
+const RN=140, rf=new Float32Array(RN), a1=new Float32Array(RN), a2=new Float32Array(RN), pz=new Float32Array(RN);
+for(let i=0;i<RN;i++) rf[i]=V_MIN*Math.pow(V_MAX/V_MIN,i/(RN-1));
+let lastStep=-1;
+function draw(){
+  requestAnimationFrame(draw);
+  if(!analyser) return;
+  if(playing){ const cur=Math.floor((ctx.currentTime-startT)/STEP)%16;
+    if(cur!==lastStep){ if(lastStep>=0) cells[lastStep].classList.remove("play"); if(cur>=0) cells[cur].classList.add("play"); lastStep=cur; } }
+  else if(lastStep>=0){ cells[lastStep].classList.remove("play"); lastStep=-1; }
+  const [g,W,H]=fit(spectrum);
+  const bins=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(bins);
+  g.clearRect(0,0,W,H);
+  g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace";
+  [[100,"100"],[1000,"1k"],[10000,"10k"]].forEach(([f,l])=>{ const x=fx(f,W); g.fillRect(x,0,1,H); g.fillText(l+"Hz",x+3,H-4); });
+  const binHz=ctx.sampleRate/2/bins.length, COLS=Math.floor(W/3);
+  for(let i=0;i<COLS;i++){
+    const f0=V_MIN*Math.pow(V_MAX/V_MIN,i/COLS), f1b=V_MIN*Math.pow(V_MAX/V_MIN,(i+1)/COLS);
+    let v=0; for(let b=Math.floor(f0/binHz); b<=Math.min(bins.length-1,Math.floor(f1b/binHz)); b++) v=Math.max(v,bins[b]);
+    const h=(v/255)*H, t=i/COLS; g.fillStyle=`rgb(${Math.round(120+135*t)},255,0)`; g.fillRect(i*(W/COLS),H-h,Math.max(W/COLS-1,1),h);
+  }
+  f1.getFrequencyResponse(rf,a1,pz); f2.getFrequencyResponse(rf,a2,pz);
+  g.lineWidth=2; g.strokeStyle="#ff7a00"; g.beginPath();
+  for(let i=0;i<RN;i++){ const mm=a1[i]*a2[i], y=dby(20*Math.log10(Math.max(mm,1e-4)),H), x=fx(rf[i],W); i===0?g.moveTo(x,y):g.lineTo(x,y); }
+  g.stroke();
+  const cx=fx(f2.frequency.value,W); g.strokeStyle="#ff7a00"; g.setLineDash([4,4]); g.beginPath(); g.moveTo(cx,0); g.lineTo(cx,H); g.stroke(); g.setLineDash([]);
+}
+</script>
+</body>
+</html>

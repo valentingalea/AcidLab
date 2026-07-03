@@ -22,7 +22,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 05 | The 303 voice | ✅ done | first assembly: osc(saw/sq) → 24 dB filter → VCA amp env, monophonic (held-note stack, last-note priority), playable keyboard (mouse + A..K, Z/X octave), cutoff/reso/amp-decay/vol, live filter curve, signal-chain diagram. Filter env deferred to 06 |
 | 303 | Interlude · The TB-303 story | ✅ done | history (Roland's failed bass machine → DJ Pierre/Phuture discovery → Acid Tracks 1987) + how the real 303 is programmed; same bassline "tame vs live acid morph" demo, 16-step sequencer grid w/ playhead, panel-map of every knob→lesson. Reuses 00–06 voice, web-searched facts, sits after 06 |
 | 06 | Filter env: Env Mod + Decay | ✅ done | per-note envelope on both biquads' cutoff (floor→peak→floor, exp decay); Env Mod (0..4 oct) + Decay hero knobs; live env-shape graph + moving cutoff marker; hands-free "acid line" riff (lookahead scheduler); reuses lesson-03 resonance make-up. 2026-07-03 fix: riff sounded monotone/no-squelch — amp died to silence before the filter swept; now the note rings to ~0.28·L across the step so the sweep is audible, + baked-in accent groove (louder+brighter notes, preview of 07), punchier defaults (reso 14, floor 220, EnvMod 80) |
-| 07 | Accent | ⬜ planned | |
+| 07 | Accent | ✅ done | ACCENT amount knob + clickable 16-step accent grid; accented steps scale 3 things by amount (amp ×(1+0.9a) louder, filter-env peak ×(1+a) brighter, filter decay ×(1−0.45a) snappier); playhead, live spectrum. Reuses 06 voice |
 | 08 | Slide / glide | ⬜ planned | |
 | 09 | Drive / saturation | ⏭️ optional | |
 | 10 | The clock problem (scheduler) | ⬜ planned | CS centrepiece |
@@ -36,13 +36,12 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 18 | Shipping it | ⬜ planned | for the game |
 
 ## Now / Next
-- **Now:** Prologue (3 ELI5 parts), Module 0 (00 + 01), Module 1 (02 + 03 —
-  the filter), and Module 2 up through the filter envelope (05 voice + 06 env)
-  all live. The core 303 voice now sounds properly acid.
-  Old `prologue-theory/` URL redirects to P1.
-- **Next:** Lesson 07 (Accent) — per-note emphasis: louder + brighter + snappier
-  envelope on accented steps. Then 08 (Slide/glide). Lesson 04 (AudioWorklet
-  ladder) stays optional.
+- **Now:** Prologue (3 ELI5 parts), Module 0 (00 + 01), Module 1 (02 + 03),
+  Module 2 (05 voice, 06 filter env, 07 accent), and the 303-story interlude
+  all live. Old `prologue-theory/` URL redirects to P1.
+- **Next:** Lesson 08 (Slide / glide) — portamento between legato notes, the
+  last per-note trick; completes the 303 voice. Lesson 04 (AudioWorklet ladder)
+  stays optional.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?
