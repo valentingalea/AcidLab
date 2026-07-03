@@ -64,6 +64,9 @@
   .tog.beat{background:#141a0e}
   .tog.acc.on{background:linear-gradient(#ffd9a8,#ff7a00);border-color:var(--orange)}
   .tog.sld.on{background:linear-gradient(#bfeaff,#5cc8ff);border-color:var(--blue)}
+  .tog.oct{display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;color:#3d4a30}
+  .tog.oct.up{color:#0a0c08;background:linear-gradient(#e9ffc0,#b6ff00);border-color:var(--acid)}
+  .tog.oct.dn{color:#0a0c08;background:linear-gradient(#bfeaff,#5cc8ff);border-color:var(--blue)}
   .cur{box-shadow:0 0 0 2px var(--acid) inset}
   p{margin:10px 0} b{color:var(--ink)}
   .explain{color:var(--dim);font-size:14px}
@@ -91,6 +94,7 @@
       <button id="play" disabled>▶ play</button>
       <button id="wave" disabled>◿ saw</button>
       <button id="rnd" disabled>🎲 random acid line</button>
+      <button id="scale">scale: Min pent</button>
       <span class="hint">·</span>
       <button class="preset" data-p="acid1">acid 1</button>
       <button class="preset" data-p="acid2">acid 2</button>
@@ -98,9 +102,9 @@
     </div>
 
     <div class="seq" id="seq"></div>
-    <p class="hint">Top row = <b class="hl">pitch</b> (tap a step to cycle its note; tap past the top to make it a
-      <b>rest</b>). Middle = <b class="kbd">accent</b>, bottom = <b class="blu">slide</b> (tap to toggle).
-      Everything you built, one grid.</p>
+    <p class="hint"><b class="hl">NOTE</b> = pitch (tap to cycle; past the top = rest) · <b class="kbd">ACC</b>ent ·
+      <b class="blu">SLD</b> slide · <b>OCT</b> = octave ▲/▼ (the 303's octave switch, ±12). The
+      <span class="kbd">scale</span> button reshapes the note lane — try <b>Phryg dom</b> for eastern/"Arabic" acid.</p>
 
     <div class="row">
       <div class="ctrl"><label>tempo <b id="bpmVal">128</b></label><input id="bpm" type="range" min="90" max="160" value="128"></div>
@@ -128,6 +132,12 @@
     </table>
     <p>The playhead walks the 16 steps on the lookahead clock (lesson 10), and for each step it plays the 303
     voice at that pitch, applying that step's accent and slide. That's a TB-303. You built every piece.</p>
+    <p>The <b>OCT</b> row is the 303's <b class="hl">octave switch</b> (▲ up / ▼ down = ±12 semitones): how a
+    tiny one-octave keyboard reaches across three, and where acid's signature <b>octave-jump</b> bounce comes
+    from. And the real 303 has <b class="hl">no scale at all</b> — it's fully <b>chromatic</b>. Our
+    <span class="kbd">scale</span> button is just a helper mask (prologue P2); set it to <b>Phrygian dominant</b>
+    or <b>harmonic minor</b> for that eastern/"Arabic" flavour — the same maqam-Hijaz trick from P2, in 12-TET.
+    (True Arabic <i>microtones</i> live between the keys, so a 303 borrows the mood, not the exact pitches.)</p>
   </div>
 
   <!-- ── idea 2 ─────────────────────────────────────────────────── -->
@@ -189,21 +199,33 @@ const level=0.30, C_MIN=40, C_MAX=12000, ROOT=45, slideTime=0.055;
 let waveform="sawtooth", reso=15, envMod=0.80, decay=0.30, curCut, accentAmt=0.70, bpm=128;
 const sliderToCut=v=>C_MIN*Math.pow(C_MAX/C_MIN,v/1000);
 const mf=m=>440*Math.pow(2,(m-69)/12);
-const SCALE=[0,3,5,7,10,12], SNAME=["A","C","D","E","G","A"];   // A minor pentatonic + octave
-const NP=SCALE.length;
+// The 303 is fully CHROMATIC — no built-in scale. We pick a scale just to make
+// tapping easy (a "mask", prologue P2). Switch to Phrygian dominant / harmonic
+// minor for the eastern/"Arabic" acid flavour, or Chromatic for total freedom.
+const SCALES=[
+  {n:"Min pent",   s:[0,3,5,7,10]},
+  {n:"Nat minor",  s:[0,2,3,5,7,8,10]},
+  {n:"Phrygian",   s:[0,1,3,5,7,8,10]},
+  {n:"Phryg dom",  s:[0,1,4,5,7,8,10]},        // maqam-Hijaz flavour → 'Arabic' acid
+  {n:"Harm minor", s:[0,2,3,5,7,8,11]},
+  {n:"Chromatic",  s:[0,1,2,3,4,5,6,7,8,9,10,11]},
+];
+const NAMES12=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+let curScale=0, SCALE=SCALES[0].s, NP=SCALE.length;
+const pcName=semi=>NAMES12[((ROOT+semi)%12+12)%12];
 
-// pattern: pitch 0=rest, 1..6=scale index+1
-const PITCH=new Array(16).fill(0), ACCENT=new Array(16).fill(false), SLIDE=new Array(16).fill(false);
+// pattern: pitch 0=rest, 1..NP=scale index+1; octave −1/0/+1 = ±12 (the 303 octave switch)
+const PITCH=new Array(16).fill(0), ACCENT=new Array(16).fill(false), SLIDE=new Array(16).fill(false), OCT=new Array(16).fill(0);
 
-const PRESETS={
-  acid1:{ p:[1,0,1,6, 1,0,5,0, 1,6,0,1, 1,3,1,0], a:[1,0,0,1, 0,0,1,0, 1,1,0,0, 1,0,0,0], s:[0,0,1,0, 0,0,0,0, 0,1,0,0, 0,0,0,0] },
-  acid2:{ p:[1,1,6,0, 4,0,1,6, 0,1,3,1, 6,0,5,0], a:[1,0,1,0, 1,0,0,1, 0,1,0,0, 1,0,0,0], s:[0,0,1,0, 0,0,0,1, 0,0,0,0, 1,0,0,0] },
-  clear:{ p:new Array(16).fill(0), a:new Array(16).fill(0), s:new Array(16).fill(0) },
+const PRESETS={   // p=pitch, a=accent, s=slide, o=octave. Octave jumps = note A + oct ▲.
+  acid1:{ p:[1,0,1,1, 1,0,5,0, 1,1,0,1, 1,3,1,0], a:[1,0,0,1, 0,0,1,0, 1,1,0,0, 1,0,0,0], s:[0,0,1,0, 0,0,0,0, 0,1,0,0, 0,0,0,0], o:[0,0,0,1, 0,0,0,0, 0,1,0,0, 0,0,0,0] },
+  acid2:{ p:[1,1,1,0, 4,0,1,1, 0,1,3,1, 1,0,5,0], a:[1,0,1,0, 1,0,0,1, 0,1,0,0, 1,0,0,0], s:[0,0,1,0, 0,0,0,1, 0,0,0,0, 1,0,0,0], o:[0,0,1,0, 0,0,0,1, 0,0,0,0, 1,0,0,0] },
+  clear:{ p:new Array(16).fill(0), a:new Array(16).fill(0), s:new Array(16).fill(0), o:new Array(16).fill(0) },
 };
 
 let playing=false, timer=null, nextT=0, stepIx=0, schedQ=[], playStep=-1;
 const $=s=>document.querySelector(s);
-const powerBtn=$("#power"), playBtn=$("#play"), waveBtn=$("#wave"), rndBtn=$("#rnd"), seqEl=$("#seq");
+const powerBtn=$("#power"), playBtn=$("#play"), waveBtn=$("#wave"), rndBtn=$("#rnd"), scaleBtn=$("#scale"), seqEl=$("#seq");
 
 const outBase=()=>level/(1+0.14*(Math.pow(10,reso/20)-1));
 
@@ -238,10 +260,10 @@ function ampShape(t, accented, slidInto, tieForward, stepDur){
 function schedStep(t, s, stepDur){
   const pv=PITCH[s];
   if(pv===0){ const g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.03); return; }
-  const thisFreq=mf(ROOT+SCALE[pv-1]);
+  const thisFreq=mf(ROOT+SCALE[pv-1]+12*OCT[s]);
   const ps=(s+15)%16, prevRest=PITCH[ps]===0;
   const slidInto = SLIDE[ps] && !prevRest;
-  const prevFreq = prevRest ? thisFreq : mf(ROOT+SCALE[PITCH[ps]-1]);
+  const prevFreq = prevRest ? thisFreq : mf(ROOT+SCALE[PITCH[ps]-1]+12*OCT[ps]);
   const tieForward=!!SLIDE[s], accented=!!ACCENT[s];
   osc.frequency.cancelScheduledValues(t);
   if(slidInto){ osc.frequency.setValueAtTime(prevFreq,t); osc.frequency.exponentialRampToValueAtTime(thisFreq, t+Math.min(slideTime,stepDur*0.9)); }
@@ -261,7 +283,7 @@ function setPlay(on){
 }
 
 /* ── build the grid ────────────────────────────────────────────── */
-const pcols=[], accs=[], slds=[];
+const pcols=[], accs=[], slds=[], octs=[];
 function el(tag,cls,txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
 function pnum(i){ const s=el("div","stepnum"+(i%4===0?" b":"")); s.textContent=i%4===0?(i/4+1):""; return s; }
 // step-number header row
@@ -280,20 +302,28 @@ for(let i=0;i<16;i++){ const c=el("div","tog acc"+(i%4===0?" beat":"")); c.addEv
 // slide row
 seqEl.appendChild(el("div","lbl","SLD"));
 for(let i=0;i<16;i++){ const c=el("div","tog sld"+(i%4===0?" beat":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); SLIDE[i]=!SLIDE[i]; c.classList.toggle("on",SLIDE[i]); }); seqEl.appendChild(c); slds.push(c); }
+// octave row — the 303's octave switch (±12): tap cycles •→▲→▼
+seqEl.appendChild(el("div","lbl","OCT"));
+for(let i=0;i<16;i++){ const c=el("div","tog oct"+(i%4===0?" beat":"")); c.textContent="·";
+  c.addEventListener("pointerdown",e=>{ e.preventDefault(); OCT[i]=OCT[i]===0?1:OCT[i]===1?-1:0; paintOct(i); paintPitch(i); });
+  seqEl.appendChild(c); octs.push(c); }
 
 function paintPitch(i){
   const pv=PITCH[i], c=pcols[i], bar=c.querySelector(".bar");
-  c.classList.toggle("note", pv>0); c.classList.toggle("rest", pv===0);
-  if(pv>0){ bar.style.height=(18+(pv/NP)*78)+"%"; bar.textContent=SNAME[pv-1]; } else { bar.style.height="0%"; bar.textContent=""; }
+  c.classList.toggle("note", pv>0);
+  if(pv>0){ const semi=SCALE[pv-1]+12*OCT[i]; bar.style.height=(14+(Math.max(-12,Math.min(24,semi))+12)/36*82)+"%"; bar.textContent=pcName(SCALE[pv-1]); }
+  else { bar.style.height="0%"; bar.textContent=""; }
 }
-function repaint(){ for(let i=0;i<16;i++){ paintPitch(i); accs[i].classList.toggle("on",ACCENT[i]); slds[i].classList.toggle("on",SLIDE[i]); } }
-function loadPreset(name){ const p=PRESETS[name]; for(let i=0;i<16;i++){ PITCH[i]=p.p[i]; ACCENT[i]=!!p.a[i]; SLIDE[i]=!!p.s[i]; } repaint(); }
+function paintOct(i){ const o=OCT[i], c=octs[i]; c.textContent=o>0?"▲":o<0?"▼":"·"; c.classList.toggle("up",o>0); c.classList.toggle("dn",o<0); }
+function repaint(){ for(let i=0;i<16;i++){ paintPitch(i); accs[i].classList.toggle("on",ACCENT[i]); slds[i].classList.toggle("on",SLIDE[i]); paintOct(i); } }
+function loadPreset(name){ const p=PRESETS[name]; for(let i=0;i<16;i++){ PITCH[i]=p.p[i]; ACCENT[i]=!!p.a[i]; SLIDE[i]=!!p.s[i]; OCT[i]=p.o?p.o[i]:0; } repaint(); }
+function setScale(idx){ curScale=idx; SCALE=SCALES[idx].s; NP=SCALE.length; for(let i=0;i<16;i++) if(PITCH[i]>NP) PITCH[i]=NP; scaleBtn.textContent="scale: "+SCALES[idx].n; repaint(); }
 
 function randomize(){
-  const noteW=[1,1,1,6,6,2,3,4,5];                              // weighted to root + octave
   for(let i=0;i<16;i++){
-    PITCH[i] = Math.random()<0.26 ? 0 : noteW[Math.floor(Math.random()*noteW.length)];
-    ACCENT[i] = Math.random()<0.32;
+    PITCH[i] = Math.random()<0.26 ? 0 : (Math.random()<0.5 ? 1 : 1+Math.floor(Math.random()*NP));  // root-heavy, in scale
+    OCT[i]   = PITCH[i]===0 ? 0 : (Math.random()<0.18 ? 1 : Math.random()<0.08 ? -1 : 0);           // occasional octave jump
+    ACCENT[i]= Math.random()<0.32;
     SLIDE[i] = PITCH[i]!==0 && Math.random()<0.22;
   }
   if(PITCH[0]===0) PITCH[0]=1;                                  // land the downbeat
@@ -307,6 +337,7 @@ powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.
 playBtn.onclick=()=>{ if(ctx) setPlay(!playing); };
 waveBtn.onclick=()=>{ waveform=waveform==="sawtooth"?"square":"sawtooth"; waveBtn.textContent=waveform==="square"?"▨ square":"◿ saw"; if(osc) osc.type=waveform; };
 rndBtn.onclick=randomize;
+scaleBtn.onclick=()=>setScale((curScale+1)%SCALES.length);
 document.querySelectorAll(".preset").forEach(b=>b.onclick=()=>loadPreset(b.dataset.p));
 $("#bpm").oninput=e=>{ bpm=+e.target.value; $("#bpmVal").textContent=bpm; };
 $("#cut").oninput=e=>{ curCut=sliderToCut(+e.target.value); $("#cutVal").textContent=Math.round(curCut); };
@@ -317,7 +348,7 @@ $("#acc").oninput=e=>{ accentAmt=+e.target.value/100; $("#accVal").textContent=e
 $("#cutVal").textContent=Math.round(curCut);
 
 /* ── playhead ──────────────────────────────────────────────────── */
-function setCur(s,on){ pcols[s].classList.toggle("cur",on); accs[s].classList.toggle("cur",on); slds[s].classList.toggle("cur",on); }
+function setCur(s,on){ pcols[s].classList.toggle("cur",on); accs[s].classList.toggle("cur",on); slds[s].classList.toggle("cur",on); octs[s].classList.toggle("cur",on); }
 function draw(){
   requestAnimationFrame(draw);
   if(!ctx) return;
