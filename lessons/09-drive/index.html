@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>09 · Drive / saturation — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff; --red:#ff5a5a;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .scopes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.scopes{grid-template-columns:1fr}}
+  .scopebox{background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .scopebox h3{margin:0 0 8px;font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  canvas{width:100%;height:150px;display:block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:13px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:16px;padding:12px 22px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #play{font-weight:700;font-size:15px;padding:11px 20px}
+  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #play:disabled{opacity:.35;cursor:not-allowed}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  .ctrl.hero label b{color:var(--red);font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  .ctrl.hero input[type=range]{accent-color:var(--red);height:32px}
+  .curve.on{background:var(--red);color:#0a0c08;border-color:var(--red)}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)} .dr{color:var(--red)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  ul{margin:8px 0;padding-left:22px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">09</span> · Drive / saturation — the dirty edge</h1>
+  <p class="sub">The 303 has no distortion knob. So how is hard acid so filthy? You <i>overdrive</i> it. Same trick you feared in lesson P3 — now weaponised.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="scopes">
+      <div class="scopebox">
+        <h3>Transfer curve · in → out (the shaper)</h3>
+        <canvas id="curve"></canvas>
+      </div>
+      <div class="scopebox">
+        <h3>Output waveform · what the drive did</h3>
+        <canvas id="scope"></canvas>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="play" disabled>▶ acid line</button>
+      <div class="ctrl hero">
+        <label>DRIVE — how hard you shove it in <b id="drVal">6×</b></label>
+        <input id="drive" type="range" min="1" max="240" value="60">
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="hint">shape:</span>
+      <button class="curve" data-c="clean" disabled>clean</button>
+      <button class="curve on" data-c="soft" disabled>soft (tube)</button>
+      <button class="curve" data-c="hard" disabled>hard (fuzz)</button>
+      <button class="curve" data-c="fold" disabled>fold (metal)</button>
+    </div>
+    <div class="row">
+      <div class="ctrl"><label>cutoff <b id="cutVal">300 Hz</b></label><input id="cut" type="range" min="0" max="1000" value="331"></div>
+      <div class="ctrl"><label>resonance <b id="resVal">14 dB</b></label><input id="res" type="range" min="0" max="26" value="14" step="0.5"></div>
+      <div class="ctrl" style="max-width:150px"><label>output <b id="levVal">70%</b></label><input id="lev" type="range" min="0" max="100" value="70"></div>
+    </div>
+    <p class="hint">Start the line, then push <span class="dr">DRIVE</span> from 1× up. Watch the saw on the right
+      get squashed flat, and the curve on the left bend from a straight line into a clipping wall. Flip
+      <span class="kbd">clean</span> ↔ the shapes to A/B the dirt.</p>
+  </div>
+
+  <!-- ── idea 1 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>Distortion is just clipping, on purpose</h2>
+    <p>Back in lesson P3, when a signal got too loud and slammed into the ±1 ceiling, its peaks got chopped
+    flat and it sounded nasty — <b>clipping</b>, the thing you were trying to avoid. <b class="hl">Distortion
+    is deliberately doing exactly that.</b> You shove the signal too hard into a limit, the peaks flatten, and
+    flattening a smooth wave <b class="hl">adds new harmonics</b> — that extra fizz and grind is the "dirt".</p>
+    <p>A pure saw is already buzzy; squash its tips and you pile even more high harmonics on top — the sound
+    gets thicker, louder, more aggressive, and it <i>bites</i>. That's saturation. It's the same physics as a
+    tube amp being cranked, a fuzz pedal, or a mixing desk pushed into the red.</p>
+  </div>
+
+  <!-- ── idea 2 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>The transfer curve — a shape that reshapes</h2>
+    <p>The tool is a <b class="hl">wave shaper</b>: a lookup curve that maps every input sample to an output
+    sample. The left graph <i>is</i> that curve — input along the bottom, output up the side. A straight
+    diagonal (<span class="kbd">clean</span>) means "out = in", no change. Bend that line and you bend the
+    sound:</p>
+    <ul>
+      <li>where the curve is <b>steep</b>, the signal gets louder;</li>
+      <li>where it <b>flattens off</b> near the top, loud peaks get squashed together — that flat shoulder is
+        the clipping.</li>
+    </ul>
+    <p>The <span class="dr">DRIVE</span> knob is a pre-amp: it scales the signal <i>up</i> before the curve, so
+    more of the wave is shoved out onto that flat shoulder. Low drive tickles the middle (clean-ish); high
+    drive pins the whole wave to the clipped ends. Watch the green dots on the curve — they're the actual
+    signal, crawling out toward the corners as you drive harder.</p>
+  </div>
+
+  <!-- ── idea 3 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Three flavours of dirt</h2>
+    <p>Same idea, different curve shapes — each a different character:</p>
+    <table>
+      <tr><th>shape</th><th>curve</th><th>sound</th></tr>
+      <tr><td><b class="hl">soft</b> (tube)</td><td>a gentle S that eases into the limit</td><td>warm, fat, musical — thickens without getting harsh. The everyday "make it beefier".</td></tr>
+      <tr><td><b class="hl">hard</b> (fuzz)</td><td>a sharp corner then dead flat</td><td>buzzy, raspy, aggressive — classic distortion-pedal grind. Hard acid lives here.</td></tr>
+      <tr><td><b class="hl">fold</b> (metal)</td><td>the curve turns back on itself</td><td>wild, clangorous, inharmonic — the peak doesn't just clip, it <i>folds over</i>. Ring-mod-ish, brutal.</td></tr>
+    </table>
+    <p>Flip between them with the line running and the same notes go from warm to nasty to unhinged. Soft is
+    the safe workhorse; fold is a weapon — use sparingly.</p>
+  </div>
+
+  <!-- ── idea 4 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>Why acid needs it — drive × resonance</h2>
+    <p>Here's the thing the classic records know: a resonant filter and distortion are <b class="hl">a vicious
+    team</b>. The filter's resonant peak makes one loud, narrow whistle; drive it, and that whistle turns into
+    a <b class="dr">scream</b> — the harmonics pile up right where the ear is already focused. Turn resonance
+    up and DRIVE up together and the squelch stops being cute and starts being <i>menacing</i>. That's the
+    sound of acid techno, of Hardfloor, of Josh Wink's "Higher State".</p>
+    <p>The 303 famously has no distortion of its own — so producers ran it into whatever they had: a cranked
+    mixer channel, a guitar pedal, a broken preamp. The dirt is <b>external</b>, and half the craft of acid is
+    <i>where and how hard</i> you add it. You just built that stage.</p>
+    <p><b class="hl">Experiments:</b></p>
+    <ul>
+      <li><b>Beef:</b> soft, DRIVE ~8×, output down a touch — a fatter bass, same notes.</li>
+      <li><b>The scream:</b> resonance ~20, hard, DRIVE high — the squelch bares its teeth.</li>
+      <li><b>Broken:</b> fold, mid drive — melodic notes turn into clanging metal.</li>
+      <li><b>A/B honestly:</b> tap <span class="kbd">clean</span> then <span class="kbd">soft</span> — hear how much "weight" a little saturation adds.</li>
+    </ul>
+    <div class="nerd"><b>// CS corner:</b> a <code>WaveShaperNode</code> holds a <code>Float32Array</code>
+    curve; input in [−1,1] is looked up (with interpolation) through it, and out-of-range input clamps to the
+    ends — which is what makes over-driving clip. Curves here: soft <code>tanh(k·x)</code>, hard
+    <code>clamp(k·x)</code>, fold <code>sin(k·x)</code>. We set <code>oversample="4x"</code> because clipping
+    manufactures harmonics <i>above</i> Nyquist that would fold back as aliasing (lesson P3 again) — 4×
+    oversampling shapes at a higher rate, then downsamples clean.</div>
+    <p style="margin-top:12px">The 303 voice is complete <i>and</i> filthy. From here it's the machine around
+    it: the clock (lesson 10), drums, and the sequencer.</p>
+    <a class="next" href="../10-clock/index.html">Next → 10 · The clock problem</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Lesson 09 — drive / saturation. The finished 303 voice (06–08) → a drive
+   stage → out:
+     osc → f1 → f2(+reso) → VCA → [driveGain → WaveShaper(curve) → postGain] → analysers → out
+   DRIVE is the pre-gain shoving the signal onto the shaper's flat shoulder;
+   the curve type sets the character (clean/soft/hard/fold).                    */
+
+let ctx, osc, f1, f2, vca, driveGain, shaper, postGain, preAna, outAna;
+const level0=0.30, C_MIN=40, C_MAX=12000, ACC=0.7;
+let reso=14, envMod=0.75, decay=0.22, curCut, drive=6, out=0.70, curveType="soft";
+const sliderToCut=v=>C_MIN*Math.pow(C_MAX/C_MIN,v/1000);
+const mf=m=>440*Math.pow(2,(m-69)/12);
+
+const ROOT=45, STEP=0.13;
+const PITCH =[0,null,0,12, 0,3,0,null, 7,0,10,0, 0,12,3,0];
+const ACCENT=[1,0,0,1, 0,0,1,0, 1,0,0,0, 1,0,1,0];
+let playing=false, timer=null, nextT=0, stepIx=0;
+
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), playBtn=$("#play"), curveC=$("#curve"), scopeC=$("#scope");
+const drEl=$("#drive"), drVal=$("#drVal"), cutEl=$("#cut"), cutVal=$("#cutVal");
+const resEl=$("#res"), resVal=$("#resVal"), levEl=$("#lev"), levVal=$("#levVal");
+const curveBtns=[...document.querySelectorAll(".curve")];
+curCut=sliderToCut(+cutEl.value);
+const outBase=()=>level0/(1+0.14*(Math.pow(10,reso/20)-1));
+
+// build a shaper curve for the chosen character
+function makeCurve(type){
+  const N=2048, c=new Float32Array(N);
+  for(let i=0;i<N;i++){ const x=i/(N-1)*2-1;
+    c[i] = type==="soft" ? Math.tanh(2.2*x)
+         : type==="hard" ? Math.max(-1,Math.min(1, 2.6*x))
+         : type==="fold" ? Math.sin(Math.PI*1.5*x)
+         :                  x;                      // clean = identity
+  }
+  return c;
+}
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  osc=ctx.createOscillator(); osc.type="sawtooth"; osc.frequency.value=mf(ROOT);
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.Q.value=-3; f1.frequency.value=curCut;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.Q.value=reso; f2.frequency.value=curCut;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  driveGain=ctx.createGain(); driveGain.gain.value=drive;
+  shaper=ctx.createWaveShaper(); shaper.curve=makeCurve(curveType); shaper.oversample="4x";
+  postGain=ctx.createGain(); postGain.gain.value=out*0.5;
+  preAna=ctx.createAnalyser(); preAna.fftSize=2048;   // signal entering the shaper (for the curve dots)
+  outAna=ctx.createAnalyser(); outAna.fftSize=2048;   // final output (for the scope)
+  osc.connect(f1); f1.connect(f2); f2.connect(vca);
+  vca.connect(driveGain); driveGain.connect(preAna); driveGain.connect(shaper);
+  shaper.connect(postGain); postGain.connect(outAna).connect(ctx.destination);
+  osc.start();
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  playBtn.disabled=false; curveBtns.forEach(b=>b.disabled=false);
+  draw();
+}
+
+function strike(t, midi, accented){
+  osc.frequency.setValueAtTime(mf(midi), t);
+  const floor=curCut, peak=Math.min(floor*Math.pow(2,envMod*4)*(accented?1+ACC:1), C_MAX), dec=decay*(accented?1-0.45*ACC:1), atk=0.003;
+  [f1.frequency,f2.frequency].forEach(p=>{ p.cancelScheduledValues(t); p.setValueAtTime(floor,t);
+    if(peak>floor*1.01) p.linearRampToValueAtTime(peak,t+atk);
+    p.exponentialRampToValueAtTime(Math.max(floor,C_MIN),t+atk+dec); });
+  const L=outBase()*(accented?1+0.9*ACC:1)*0.62, g=vca.gain;
+  g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t);
+  g.linearRampToValueAtTime(L,t+0.005);
+  g.exponentialRampToValueAtTime(0.26*L, t+STEP*0.9);
+  g.exponentialRampToValueAtTime(0.0006, t+STEP*0.99);
+}
+function tick(){ while(nextT < ctx.currentTime+0.15){ const s=stepIx%16, semi=PITCH[s]; if(semi!==null) strike(nextT, ROOT+semi, !!ACCENT[s]); stepIx++; nextT+=STEP; } }
+function setPlay(on){
+  if(!ctx) return;
+  playing=on; playBtn.classList.toggle("on",on); playBtn.textContent=on?"■ stop":"▶ acid line";
+  if(on){ stepIx=0; nextT=ctx.currentTime+0.06; clearInterval(timer); timer=setInterval(tick,30); tick(); }
+  else{ clearInterval(timer); const t=ctx.currentTime,g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.06); }
+}
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+playBtn.onclick=()=>setPlay(!playing);
+curveBtns.forEach(b=>b.onclick=()=>{ curveType=b.dataset.c; curveBtns.forEach(x=>x.classList.toggle("on",x===b)); if(shaper) shaper.curve=makeCurve(curveType); });
+
+function fmtCut(f){ const l=f>=10000?"wide open":f>=3000?"bright":f>=800?"warm":f>=250?"muffled":"underwater"; return Math.round(f)+" Hz ("+l+")"; }
+function fmtRes(q){ const l=q<1?"off":q<6?"gentle":q<12?"peaky":q<19?"whistly":"screaming"; return q+" dB ("+l+")"; }
+drEl.oninput=()=>{ drive=+drEl.value/10; drVal.textContent=drive.toFixed(drive<10?1:0)+"×"; if(driveGain) driveGain.gain.setTargetAtTime(drive,ctx.currentTime,0.01); };
+cutEl.oninput=()=>{ curCut=sliderToCut(+cutEl.value); cutVal.textContent=fmtCut(curCut); };
+resEl.oninput=()=>{ reso=+resEl.value; resVal.textContent=fmtRes(reso); if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01); };
+levEl.oninput=()=>{ out=+levEl.value/100; levVal.textContent=levEl.value+"%"; if(postGain) postGain.gain.setTargetAtTime(out*0.5,ctx.currentTime,0.01); };
+drVal.textContent=drive+"×"; cutVal.textContent=fmtCut(curCut); resVal.textContent=fmtRes(reso);
+
+/* ── visualization ─────────────────────────────────────────────── */
+function fit(c){ const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect(); c.width=r.width*dpr; c.height=r.height*dpr; const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); return [g,r.width,r.height]; }
+const preBuf=new Float32Array(2048), outBuf=new Uint8Array(2048);
+function draw(){
+  requestAnimationFrame(draw);
+  if(!ctx) return;
+  // transfer curve: identity + current curve + live signal dots
+  {
+    const [g,W,H]=fit(curveC), cx=W/2, cy=H/2, sx=W*0.44, sy=H*0.44;   // x,y ∈ [-1.1,1.1]
+    g.clearRect(0,0,W,H);
+    g.strokeStyle="#20281a"; g.beginPath(); g.moveTo(0,cy); g.lineTo(W,cy); g.moveTo(cx,0); g.lineTo(cx,H); g.stroke();
+    g.strokeStyle="#3a4530"; g.setLineDash([3,3]); g.beginPath(); g.moveTo(cx-sx,cy+sy); g.lineTo(cx+sx,cy-sy); g.stroke(); g.setLineDash([]); // identity
+    const crv=makeCurve(curveType);                                    // the shaping curve
+    g.strokeStyle="#ff5a5a"; g.lineWidth=2.5; g.beginPath();
+    for(let i=0;i<crv.length;i++){ const x=i/(crv.length-1)*2-1, y=crv[i]; const px=cx+x*sx, py=cy-y*sy; i===0?g.moveTo(px,py):g.lineTo(px,py); }
+    g.stroke();
+    // live signal riding the curve
+    preAna.getFloatTimeDomainData(preBuf);
+    g.fillStyle="rgba(182,255,0,.5)";
+    for(let i=0;i<preBuf.length;i+=8){ let x=preBuf[i]; const xi=Math.max(-1,Math.min(1,x)); const yi=crv[Math.round((xi+1)/2*(crv.length-1))];
+      const px=cx+Math.max(-1.08,Math.min(1.08,x))*sx, py=cy-yi*sy; g.fillRect(px-1,py-1,2,2); }
+    g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace"; g.fillText("in →",W-34,cy-4); g.fillText("out ↑",cx+4,12);
+  }
+  // output scope
+  {
+    const [g,W,H]=fit(scopeC);
+    outAna.getByteTimeDomainData(outBuf);
+    g.clearRect(0,0,W,H);
+    g.strokeStyle="#2a3320"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
+    g.lineWidth=2; g.strokeStyle="#b6ff00"; g.beginPath();
+    const span=Math.max(2,Math.min(outBuf.length,Math.round(ctx.sampleRate/mf(ROOT)*2)));
+    for(let i=0;i<span;i++){ const x=(i/span)*W, y=H-(outBuf[i]/255)*H; i===0?g.moveTo(x,y):g.lineTo(x,y); }
+    g.stroke();
+  }
+}
+</script>
+</body>
+</html>

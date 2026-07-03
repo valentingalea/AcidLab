@@ -101,7 +101,9 @@ asides so the main flow stays plain-language. Vanilla Web Audio, self-contained.
   the moment it starts sounding *acid*.
 - **07 · Accent** — per-note emphasis: louder + brighter + snappier envelope.
 - **08 · Slide / glide** — portamento between legato notes (the liquid pitch).
-- **09 · (optional) Drive / saturation** — `WaveShaperNode` for the dirty edge.
+- **09 · Drive / saturation** — `WaveShaperNode` for the dirty edge (soft/hard/
+  fold curves, 4× oversample). *Was optional; built on request — the driven-303
+  hard-acid sound.* ✅ built
 - Outcome: a full "303 panel" — Tuning, Cutoff, Resonance, Env Mod, Decay, Accent.
 
 ### Interlude — Meet the machine (`lessons/303-story/`)
