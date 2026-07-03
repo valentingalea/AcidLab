@@ -20,7 +20,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 03 | Resonance & the squelch | ✅ done | reso knob (Q in dB on stage 2 only), 12/24 dB slope toggle (chained biquads), impulse "ping" that rings at cutoff, dB-scale response curve. 2026-07-03: reworked ★ squelch from a slow held sweep (clipped to 2.17, sounded like a pad) into a plucky repeating A-minor-pentatonic riff w/ per-note filter env (env-mod+decay preview) via mini lookahead scheduler; added resonance makeup-gain so high-Q no longer clips |
 | 04 | Ladder filter (AudioWorklet) | ⏭️ optional | |
 | 05 | The 303 voice | ✅ done | first assembly: osc(saw/sq) → 24 dB filter → VCA amp env, monophonic (held-note stack, last-note priority), playable keyboard (mouse + A..K, Z/X octave), cutoff/reso/amp-decay/vol, live filter curve, signal-chain diagram. Filter env deferred to 06 |
-| 06 | Filter env: Env Mod + Decay | ⬜ planned | |
+| 06 | Filter env: Env Mod + Decay | ✅ done | per-note envelope on both biquads' cutoff (floor→peak→floor, exp decay); Env Mod (0..4 oct) + Decay hero knobs; live env-shape graph + moving cutoff marker; hands-free "acid line" riff (lookahead scheduler); reuses lesson-03 resonance make-up |
 | 07 | Accent | ⬜ planned | |
 | 08 | Slide / glide | ⬜ planned | |
 | 09 | Drive / saturation | ⏭️ optional | |
@@ -36,11 +36,12 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 
 ## Now / Next
 - **Now:** Prologue (3 ELI5 parts), Module 0 (00 + 01), Module 1 (02 + 03 —
-  the filter) and the first Module 2 lesson (05 — the playable voice) all live.
+  the filter), and Module 2 up through the filter envelope (05 voice + 06 env)
+  all live. The core 303 voice now sounds properly acid.
   Old `prologue-theory/` URL redirects to P1.
-- **Next:** Lesson 06 (filter envelope: Env Mod + Decay) — point a second ADSR
-  at the cutoff so it moves per note. This is the moment it sounds acid.
-  Lesson 04 (AudioWorklet ladder) stays optional.
+- **Next:** Lesson 07 (Accent) — per-note emphasis: louder + brighter + snappier
+  envelope on accented steps. Then 08 (Slide/glide). Lesson 04 (AudioWorklet
+  ladder) stays optional.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>06 · Filter envelope (Env Mod + Decay) — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .scopes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.scopes{grid-template-columns:1fr}}
+  .scopebox{background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .scopebox h3{margin:0 0 8px;font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  canvas{width:100%;height:150px;display:block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  button.acid{border-color:var(--orange);color:var(--orange);font-weight:700}
+  button.acid:hover{background:var(--orange);color:#0a0c08}
+  button.acid.on{background:var(--orange);color:#0a0c08}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  .ctrl.hero label b{color:var(--orange);font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  .ctrl.hero input[type=range]{accent-color:var(--orange);height:32px}
+  #power{background:var(--orange);color:#0a0c08;border:none;border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  .note{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:96px;text-align:center}
+  .note .nm{font-size:20px;color:var(--acid);font-weight:700}
+  .note .hz{font-size:11px;color:var(--dim)}
+
+  /* keyboard */
+  #kbwrap{position:relative;height:120px;margin:6px 0 2px;user-select:none;touch-action:none}
+  .wkey,.bkey{position:absolute;bottom:0;border:1px solid #000;border-radius:0 0 5px 5px;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;font-size:9px;padding-bottom:5px}
+  .wkey{top:0;background:linear-gradient(#e6eede,#c3ccb8);color:#4a5540}
+  .bkey{top:0;height:62%;background:linear-gradient(#2a3220,#12160d);color:#8fa073;z-index:2;font-size:8px}
+  .wkey.press{background:linear-gradient(#e9ffc0,#b6ff00);color:#2a3a00}
+  .bkey.press{background:linear-gradient(#7aa800,#4c6a00);color:#eaffc0}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  ul{margin:8px 0;padding-left:22px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">06</span> · Filter envelope — Env Mod + Decay</h1>
+  <p class="sub">The one wire that makes it acid: a second envelope, aimed at the cutoff, that fires on every note.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="scopes">
+      <div class="scopebox">
+        <h3>Filter envelope · cutoff over time</h3>
+        <canvas id="env"></canvas>
+      </div>
+      <div class="scopebox">
+        <h3>Spectrum · harmonics + the moving cutoff</h3>
+        <canvas id="spectrum"></canvas>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <div class="note"><div class="nm" id="noteName">—</div><div class="hz" id="noteHz">off</div></div>
+      <span class="hint">wave:</span>
+      <button class="wave on" data-w="sawtooth">◿ saw</button>
+      <button class="wave" data-w="square">▨ square</button>
+      <button id="acidBtn" class="acid" disabled>▶ acid line</button>
+    </div>
+
+    <div class="row">
+      <div class="ctrl hero">
+        <label>ENV MOD — how far each note kicks the cutoff up <b id="envVal">70%</b></label>
+        <input id="env-mod" type="range" min="0" max="100" value="70">
+      </div>
+      <div class="ctrl hero">
+        <label>DECAY — how fast it falls back <b id="decVal">220 ms</b></label>
+        <input id="dec" type="range" min="30" max="1200" value="220">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="ctrl">
+        <label>CUTOFF (base / floor) <b id="cutVal">250 Hz</b></label>
+        <input id="cut" type="range" min="0" max="1000" value="321">
+      </div>
+      <div class="ctrl">
+        <label>RESONANCE <b id="resVal">12 dB</b></label>
+        <input id="res" type="range" min="0" max="26" value="12" step="0.5">
+      </div>
+      <div class="ctrl" style="max-width:150px">
+        <label>volume <b id="levVal">35%</b></label>
+        <input id="lev" type="range" min="0" max="100" value="35">
+      </div>
+    </div>
+
+    <div id="kbwrap"></div>
+    <p class="hint">Press <span class="kbd">▶ acid line</span> for a hands-free riff, then turn ENV MOD and DECAY
+      while it plays. Or play the keys (<code>A W S E D F T G Y H U J K</code>, <code>Z</code>/<code>X</code> octave) —
+      each note fires the filter envelope.</p>
+  </div>
+
+  <!-- ── idea 1: the problem ────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>Your hand, but automatic</h2>
+    <p>In lesson 03 you made the acid squelch by sweeping the cutoff <i>by hand</i>. In lesson 05 the filter
+    just sat still. This lesson connects the two: a <b class="hl">filter envelope</b> — a second copy of the
+    ADSR from lesson 01, wired to the <b>cutoff</b> instead of the volume — that does the sweep for you,
+    <b>freshly on every note</b>.</p>
+    <p>The 303 gives that envelope a fixed instant attack and just two knobs, and they're the two most
+    important knobs in acid:</p>
+    <table>
+      <tr><th>knob</th><th>what it sets</th><th>ear</th></tr>
+      <tr><td><b class="hl">Env Mod</b></td><td>how <i>far</i> above the cutoff floor each note kicks the filter open (the sweep's height)</td><td>0 = dead/static · high = a big wide-open <i>wow</i></td></tr>
+      <tr><td><b class="hl">Decay</b></td><td>how <i>fast</i> the filter falls back down to the floor after the kick</td><td>short = a tight percussive blip · long = a slow talking wah</td></tr>
+    </table>
+    <p>Watch the <b>left graph</b>: it's the cutoff over time for one note — flat at the floor, a vertical
+    snap up to the peak, then a decay back down. <b>Env Mod</b> is the height of that snap; <b>Decay</b> is the
+    width of the slope. Press <span class="kbd">▶ acid line</span> and watch the orange <b>cutoff marker</b>
+    on the spectrum jump and slide on every note.</p>
+  </div>
+
+  <!-- ── idea 2: env mod ────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>Env Mod is the depth of the sweep</h2>
+    <p>The <span class="kbd">CUTOFF</span> knob is now a <b>floor</b> — where the filter rests <i>between</i>
+    the peaks. <b class="hl">Env Mod</b> stacks the envelope on top of it: each note snaps up to
+    <code>floor × 2^(envmod)</code> octaves, then decays back to the floor.</p>
+    <ul>
+      <li><b>Env Mod = 0:</b> no kick — you're back to lesson 05, every note the same dull brightness.</li>
+      <li><b>A little:</b> a gentle per-note <i>bloom</i>, subtle movement.</li>
+      <li><b>A lot:</b> each note flings the filter wide open then slams shut — the full acid <i>wowww</i>.</li>
+    </ul>
+    <p>Set the floor <b>low</b> (dark, so there's lots of room above it) and give Env Mod plenty of travel —
+    that low-floor-plus-big-sweep is the classic dark acid bass. If the floor is already high, the sweep has
+    nowhere to go and the effect vanishes.</p>
+  </div>
+
+  <!-- ── idea 3: decay ──────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Decay is the length of the "wow"</h2>
+    <p><b class="hl">Decay</b> is the single knob a 303 player rides most. It sets how long the filter takes to
+    fall from the peak back to the floor:</p>
+    <ul>
+      <li><b>Short (~50–150 ms):</b> a sharp <i>blip</i> / <i>pew</i> — the filter's already shut by the time
+        your ear catches up. Punchy, percussive, techno.</li>
+      <li><b>Medium (~200–400 ms):</b> the classic talking <i>wow</i> — you clearly hear it open and close.</li>
+      <li><b>Long (~600 ms+):</b> a slow <i>wahhh</i> that can outlast the note, so the filter is still gliding
+        as the next one hits — liquid and overlapping.</li>
+    </ul>
+    <p>With the <span class="kbd">▶ acid line</span> running, sweep Decay slowly from left to right. That change
+    — nothing else — is most of what a 303 performance <i>is</i>: one hand riding Decay (and cutoff) while the
+    pattern loops.</p>
+    <div class="nerd"><b>// CS corner:</b> the filter env is pure <code>AudioParam</code> automation on the
+    biquads' <code>frequency</code>, retriggered per note:
+    <code>setValueAtTime(floor)</code> → <code>linearRampToValueAtTime(peak, +3ms)</code> →
+    <code>exponentialRampToValueAtTime(floor, +decay)</code>. Exponential (not linear) decay is why it sounds
+    natural — like the analog capacitor it models discharging. Both cascaded biquads get the same automation so
+    the 24 dB slope moves as one.</p></div>
+  </div>
+
+  <!-- ── idea 4: env × resonance ────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>Env Mod × Resonance = the scream</h2>
+    <p>Now bring back <span class="kbd">RESONANCE</span> from lesson 03. The envelope sweeps the cutoff, and
+    the <b>resonant peak rides along with it</b> — so on every note the emphasis whistle streaks up through the
+    harmonics and back down. Env Mod provides the motion; resonance provides the voice. Together they're the
+    entire acid scream, and now it's <b class="hl">automatic and in time</b>, one burst per note.</p>
+    <p>That's the 303 voice essentially complete: oscillator → 24 dB resonant filter → amp, with an envelope on
+    the cutoff. What's left are the two per-note performance tricks — <b>Accent</b> (lesson 07: make some notes
+    louder, brighter, snappier) and <b>Slide</b> (lesson 08: glide the pitch between notes) — the expression on
+    top of the sound you just built.</p>
+    <p><b class="hl">Experiments:</b></p>
+    <ul>
+      <li><b>Textbook acid:</b> saw, floor low, resonance ~14, Env Mod ~75%, Decay ~250 ms — run the acid line.</li>
+      <li><b>Techno blip:</b> same but Decay right down to ~60 ms — dry and percussive.</li>
+      <li><b>Liquid:</b> Decay up past 600 ms — the wows smear into each other.</li>
+      <li><b>Kill it:</b> pull Env Mod to 0 — instantly back to the flat lesson-05 tone. That gap <i>is</i> the lesson.</li>
+    </ul>
+    <a class="next" href="../../index.html">Next → 07 · Accent (soon)</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Lesson 06 — the filter envelope. Same voice as lesson 05:
+
+     osc(saw/square) ──► f1 lowpass ──► f2 lowpass(+reso) ──► VCA ──► Analyser ──► out
+                         └──── 24 dB/oct ────┘        ▲                 ▲
+                              cutoff driven by  ───────┘   amp env      │
+                              a per-note envelope (floor→peak→floor)
+
+   The NEW piece: on every note we schedule an envelope on BOTH biquads'
+   frequency — snap up to floor·2^(envMod·4 oct), exp-decay back to floor over
+   `decay`. That is the acid movement.                                          */
+
+let ctx, osc, f1, f2, vca, analyser;
+let waveform="sawtooth", level=0.35, reso=12, envMod=0.70, decay=0.22;
+let curFreq=110;
+
+const C_MIN=40, C_MAX=12000, ENV_OCT=4;              // Env Mod 0..1 → up to 4 octaves of sweep
+const sliderToCut = v => C_MIN*Math.pow(C_MAX/C_MIN, v/1000);
+const mf = m => 440*Math.pow(2,(m-69)/12);
+const NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const nameOf = m => NAMES[((m%12)+12)%12] + (Math.floor(m/12)-1);
+const outLevel = () => level / (1 + 0.14*(Math.pow(10,reso/20)-1));  // resonance make-up (lesson 03)
+
+const $ = s => document.querySelector(s);
+const powerBtn=$("#power"), acidBtn=$("#acidBtn");
+const cutEl=$("#cut"), cutVal=$("#cutVal"), resEl=$("#res"), resVal=$("#resVal");
+const envEl=$("#env-mod"), envVal=$("#envVal"), decEl=$("#dec"), decVal=$("#decVal"), levEl=$("#lev"), levVal=$("#levVal");
+const noteName=$("#noteName"), noteHz=$("#noteHz");
+const envCanvas=$("#env"), spectrum=$("#spectrum");
+let curCut = sliderToCut(+cutEl.value);
+
+function powerOn(){
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  osc = ctx.createOscillator(); osc.type=waveform; osc.frequency.value=curFreq;
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.frequency.value=curCut; f1.Q.value=-3;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.frequency.value=curCut; f2.Q.value=reso;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  analyser=ctx.createAnalyser(); analyser.fftSize=4096; analyser.smoothingTimeConstant=0.6;
+  osc.connect(f1); f1.connect(f2); f2.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start();
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  acidBtn.disabled=false; draw();
+}
+
+/* ── the filter envelope: floor → peak → floor, on both biquads ─── */
+function filterEnv(t){
+  const floor=curCut, peak=Math.min(floor*Math.pow(2, envMod*ENV_OCT), C_MAX), atk=0.003;
+  [f1.frequency,f2.frequency].forEach(p=>{
+    p.cancelScheduledValues(t);
+    p.setValueAtTime(floor, t);
+    if(peak>floor*1.01) p.linearRampToValueAtTime(peak, t+atk);      // snap open
+    p.exponentialRampToValueAtTime(Math.max(floor,C_MIN), t+atk+decay); // decay back to floor
+  });
+}
+// strike a note: pitch + filter env (+ amp: sustain for held keys, pluck for the riff)
+function strike(t, midi, pluck){
+  curFreq=mf(midi);
+  osc.frequency.setValueAtTime(curFreq, t);
+  filterEnv(t);
+  const L=outLevel(), g=vca.gain;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(Math.max(g.value,1e-4), t);
+  g.linearRampToValueAtTime(L, t+0.004);
+  if(pluck) g.exponentialRampToValueAtTime(0.0008, t+0.004+Math.min(decay*1.1,0.24));
+}
+
+/* ── monophonic keyboard voice (sustain while held) ────────────── */
+const held=[];
+function noteOn(m){
+  if(!ctx) return;
+  if(ctx.state==="suspended") ctx.resume();
+  if(riffing) setRiff(false);
+  const i=held.indexOf(m); if(i>=0) held.splice(i,1);
+  held.push(m);
+  strike(ctx.currentTime, m, false);         // sustain: amp holds so you hear the filter decay
+  noteName.textContent=nameOf(m); noteHz.textContent=curFreq.toFixed(1)+" Hz";
+  flash(m,true);
+}
+function noteOff(m){
+  const i=held.indexOf(m); if(i>=0) held.splice(i,1);
+  flash(m,false);
+  if(!ctx) return;
+  if(held.length){ const top=held[held.length-1]; curFreq=mf(top); osc.frequency.setValueAtTime(curFreq,ctx.currentTime);
+    noteName.textContent=nameOf(top); noteHz.textContent=curFreq.toFixed(1)+" Hz"; }
+  else{
+    const t=ctx.currentTime, g=vca.gain;
+    g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.05);
+    noteHz.textContent="off";
+  }
+}
+
+/* ── the hands-free acid line (a lookahead scheduler, foreshadowing L10) ─ */
+let riffing=false, riffTimer=null, riffNext=0, riffStep=0;
+const RIFF_STEP=0.25, RIFF_ROOT=45;                 // A2, 8th notes
+const RIFF_SEMIS=[0,0,12,0,3,0,7,10,0,12,5,3];      // A minor pentatonic bass line
+function setRiff(on){
+  if(!ctx) return;
+  riffing=on; acidBtn.classList.toggle("on",on); acidBtn.textContent = on ? "■ stop" : "▶ acid line";
+  if(on){ riffStep=0; riffNext=ctx.currentTime+0.1;
+    riffTimer=setInterval(()=>{
+      while(riffNext < ctx.currentTime+0.18){
+        const m=RIFF_ROOT+RIFF_SEMIS[riffStep%RIFF_SEMIS.length];
+        strike(riffNext, m, true); riffStep++; riffNext+=RIFF_STEP;
+      }
+    }, 40);
+  }else{
+    clearInterval(riffTimer);
+    const t=ctx.currentTime, g=vca.gain;
+    g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.06);
+    noteHz.textContent="off"; noteName.textContent="—";
+  }
+}
+
+/* ── keyboard (C2..C4) ─────────────────────────────────────────── */
+const LO=36, HI=60, WHITE=[0,2,4,5,7,9,11];
+const kbwrap=$("#kbwrap"), keyEls={};
+let pointerNote=null;
+(function buildKeyboard(){
+  const whiteCount=[...Array(HI-LO+1).keys()].filter(i=>WHITE.includes((LO+i)%12)).length;
+  const Wk=100/whiteCount, Wb=Wk*0.62; let wi=0;
+  for(let m=LO;m<=HI;m++){
+    const pc=m%12, el=document.createElement("div"); el.dataset.midi=m;
+    if(WHITE.includes(pc)){ el.className="wkey"; el.style.left=(wi*Wk)+"%"; el.style.width=Wk+"%"; el.textContent=pc===0?nameOf(m):""; wi++; }
+    else{ el.className="bkey"; el.style.left=(wi*Wk - Wb/2)+"%"; el.style.width=Wb+"%"; }
+    el.addEventListener("pointerdown", e=>{ e.preventDefault(); pointerNote=m; noteOn(m); });
+    el.addEventListener("pointerenter", e=>{ if(e.buttons){ if(pointerNote!=null&&pointerNote!==m) noteOff(pointerNote); pointerNote=m; noteOn(m); } });
+    el.addEventListener("pointerup",   e=>{ e.preventDefault(); if(pointerNote===m) pointerNote=null; noteOff(m); });
+    kbwrap.appendChild(el); keyEls[m]=el;
+  }
+})();
+addEventListener("pointerup", ()=>{ if(pointerNote!=null){ noteOff(pointerNote); pointerNote=null; } });
+function flash(m,on){ const el=keyEls[m]; if(el) el.classList.toggle("press",on); }
+
+let kbBase=36;
+const KEYMAP={KeyA:0,KeyW:1,KeyS:2,KeyE:3,KeyD:4,KeyF:5,KeyT:6,KeyG:7,KeyY:8,KeyH:9,KeyU:10,KeyJ:11,KeyK:12};
+const downKeys=new Set();
+addEventListener("keydown",e=>{
+  if(e.code==="KeyZ"){ kbBase=Math.max(12,kbBase-12); return; }
+  if(e.code==="KeyX"){ kbBase=Math.min(96,kbBase+12); return; }
+  if(e.repeat) return;
+  const off=KEYMAP[e.code]; if(off==null) return;
+  e.preventDefault(); if(!downKeys.has(e.code)){ downKeys.add(e.code); noteOn(kbBase+off); }
+});
+addEventListener("keyup",e=>{ const off=KEYMAP[e.code]; if(off==null) return; e.preventDefault(); downKeys.delete(e.code); noteOff(kbBase+off); });
+
+/* ── controls ──────────────────────────────────────────────────── */
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+acidBtn.onclick=()=>setRiff(!riffing);
+document.querySelectorAll(".wave").forEach(b=>b.onclick=()=>{
+  waveform=b.dataset.w; document.querySelectorAll(".wave").forEach(x=>x.classList.toggle("on",x===b));
+  if(osc) osc.type=waveform;
+});
+function fmtCut(f){ const l=f>=10000?"wide open":f>=3000?"bright":f>=800?"warm":f>=250?"muffled":"underwater"; return Math.round(f)+" Hz ("+l+")"; }
+function fmtRes(q){ const l=q<1?"off":q<6?"gentle":q<12?"peaky":q<19?"whistly":"screaming"; return q+" dB ("+l+")"; }
+cutEl.oninput=()=>{
+  curCut=sliderToCut(+cutEl.value); cutVal.textContent=fmtCut(curCut); drawEnvGraph();
+  if(ctx && !riffing && held.length===0){ const t=ctx.currentTime; f1.frequency.setTargetAtTime(curCut,t,0.02); f2.frequency.setTargetAtTime(curCut,t,0.02); }
+};
+resEl.oninput=()=>{ reso=+resEl.value; resVal.textContent=fmtRes(reso); if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01); };
+envEl.oninput=()=>{ envMod=+envEl.value/100; envVal.textContent=envEl.value+"%"; drawEnvGraph(); };
+decEl.oninput=()=>{ decay=+decEl.value/1000; decVal.textContent=decEl.value+" ms"; drawEnvGraph(); };
+levEl.oninput=()=>{ level=+levEl.value/100; levVal.textContent=levEl.value+"%"; };
+cutVal.textContent=fmtCut(curCut); resVal.textContent=fmtRes(reso);
+
+/* ── visualization ─────────────────────────────────────────────── */
+function fitCanvas(c){
+  const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect();
+  c.width=r.width*dpr; c.height=r.height*dpr;
+  const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return [g,r.width,r.height];
+}
+const V_MIN=40, V_MAX=16000;
+const fx=(f,W)=>W*Math.log(f/V_MIN)/Math.log(V_MAX/V_MIN);      // log-freq → x (spectrum)
+const fy=(f,H)=>H-H*Math.log(Math.max(f,V_MIN)/V_MIN)/Math.log(V_MAX/V_MIN); // log-freq → y (env graph)
+
+// left graph: the programmed cutoff-over-time for one note (redrawn on knob change)
+function drawEnvGraph(){
+  const [g,W,H]=fitCanvas(envCanvas);
+  const floor=curCut, peak=Math.min(floor*Math.pow(2,envMod*ENV_OCT),C_MAX);
+  const atk=0.003, Tspan=Math.max(atk+decay,0.05)*1.18;          // time window with a little tail
+  g.clearRect(0,0,W,H);
+  // gridlines at 100 / 1k / 10k
+  g.fillStyle="#25301c"; g.font="10px ui-monospace,monospace";
+  [[100,"100"],[1000,"1k"],[10000,"10k"]].forEach(([f,l])=>{ const y=fy(f,H); g.fillRect(0,y,W,1); g.fillStyle="#3a4530"; g.fillText(l,2,y-2); g.fillStyle="#25301c"; });
+  // floor line
+  const yFloor=fy(floor,H); g.strokeStyle="#5a6a3a"; g.setLineDash([3,3]); g.beginPath(); g.moveTo(0,yFloor); g.lineTo(W,yFloor); g.stroke(); g.setLineDash([]);
+  // the envelope shape: flat floor → snap to peak → exp decay to floor
+  const tx=t=>W*(t/Tspan);
+  g.strokeStyle="#ff7a00"; g.lineWidth=2; g.beginPath();
+  g.moveTo(tx(0),yFloor);
+  g.lineTo(tx(atk),fy(peak,H));
+  const N=80;
+  for(let i=1;i<=N;i++){ const t=atk+(decay*i/N); const f=floor*Math.pow(peak/floor,1-i/N); g.lineTo(tx(t),fy(f,H)); }
+  g.lineTo(W,yFloor);
+  g.stroke();
+  // labels
+  g.fillStyle="#ff7a00"; g.fillText("peak "+Math.round(peak)+"Hz", Math.min(tx(atk)+4,W-90), Math.max(fy(peak,H)+12,12));
+  g.fillStyle="#7c8a6a"; g.fillText("floor "+Math.round(floor)+"Hz", 4, Math.min(yFloor+13,H-3));
+}
+
+const RESP_N=160;
+const respFreqs=new Float32Array(RESP_N), m1=new Float32Array(RESP_N), m2=new Float32Array(RESP_N), ph=new Float32Array(RESP_N);
+for(let i=0;i<RESP_N;i++) respFreqs[i]=V_MIN*Math.pow(V_MAX/V_MIN,i/(RESP_N-1));
+const DB_TOP=30, DB_BOT=-42;
+const dby=(db,H)=>H*(1-(Math.min(Math.max(db,DB_BOT),DB_TOP)-DB_BOT)/(DB_TOP-DB_BOT));
+
+function draw(){
+  requestAnimationFrame(draw);
+  if(!analyser) return;
+  const [g,W,H]=fitCanvas(spectrum);
+  const bins=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(bins);
+  g.clearRect(0,0,W,H);
+  g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace";
+  [[100,"100"],[1000,"1k"],[10000,"10k"]].forEach(([f,l])=>{ const x=fx(f,W); g.fillRect(x,0,1,H); g.fillText(l+"Hz",x+3,H-4); });
+  g.fillStyle="#25301c"; g.fillRect(0,dby(0,H),W,1);
+  const binHz=ctx.sampleRate/2/bins.length, COLS=Math.floor(W/3);
+  for(let i=0;i<COLS;i++){
+    const f0=V_MIN*Math.pow(V_MAX/V_MIN,i/COLS), f1b=V_MIN*Math.pow(V_MAX/V_MIN,(i+1)/COLS);
+    let v=0; for(let b=Math.floor(f0/binHz); b<=Math.min(bins.length-1,Math.floor(f1b/binHz)); b++) v=Math.max(v,bins[b]);
+    const h=(v/255)*H, t=i/COLS;
+    g.fillStyle=`rgb(${Math.round(120+135*t)},255,0)`;
+    g.fillRect(i*(W/COLS), H-h, Math.max(W/COLS-1,1), h);
+  }
+  // live filter curve + moving cutoff marker (this is the envelope, in motion)
+  f1.getFrequencyResponse(respFreqs,m1,ph); f2.getFrequencyResponse(respFreqs,m2,ph);
+  g.lineWidth=2; g.strokeStyle="#ff7a00"; g.beginPath();
+  for(let i=0;i<RESP_N;i++){ const mm=m1[i]*m2[i]; const y=dby(20*Math.log10(Math.max(mm,1e-4)),H); const x=fx(respFreqs[i],W); i===0?g.moveTo(x,y):g.lineTo(x,y); }
+  g.stroke();
+  const cx=fx(f2.frequency.value,W);
+  g.strokeStyle="#ff7a00"; g.setLineDash([4,4]); g.beginPath(); g.moveTo(cx,0); g.lineTo(cx,H); g.stroke(); g.setLineDash([]);
+}
+
+drawEnvGraph();
+addEventListener("resize", drawEnvGraph);
+</script>
+</body>
+</html>
