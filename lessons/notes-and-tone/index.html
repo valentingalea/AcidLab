@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>Interlude · Notes vs tone — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:24px;margin:10px 0 2px}
+  h1 .n{color:var(--orange)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)} .blu{color:var(--blue)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  ul{margin:8px 0;padding-left:22px}
+
+  /* the big "oscillator right now" readout */
+  .osc{display:flex;gap:22px;flex-wrap:wrap;align-items:baseline;background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:12px 18px;margin-bottom:12px}
+  .osc .lbl{font-size:11px;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+  .osc .note{font-size:40px;color:var(--acid);font-weight:700;line-height:1;min-width:78px}
+  .osc .hz{font-size:26px;color:var(--orange);font-weight:700}
+  .osc .say{color:var(--dim);font-size:13px}
+
+  /* note lane */
+  .lane{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;align-items:end;height:150px;margin:8px 0 2px}
+  .col{position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer}
+  .bar{background:linear-gradient(#5a6a3a,#3a4a24);border:1px solid var(--line);border-bottom:none;border-radius:4px 4px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;font-size:11px;color:#0a0c08;font-weight:700;transition:height .06s}
+  .col.root .bar{background:linear-gradient(#e9ffc0,#b6ff00)}
+  .col:not(.root) .bar{background:linear-gradient(#ffd9a8,#ff7a00);color:#3a1c00}
+  .col.play .bar{filter:brightness(1.25);box-shadow:0 0 0 2px var(--acid)}
+  .col .beat{position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:9px;color:#3d4a30}
+
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 10px}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:16px;padding:12px 22px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #play{font-weight:700;font-size:15px;padding:11px 20px}
+  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #play:disabled{opacity:.35;cursor:not-allowed}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px;max-width:280px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--blue);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--blue);height:26px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">♪</span> · Notes vs tone — what "playing" actually does</h1>
+  <p class="sub">"I get the oscillator and the filter… but what does <i>playing a note</i> even do? If I have 16 A's and put a G in the middle — what is that?" Great question. Here's the whole answer, and you can hear it.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="osc">
+      <div><div class="lbl">the oscillator is vibrating at</div>
+        <span class="note" id="ro-note">—</span> <span class="hz" id="ro-hz">— Hz</span></div>
+      <div class="say" id="ro-say">↑ this is the <b class="hl">only</b> thing that changes when you "play a note".</div>
+    </div>
+
+    <div class="lane" id="lane"></div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="play" disabled>▶ play the pattern</button>
+      <button id="p-allA" disabled>16 A's</button>
+      <button id="p-oneG" disabled>put a G in the middle</button>
+    </div>
+    <p class="hint">Tap any bar to change that step's note (it cycles up the scale). Or hit the two presets —
+      that's <i>your exact question</i>. The big number up top is the oscillator frequency; watch it as it plays.</p>
+
+    <div class="row">
+      <div class="ctrl">
+        <label>TONE (cutoff) — changes how it <i>sounds</i>, not what it plays <b id="cutVal">bright</b></label>
+        <input id="cut" type="range" min="150" max="6000" value="2200">
+      </div>
+    </div>
+    <p class="hint">Now drag <span class="blu">TONE</span> while it loops: the <b>tune is identical</b> — same
+      notes, same order — only the <i>colour</i> changes. Notes and tone are two separate dials.</p>
+  </div>
+
+  <!-- ── idea 1 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>A note is just a frequency — nothing more</h2>
+    <p>Here's the whole secret, and it's smaller than you think. Back in <b>P1</b> you learned pitch = how fast
+    the air wiggles. A musical <b>note</b> is simply a <b class="hl">named wiggle-speed</b>:</p>
+    <table>
+      <tr><th>note</th><th>really means</th></tr>
+      <tr><td><b class="hl">A</b> (A2)</td><td>"vibrate <b>110</b> times a second"</td></tr>
+      <tr><td><b class="kbd">G</b> (G3)</td><td>"vibrate <b>196</b> times a second"</td></tr>
+      <tr><td>C, D, E…</td><td>…every note is just a different number of wiggles/sec</td></tr>
+    </table>
+    <p>So <b class="hl">"playing a note" = setting the oscillator's frequency knob to that number.</b> That's
+    it. You already met the knob in lesson 00 (the frequency slider) and again in lesson 05 (the keyboard) —
+    every key just parks the oscillator on a different frequency. There is <i>no</i> separate "note machine";
+    the note <b>is</b> the frequency.</p>
+  </div>
+
+  <!-- ── idea 2 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>Your "16 A's and a G" — answered</h2>
+    <p>So what <i>is</i> 16 A's with a G in the middle? It's a <b class="hl">list of frequencies over time</b>
+    — a <b>bassline</b>. The oscillator's frequency knob sits on <b>A</b> (110 Hz) step after step, then for
+    one step it jumps to <b class="kbd">G</b> (196 Hz), then straight back to A. Hit <span class="kbd">16 A's</span>
+    then <span class="kbd">put a G in the middle</span> above and listen: fifteen identical thumps, then one
+    that pops out — and suddenly it's a little <i>tune</i> instead of a machine gun.</p>
+    <p>That's not a beginner mistake — it's a <b class="hl">real acid technique</b>. Classic 303 basslines are
+    mostly the <b>root note</b> hammered over and over, with the occasional other note (a passing G, an octave
+    jump, a chromatic step) poked in to give it shape and pull. You just invented an acid bassline by changing
+    <b>one number, once</b>.</p>
+    <p>Playing music, at the bottom, is nothing but <b class="hl">choosing which frequency the oscillator
+    should be at each moment</b>. A melody is a sequence of those choices. That's all a "note" ever was.</p>
+  </div>
+
+  <!-- ── idea 3 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Two separate dials: <span class="hl">tune</span> and <span class="blu">tone</span></h2>
+    <p>This is the part that untangles everything. There are two <b>completely independent</b> things going on:</p>
+    <table>
+      <tr><th></th><th>controlled by</th><th>decides</th></tr>
+      <tr><td><b class="hl">the tune</b></td><td>the <b>notes</b> (oscillator frequency, step by step)</td><td><i>which</i> pitches — the melody / bassline</td></tr>
+      <tr><td><b class="blu">the tone</b></td><td>the <b>filter, envelope, resonance, drive</b></td><td><i>how each note sounds</i> — bright, dark, plucky, dirty</td></tr>
+    </table>
+    <p>They don't touch each other. The filter does the <b>exact same thing</b> to an A as it does to a G — it
+    carves and shapes whatever frequency happens to be playing. Proof: with the loop running, drag
+    <span class="blu">TONE</span> above — the notes never change, only the colour does. And flipping notes in
+    the lane never changes the tone. <b class="hl">Everything you built in lessons 02–09 was the tone half;
+    the notes are the other half, and this is where they meet.</b></p>
+    <p>That's why the same three-note riff can sound like a warm dub bass or a screaming acid line: same
+    <span class="hl">tune</span>, different <span class="blu">tone</span>.</p>
+  </div>
+
+  <!-- ── idea 4 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>"…is this the sequencer?"</h2>
+    <p>Yes and no — good instinct. The <b class="hl">sequencer</b> (coming in lesson 13) is just the
+    <b>tool</b> for writing down that list of notes: a 16-step grid where you type a pitch per step, plus the
+    accent (lesson 07) and slide (lesson 08) switches. But the <b>idea</b> — a note is a frequency, a bassline
+    is a sequence of frequencies fed to the oscillator one step at a time on the clock (lesson 10) — is exactly
+    what you're doing right here. Every "acid line" button since lesson 06 was a little sequencer playing a
+    list like this one.</p>
+    <div class="nerd"><b>// CS corner:</b> the pattern is literally an array of MIDI note numbers, e.g.
+    <code>[57,57,57,57, 57,57,57,57, 57,57,55,57, …]</code> (57 = A, 55 = G). Each clock step the scheduler
+    does <code>osc.frequency.setValueAtTime(mtof(pattern[i]), when)</code> where
+    <code>mtof(m)=440·2^((m−69)/12)</code> — the one formula from P1. The filter graph never changes; only that
+    one number is rewritten each step. Melody = writing a frequency; timbre = everything downstream of it.</div>
+    <p style="margin-top:12px">Now nothing about the 303 is mysterious: the <b class="hl">notes</b> pick the
+    pitches, the <b class="blu">voice</b> (osc → filter → env → drive) colours them, and the <b>clock</b> keeps
+    time. That's the whole machine.</p>
+    <a class="next" href="../06-filter-envelope/index.html">Back to the tone → 06 · Filter envelope</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Interlude — the pitch↔frequency bridge. A 16-step pattern of note indices;
+   each clock step just sets osc.frequency to that note's Hz. The point: the
+   ONLY thing changing per step is the oscillator frequency (a "note"); the
+   filter (TONE) is a separate axis that shapes whatever pitch is playing.      */
+
+let ctx, osc, filter, vca;
+const STEP=0.2, ROOT=45;                              // A2, followable tempo
+// the little scale a bar cycles through (semitones above A2) + display names
+const SCALE=[0,3,5,7,10,12], SNAME=["A","C","D","E","G","A"];
+const mf=m=>440*Math.pow(2,(m-69)/12);
+const noteName=i=>SNAME[i%SCALE.length];
+const noteMidi=i=>ROOT+SCALE[i%SCALE.length];
+
+const pattern=new Array(16).fill(0);                  // all A to start (index 0)
+let playing=false, timer=null, nextT=0, stepIx=0, startT=0, cutoff=2200;
+
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), playBtn=$("#play"), laneEl=$("#lane");
+const roNote=$("#ro-note"), roHz=$("#ro-hz"), roSay=$("#ro-say");
+const cutEl=$("#cut"), cutVal=$("#cutVal");
+
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  osc=ctx.createOscillator(); osc.type="sawtooth"; osc.frequency.value=mf(noteMidi(0));
+  filter=ctx.createBiquadFilter(); filter.type="lowpass"; filter.frequency.value=cutoff; filter.Q.value=6;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  osc.connect(filter); filter.connect(vca).connect(ctx.destination);
+  osc.start();
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  playBtn.disabled=false; document.querySelectorAll(".preset").forEach(b=>b.disabled=false);
+  $("#p-allA").disabled=$("#p-oneG").disabled=false;
+  draw();
+}
+// pluck one note: set the oscillator FREQUENCY (this is the whole "playing a note")
+function pluck(t, idx){
+  osc.frequency.setValueAtTime(mf(noteMidi(idx)), t);
+  const g=vca.gain;
+  g.cancelScheduledValues(t); g.setValueAtTime(1e-4,t);
+  g.linearRampToValueAtTime(0.28, t+0.004);
+  g.exponentialRampToValueAtTime(0.05, t+STEP*0.6);
+  g.exponentialRampToValueAtTime(0.0006, t+STEP*0.95);
+}
+function tick(){ while(nextT < ctx.currentTime+0.15){ pluck(nextT, pattern[stepIx%16]); stepIx++; nextT+=STEP; } }
+function setPlay(on){
+  if(!ctx) return;
+  playing=on; playBtn.classList.toggle("on",on); playBtn.textContent=on?"■ stop":"▶ play the pattern";
+  if(on){ stepIx=0; startT=ctx.currentTime+0.06; nextT=startT; clearInterval(timer); timer=setInterval(tick,30); tick(); }
+  else{ clearInterval(timer); const t=ctx.currentTime,g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.06);
+    roNote.textContent="—"; roHz.textContent="— Hz"; }
+}
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+playBtn.onclick=()=>setPlay(!playing);
+
+/* ── the note lane ─────────────────────────────────────────────── */
+const cols=[];
+for(let i=0;i<16;i++){
+  const col=document.createElement("div"); col.className="col"; col.dataset.i=i;
+  col.innerHTML=`<div class="bar"></div><div class="beat">${i%4===0?(i/4+1):""}</div>`;
+  col.addEventListener("pointerdown", e=>{ e.preventDefault(); pattern[i]=(pattern[i]+1)%SCALE.length; paintCol(i); });
+  laneEl.appendChild(col); cols.push(col);
+}
+function paintCol(i){
+  const idx=pattern[i], col=cols[i], bar=col.querySelector(".bar");
+  bar.style.height=(20+idx/(SCALE.length-1)*78)+"%";
+  bar.textContent=noteName(idx);
+  col.classList.toggle("root", idx===0);
+}
+function paintAll(){ for(let i=0;i<16;i++) paintCol(i); }
+
+/* presets — the user's exact scenario */
+$("#p-allA").className="preset"; $("#p-oneG").className="preset";
+$("#p-allA").onclick=()=>{ pattern.fill(0); paintAll(); };
+$("#p-oneG").onclick=()=>{ pattern.fill(0); pattern[8]=4; paintAll(); };   // one G (index 4) in the middle
+
+/* ── TONE knob (separate axis) ─────────────────────────────────── */
+cutEl.oninput=()=>{ cutoff=+cutEl.value; cutVal.textContent = cutoff>3500?"bright":cutoff>1200?"warm":cutoff>500?"muffled":"dark";
+  if(filter) filter.frequency.setTargetAtTime(cutoff,ctx.currentTime,0.02); };
+
+/* ── playhead + the big frequency readout ──────────────────────── */
+let lastStep=-1;
+function draw(){
+  requestAnimationFrame(draw);
+  if(!ctx) return;
+  if(playing){
+    const cur=Math.floor((ctx.currentTime-startT)/STEP)%16;
+    if(cur!==lastStep && cur>=0){
+      if(lastStep>=0) cols[lastStep].classList.remove("play");
+      cols[cur].classList.add("play"); lastStep=cur;
+      const idx=pattern[cur];
+      roNote.textContent=noteName(idx);
+      roHz.textContent=Math.round(mf(noteMidi(idx)))+" Hz";
+      roNote.style.color = idx===0 ? "var(--acid)" : "var(--orange)";
+    }
+  } else if(lastStep>=0){ cols[lastStep].classList.remove("play"); lastStep=-1; }
+}
+paintAll();
+</script>
+</body>
+</html>
