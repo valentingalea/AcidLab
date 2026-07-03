@@ -104,6 +104,18 @@ asides so the main flow stays plain-language. Vanilla Web Audio, self-contained.
 - **09 · (optional) Drive / saturation** — `WaveShaperNode` for the dirty edge.
 - Outcome: a full "303 panel" — Tuning, Cutoff, Resonance, Env Mod, Decay, Accent.
 
+### Interlude — Meet the machine (`lessons/303-story/`)
+- **303 · The TB-303 story** — a history + context piece placed after 06 (the
+  voice is now complete). Why Roland built it (a robot bassist to practise with,
+  paired with the TR-606), why it flopped (didn't sound like a bass, brutal to
+  program, discontinued 1984, ~10k units), and the Chicago accident (Phuture /
+  DJ Pierre twisting the knobs → Ron Hardy at the Music Box → "Acid Tracks",
+  Trax, 1987). Interactive: the *same* 16-step bassline played "as Roland
+  intended" (flat) vs a live 8-second **morph** into acid (resonance + Env Mod up,
+  cutoff down), a playhead'd sequencer grid, and a **panel map** linking every
+  303 knob to the lesson that built it. Reuses the 00–06 voice; no new DSP.
+  ✅ built
+
 ### Module 3 — Rhythm & timing
 - **10 · The clock problem** — why `setTimeout` can't keep musical time; the
   lookahead scheduler ("A Tale of Two Clocks"). BPM → 16th notes → transport.

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>Interlude · The TB-303 story — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff; --silver:#c9d2c0;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:25px;margin:10px 0 2px}
+  h1 .n{color:var(--orange)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)} .east{color:var(--blue)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .pull{border-left:3px solid var(--orange);padding:2px 0 2px 14px;margin:14px 0;color:var(--ink);font-style:italic}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  ul{margin:8px 0;padding-left:22px}
+  canvas{width:100%;height:130px;display:block;background:#0a0c08;border:1px solid var(--line);border-radius:10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:15px;padding:10px 18px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  button.tame.on{background:var(--silver);color:#0a0c08;border-color:var(--silver)}
+  button.acidb{border-color:var(--orange);color:var(--orange);font-weight:700}
+  button.acidb.on{background:var(--orange);color:#0a0c08}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  .modeline{font-size:12.5px;color:var(--dim);min-height:18px;margin:4px 0}
+  .modeline b{color:var(--orange)}
+
+  /* 16-step sequencer illustration */
+  .seq{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;margin:10px 0 4px}
+  .cell{background:#0a0c08;border:1px solid var(--line);border-radius:5px;padding:5px 0 4px;text-align:center;position:relative;min-height:52px}
+  .cell .pn{font-size:12px;color:var(--ink);font-weight:600}
+  .cell.rest .pn{color:#3d4a30}
+  .cell .ac{height:6px;font-size:10px;line-height:6px;color:var(--orange)}
+  .cell .sl{height:10px;font-size:11px;line-height:10px;color:var(--blue)}
+  .cell.acc{border-color:var(--orange)}
+  .cell.acc .pn{color:var(--orange)}
+  .cell.play{box-shadow:0 0 0 2px var(--acid) inset}
+  .cell .beat{position:absolute;top:1px;left:3px;font-size:8px;color:#3d4a30}
+  .seqleg{font-size:11.5px;color:var(--dim);display:flex;gap:16px;flex-wrap:wrap}
+  .seqleg b{color:var(--ink)}
+
+  /* panel map */
+  .pmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin:8px 0}
+  .knob{display:block;text-decoration:none;background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink)}
+  .knob .kn{font-size:14px;font-weight:700;color:var(--acid)}
+  .knob .kd{font-size:11.5px;color:var(--dim);margin-top:2px}
+  .knob .kl{font-size:11px;color:var(--orange);margin-top:6px;display:inline-block}
+  a.knob:hover{border-color:var(--acid);transform:translateX(2px)}
+  .knob.todo{opacity:.55} .knob.todo .kn{color:var(--silver)} .knob.todo .kl{color:var(--dim)}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+  footer{margin-top:26px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">303</span> · The little silver box that failed — and ate dance music</h1>
+  <p class="sub">An interlude: everything you've built (lessons 00–06) is a real machine — the Roland TB-303.
+    Here's where it came from, why nobody wanted it, and the accident that made it immortal.</p>
+
+  <!-- ── Hear the accident ──────────────────────────────────────── -->
+  <div class="panel">
+    <h2><span class="k">hear it</span>The same bassline, twice</h2>
+    <p class="explain">One pattern, one machine. First the way Roland <b>wanted</b> it used — a plain,
+    behaving bass. Then the way DJ Pierre <b>actually</b> used it: leave the pattern looping and start
+    twisting the filter knobs. Same notes, same box. Listen to what happens.</p>
+    <canvas id="spectrum"></canvas>
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="tameBtn" class="tame" disabled>▶ as Roland intended</button>
+      <button id="acidBtn" class="acidb" disabled>▶ …now twist the knobs</button>
+    </div>
+    <div class="modeline" id="modeline">Power on, then press a button. Watch the orange filter curve.</div>
+
+    <div class="seq" id="seq"></div>
+    <div class="seqleg">
+      <span><b style="color:var(--acid)">■</b> playhead</span>
+      <span><b style="color:var(--orange)">●</b> accent (punchier note)</span>
+      <span><b style="color:var(--blue)">→</b> slide (glide to next)</span>
+      <span><b style="color:#3d4a30">·</b> rest</span>
+    </div>
+    <p class="hint">That's a 16-step pattern — the 303's whole memory for one bar. Nothing about the notes
+      changed between the two buttons; only <b>Cutoff, Resonance and Env Mod</b> moved. That gap <i>is</i> acid.</p>
+  </div>
+
+  <!-- ── 1 · what it was for ────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">1981</span>A bass player in a box</h2>
+    <p>Roland engineer <b>Tadao Kikumoto</b> (who also designed the legendary TR-909 drum machine) built the
+    <b class="hl">TB-303 Bass Line</b> in 1981 for a very practical, very un-glamorous reason: a
+    <b>robot bassist for people practising alone</b>. A guitarist or organist rehearsing in their bedroom had
+    no band. So Roland sold the TB-303 next to a tiny drum machine, the <b>TR-606 Drumatix</b> — together, a
+    pocket rhythm section. Program your song's bassline once, hit start, and you had something to play over.</p>
+    <p>Under the hood it's the minimal synthesizer — and by now you know every piece of it:</p>
+    <ul>
+      <li><b>one oscillator</b> — saw or square (lesson 00),</li>
+      <li><b>one resonant low-pass filter</b> — its distinctive analog character (lessons 02–03),</li>
+      <li><b>one envelope</b> on the filter (lesson 06),</li>
+      <li>plus <b>accent</b> and <b>slide</b> per step (lessons 07–08), and a <b>16-step sequencer</b> (lesson 13).</li>
+    </ul>
+    <p>You didn't build a toy. You built a 303.</p>
+  </div>
+
+  <!-- ── 2 · why it failed ──────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">1981–1984</span>Why nobody wanted it</h2>
+    <p>Two problems sank it:</p>
+    <ul>
+      <li><b class="hl">It didn't sound like a bass.</b> A plucked bass guitar has body, string noise, a real
+        attack. The 303 made a thin, rubbery, synthetic <i>buzz</i> — nobody was fooled. As a "bass simulator"
+        it was a flop. (Press <span class="kbd">▶ as Roland intended</span> above — that unremarkable tone is
+        the machine doing exactly its job.)</li>
+      <li><b class="hl">It was miserable to program.</b> The step sequencer made you enter notes <i>blind</i>,
+        in a cryptic two-stage dance of "pitch mode" then "time mode", counting steps in your head, unable to
+        really hear the pattern until it played back. Legendarily hostile.</li>
+    </ul>
+    <p>Reviewers shrugged, musicians returned it, and Roland <b>discontinued it in 1984</b> after making only
+    about <b class="hl">10,000 units</b>. Unsold and second-hand 303s piled up in pawn shops for pocket
+    change. By any measure Roland set out to make, the TB-303 was a failure.</p>
+  </div>
+
+  <!-- ── 3 · the accident ───────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">Chicago · ~1985</span>The accident that made it famous</h2>
+    <p>In Chicago, a trio called <b class="hl">Phuture</b> — <b>DJ Pierre</b> (Nathan Jones), <b>Spanky</b>
+    (Earl Smith Jr.) and <b>Herb J</b> (Herbert Jackson) — were chasing a new sound. Spanky grabbed a cheap,
+    unloved 303 from a <b>pawn shop</b>. It already had a pattern in it from whoever owned it last. And then,
+    the moment everything turned on:</p>
+    <p class="pull">Pierre started twisting the knobs while the pattern looped — cutoff, resonance, envelope —
+    and the machine <b>screamed and squelched</b> in a way no bass guitar ever could.</p>
+    <p>Instead of "fixing" the weird noise, they built a track around it. Their friend <b>Ron Hardy</b>, the
+    ferocious DJ at Chicago's <b>Music Box</b>, took the tape (then called "In Your Mind") and dropped it —
+    reportedly <b>four times in one night</b>. The first three times the floor didn't get it; the fourth time,
+    late and packed, it detonated. The crowd started calling it "Ron Hardy's Acid Track".</p>
+    <p>Reworked with <b>Marshall Jefferson</b> and released on <b>Trax Records</b> in <b>1987</b> as
+    <b class="hl">"Acid Tracks"</b>, it named an entire genre: <b>acid house</b>. The exact flaw Roland couldn't
+    sell — a resonant filter that refused to sound like a bass — became the most recognisable sound in
+    electronic music. Press <span class="kbd">▶ …now twist the knobs</span> above to hear the discovery happen.</p>
+  </div>
+
+  <!-- ── 4 · how it's programmed ────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">the machine</span>How you actually program a 303</h2>
+    <p>The 303 has two halves: a <b>panel of knobs</b> that shape the sound, and a <b>16-step sequencer</b>
+    that holds the notes. You've been building the panel this whole course — here's the real thing, knob by
+    knob, each linking to the lesson where you made it:</p>
+    <div class="pmap">
+      <a class="knob" href="../00-oscillator/index.html"><span class="kn">Tuning</span><span class="kd">overall pitch of the oscillator</span><span class="kl">lesson 00 →</span></a>
+      <a class="knob" href="../00-oscillator/index.html"><span class="kn">Waveform</span><span class="kd">saw ◿ or square ▨ — the only two</span><span class="kl">lesson 00 →</span></a>
+      <a class="knob" href="../02-filter-cutoff/index.html"><span class="kn">Cutoff</span><span class="kd">brightness / where the filter carves</span><span class="kl">lesson 02 →</span></a>
+      <a class="knob" href="../03-resonance/index.html"><span class="kn">Resonance</span><span class="kd">the whistle & squelch at the cutoff</span><span class="kl">lesson 03 →</span></a>
+      <a class="knob" href="../06-filter-envelope/index.html"><span class="kn">Env Mod</span><span class="kd">how far each note kicks the filter</span><span class="kl">lesson 06 →</span></a>
+      <a class="knob" href="../06-filter-envelope/index.html"><span class="kn">Decay</span><span class="kd">how fast the filter falls back</span><span class="kl">lesson 06 →</span></a>
+      <span class="knob todo"><span class="kn">Accent</span><span class="kd">per-step punch: louder + brighter</span><span class="kl">lesson 07 (next)</span></span>
+      <span class="knob todo"><span class="kn">Slide</span><span class="kd">glide the pitch into the next note</span><span class="kl">lesson 08 (soon)</span></span>
+      <span class="knob todo"><span class="kn">Tempo / Seq</span><span class="kd">the 16-step pattern & clock</span><span class="kl">lessons 10 · 13 (soon)</span></span>
+    </div>
+    <p style="margin-top:14px">The other half is the <b class="hl">sequencer</b> — the grid up top. One bar is
+    16 steps, and for <i>each</i> step you decide three things:</p>
+    <ul>
+      <li><b>a pitch</b> — a note, a <b>rest</b> (silence), or a <b>tie</b> (hold the previous note longer);</li>
+      <li><b>accent on/off</b> — does this note punch harder? (lesson 07)</li>
+      <li><b>slide on/off</b> — does its pitch glide into the next? (lesson 08)</li>
+    </ul>
+    <p>That's the entire instrument: sixteen little columns, each with a note and two switches. The magic isn't
+    in the pattern — it's that you <b>ride the filter knobs with your hands while it loops</b>. The 303 turned
+    out to be less a bass machine than a <i>performance</i> machine, and nobody noticed until Pierre.</p>
+    <div class="nerd"><b>// CS corner:</b> our engine and the real hardware line up exactly — one
+    <code>OscillatorNode</code>, two cascaded biquads for the filter, an <code>AudioParam</code> envelope on
+    the cutoff, and a lookahead scheduler stepping a 16-slot array. The real 303's filter is a quirky analog
+    <b>diode ladder</b> (part of why clones obsess over it); we approximate its slope with the two biquads from
+    lessons 02–03, and lesson 04 optionally builds the real ladder in an AudioWorklet.</div>
+  </div>
+
+  <!-- ── 5 · why the wrong sound was right ──────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">the lesson</span>Why the "wrong" sound was so right</h2>
+    <p>A resonant filter swept in real time is <b>expressive</b> — it opens and closes like a mouth, so a
+    single looping bassline suddenly <i>talks</i>. It's also <b>hypnotic</b>: repeat it under a 4/4 kick and a
+    dark room, and the tiny changes as a hand rides the cutoff become the whole point. Roland built a machine
+    to imitate a bass; musicians heard an instrument that could do something a bass never could.</p>
+    <p>The punchline: decades later Roland re-released the 303 (the TB-03, and it lives on in the TB-3 and
+    endless clones and plugins) — deliberately, this time, for the <i>exact</i> squelchy sound they once
+    couldn't give away. A failed product, saved by people using it "wrong". That's most of the history of
+    electronic music in one silver box.</p>
+    <p><b class="hl">Now you understand the whole machine.</b> Two knobs left — the per-note tricks that turn a
+    good acid tone into a <i>performance</i>:</p>
+    <a class="next" href="../../index.html">Next → 07 · Accent (the per-note punch) — soon</a>
+  </div>
+
+  <footer>
+    Further reading:
+    <a href="https://en.wikipedia.org/wiki/Roland_TB-303" target="_blank" rel="noopener">TB-303</a> ·
+    <a href="https://en.wikipedia.org/wiki/Acid_Tracks" target="_blank" rel="noopener">"Acid Tracks" (Phuture, 1987)</a> ·
+    <a href="https://en.wikipedia.org/wiki/Phuture" target="_blank" rel="noopener">Phuture</a>.
+    Dates & unit counts are the commonly cited figures; some origin details (who first turned the knob, where the
+    name "acid" came from) are debated lore.
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Interlude — the same 303 voice you built (lessons 00–06), driven by a 16-step
+   sequencer, with two "modes": TAME (a flat behaving bass, envMod≈0, no reso —
+   what Roland shipped) and MORPH (start tame, then over 8 s ramp Resonance +
+   Env Mod up and Cutoff down — the DJ-Pierre discovery, live).                 */
+
+let ctx, osc, f1, f2, vca, analyser;
+const level=0.30, C_MIN=40, C_MAX=12000;
+const mf = m => 440*Math.pow(2,(m-69)/12);
+const NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const nameOf = m => NAMES[((m%12)+12)%12];
+
+// the pattern (one bar, 16 steps). semis from A2; null = rest.
+const ROOT=45, STEP=0.125;
+const PITCH =[0,null,12,0, 3,null,0,7, 0,10,null,0, 12,0,3,0];
+const ACCENT=[1,0,0,0, 1,0,0,1, 0,1,0,0, 1,0,0,0];
+const SLIDE =[0,0,1,0, 0,0,0,0, 1,0,0,0, 0,1,0,0];
+
+const TAME={reso:1,  envMod:0.00, floor:520, decay:0.30};
+const ACID={reso:15, envMod:0.85, floor:190, decay:0.22};
+
+let mode=null, playing=false, timer=null, nextT=0, step=0, startT=0, morphStart=0;
+
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), tameBtn=$("#tameBtn"), acidBtn=$("#acidBtn"), modeline=$("#modeline"), spectrum=$("#spectrum");
+
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  osc=ctx.createOscillator(); osc.type="sawtooth"; osc.frequency.value=mf(ROOT);
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.Q.value=-3; f1.frequency.value=TAME.floor;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.Q.value=TAME.reso; f2.frequency.value=TAME.floor;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  analyser=ctx.createAnalyser(); analyser.fftSize=4096; analyser.smoothingTimeConstant=0.6;
+  osc.connect(f1); f1.connect(f2); f2.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start();
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  tameBtn.disabled=acidBtn.disabled=false;
+  draw();
+}
+
+const lerp=(a,b,p)=>a+(b-a)*p;
+function params(t){
+  if(mode==="tame") return {...TAME, accentOn:false};
+  // morph: tame → acid over 8 s, then hold acid
+  const p=Math.min(Math.max((t-morphStart)/8,0),1);
+  return { reso:lerp(TAME.reso,ACID.reso,p), envMod:lerp(TAME.envMod,ACID.envMod,p),
+           floor:lerp(TAME.floor,ACID.floor,p), decay:lerp(TAME.decay,ACID.decay,p), accentOn:p>0.35 };
+}
+function strike(t, midi, P, accented){
+  osc.frequency.setValueAtTime(mf(midi), t);
+  const floor=P.floor, peak=Math.min(floor*Math.pow(2,P.envMod*4)*(accented?1.6:1), C_MAX), atk=0.003;
+  [f1.frequency,f2.frequency].forEach(pp=>{ pp.cancelScheduledValues(t); pp.setValueAtTime(floor,t);
+    if(peak>floor*1.01) pp.linearRampToValueAtTime(peak,t+atk);
+    pp.exponentialRampToValueAtTime(Math.max(floor,C_MIN),t+atk+P.decay); });
+  const Lbase=level/(1+0.14*(Math.pow(10,P.reso/20)-1)), L=Lbase*(accented?1.0:0.72), g=vca.gain;
+  g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t);
+  g.linearRampToValueAtTime(L,t+0.005);
+  g.exponentialRampToValueAtTime(0.30*L, t+STEP*0.9);      // ring across the step (audible sweep)
+  g.exponentialRampToValueAtTime(0.0006, t+STEP*0.99);
+}
+function tick(){
+  while(nextT < ctx.currentTime+0.15){
+    const s=step%16, P=params(nextT);
+    f2.Q.setValueAtTime(P.reso, nextT);                    // morph resonance live
+    const semi=PITCH[s];
+    if(semi!==null) strike(nextT, ROOT+semi, P, P.accentOn && !!ACCENT[s]);
+    step++; nextT+=STEP;
+  }
+}
+function startMode(m){
+  if(!ctx) return;
+  if(playing && mode===m){ stopAll(); return; }
+  mode=m; playing=true; step=0; startT=ctx.currentTime+0.06; nextT=startT; morphStart=startT;
+  clearInterval(timer); timer=setInterval(tick,30); tick();
+  tameBtn.classList.toggle("on", m==="tame"); acidBtn.classList.toggle("on", m==="morph");
+  tameBtn.textContent = m==="tame" ? "■ stop" : "▶ as Roland intended";
+  acidBtn.textContent = m==="morph" ? "■ stop" : "▶ …now twist the knobs";
+  modeline.innerHTML = m==="tame"
+    ? "<b>As Roland intended:</b> resonance off, no envelope. A flat, behaving bass — and a commercial flop."
+    : "<b>The discovery:</b> resonance & Env Mod climbing, cutoff dropping — a bass turning into acid, live over 8s.";
+}
+function stopAll(){
+  playing=false; clearInterval(timer);
+  const t=ctx.currentTime, g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.06);
+  tameBtn.classList.remove("on"); acidBtn.classList.remove("on");
+  tameBtn.textContent="▶ as Roland intended"; acidBtn.textContent="▶ …now twist the knobs";
+  modeline.textContent="Stopped.";
+}
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+tameBtn.onclick=()=>startMode("tame");
+acidBtn.onclick=()=>startMode("morph");
+
+/* ── sequencer grid (illustration + live playhead) ─────────────── */
+const seqEl=$("#seq"), cells=[];
+for(let i=0;i<16;i++){
+  const c=document.createElement("div"); c.className="cell"+(PITCH[i]===null?" rest":"")+(ACCENT[i]?" acc":"");
+  const note = PITCH[i]===null ? "·" : nameOf(ROOT+PITCH[i]);
+  c.innerHTML=`<div class="beat">${i%4===0?(i/4+1):""}</div><div class="pn">${note}</div>`
+    +`<div class="ac">${ACCENT[i]&&PITCH[i]!==null?"●":""}</div><div class="sl">${SLIDE[i]&&PITCH[i]!==null?"→":""}</div>`;
+  seqEl.appendChild(c); cells.push(c);
+}
+
+/* ── spectrum + moving cutoff marker ───────────────────────────── */
+function fit(c){ const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect(); c.width=r.width*dpr; c.height=r.height*dpr; const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); return [g,r.width,r.height]; }
+const V_MIN=40,V_MAX=16000, fx=(f,W)=>W*Math.log(f/V_MIN)/Math.log(V_MAX/V_MIN);
+const DB_TOP=30,DB_BOT=-42, dby=(db,H)=>H*(1-(Math.min(Math.max(db,DB_BOT),DB_TOP)-DB_BOT)/(DB_TOP-DB_BOT));
+const RN=140, rf=new Float32Array(RN), a1=new Float32Array(RN), a2=new Float32Array(RN), pz=new Float32Array(RN);
+for(let i=0;i<RN;i++) rf[i]=V_MIN*Math.pow(V_MAX/V_MIN,i/(RN-1));
+let lastStep=-1;
+function draw(){
+  requestAnimationFrame(draw);
+  if(!analyser) return;
+  // playhead
+  if(playing){ const cur=Math.floor((ctx.currentTime-startT)/STEP)%16;
+    if(cur!==lastStep){ if(lastStep>=0) cells[lastStep].classList.remove("play"); if(cur>=0) cells[cur].classList.add("play"); lastStep=cur; } }
+  else if(lastStep>=0){ cells[lastStep].classList.remove("play"); lastStep=-1; }
+  const [g,W,H]=fit(spectrum);
+  const bins=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(bins);
+  g.clearRect(0,0,W,H);
+  g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace";
+  [[100,"100"],[1000,"1k"],[10000,"10k"]].forEach(([f,l])=>{ const x=fx(f,W); g.fillRect(x,0,1,H); g.fillText(l+"Hz",x+3,H-4); });
+  const binHz=ctx.sampleRate/2/bins.length, COLS=Math.floor(W/3);
+  for(let i=0;i<COLS;i++){
+    const f0=V_MIN*Math.pow(V_MAX/V_MIN,i/COLS), f1b=V_MIN*Math.pow(V_MAX/V_MIN,(i+1)/COLS);
+    let v=0; for(let b=Math.floor(f0/binHz); b<=Math.min(bins.length-1,Math.floor(f1b/binHz)); b++) v=Math.max(v,bins[b]);
+    const h=(v/255)*H, t=i/COLS; g.fillStyle=`rgb(${Math.round(120+135*t)},255,0)`; g.fillRect(i*(W/COLS),H-h,Math.max(W/COLS-1,1),h);
+  }
+  f1.getFrequencyResponse(rf,a1,pz); f2.getFrequencyResponse(rf,a2,pz);
+  g.lineWidth=2; g.strokeStyle="#ff7a00"; g.beginPath();
+  for(let i=0;i<RN;i++){ const mm=a1[i]*a2[i], y=dby(20*Math.log10(Math.max(mm,1e-4)),H), x=fx(rf[i],W); i===0?g.moveTo(x,y):g.lineTo(x,y); }
+  g.stroke();
+  const cx=fx(f2.frequency.value,W); g.strokeStyle="#ff7a00"; g.setLineDash([4,4]); g.beginPath(); g.moveTo(cx,0); g.lineTo(cx,H); g.stroke(); g.setLineDash([]);
+}
+</script>
+</body>
+</html>
