@@ -166,9 +166,15 @@
   <div class="panel explain">
     <h2><span class="k">idea 4</span>The squelch = motion + resonance</h2>
     <p>Now combine everything you own: a rich wave (lesson 00) + a <i>moving</i> cutoff (lesson 02) + a
-    resonant peak riding that motion (this lesson). Press <span class="kbd">★ make it squelch</span> — it sets
-    24 dB/oct, resonance ~15 dB and starts the sweep. That liquid <i>wow-ow-ow</i> is the acid squelch, made
-    of parts you now understand individually.</p>
+    resonant peak riding that motion (this lesson). Press <span class="kbd">★ make it squelch</span> — it
+    switches to 24 dB/oct, dials resonance to "whistly", and plays a little bass riff where <b>every note
+    snaps the cutoff wide open then lets it decay back down through the harmonics</b>. That plucky, vocal
+    <i>eeow-eeow</i> is the acid squelch — made of parts you now understand individually. (Press again to
+    stop.)</p>
+    <p class="hint">Notice it's <b>plucky and repeating</b>, not one slow swoop — that per-note cutoff snap is
+    a <b>filter envelope</b> (the ADSR from lesson 01 aimed at the cutoff instead of the volume). That's the
+    single most important trick in acid, and Module 2 builds it properly with its own Env&nbsp;Mod and Decay
+    knobs. Here it's on autopilot so you can just hear the target.</p>
     <p><b class="hl">Experiments before you leave:</b></p>
     <ul>
       <li><b>Acid whistle:</b> resonance max, hold note, wiggle the cutoff by hand — chase the harmonics.</li>
@@ -199,8 +205,15 @@
 
 let ctx, osc, noise, oscGain, noiseGain, inputBus, f1, f2, vca, analyser;
 let playing=false, sweeping=false, sweepTimer=null, slope24=false;
+let squelching=false, squelchTimer=null, squelchNext=0, squelchStep=0;
 let source="sawtooth", level=0.30, reso=0;
 const FREQ=110;
+
+// Resonance makeup gain: a high-Q peak sweeping through the harmonics rings the
+// filter *above* unity and clips into buzz. Pull the output down as resonance
+// rises so the squelch stays clean — real filters lose passband level at high Q
+// too, so this is honest, not just a limiter.
+const outLevel = () => level / (1 + 0.14*(Math.pow(10,reso/20)-1));
 
 const C_MIN=40, C_MAX=12000;
 const sliderToCut = v => C_MIN*Math.pow(C_MAX/C_MIN, v/1000);
@@ -243,11 +256,12 @@ function powerOn(){
 }
 
 function setGate(on){
+  if(squelching) setSquelch(false);
   playing=on;
   const t=ctx.currentTime;
   vca.gain.cancelScheduledValues(t);
   vca.gain.setValueAtTime(vca.gain.value,t);
-  vca.gain.linearRampToValueAtTime(on?level:0, t+0.012);
+  vca.gain.linearRampToValueAtTime(on?outLevel():0, t+0.012);
   gateBtn.classList.toggle("on",on);
   gateBtn.textContent = on ? "■ stop" : "▶ hold note";
 }
@@ -285,19 +299,21 @@ function ping(){
   s.onended=()=>setTimeout(()=>{ g.disconnect(); stages.forEach(f=>f.disconnect()); }, 6000);
 }
 
+// keep the sweep above the 110 Hz fundamental so it doesn't dive into mud and
+// ring-clip crossing it from below
 function sweepLap(){
   const t=ctx.currentTime;
   [f1.frequency,f2.frequency].forEach(p=>{
     p.cancelScheduledValues(t);
     p.setValueAtTime(Math.max(p.value,C_MIN), t);
-    p.exponentialRampToValueAtTime(80, t+3);
-    p.exponentialRampToValueAtTime(8000, t+6);
+    p.exponentialRampToValueAtTime(150, t+3);
+    p.exponentialRampToValueAtTime(7000, t+6);
   });
 }
 function setSweep(on){
   sweeping=on;
   sweepBtn.classList.toggle("on",on);
-  if(on){ if(!playing) setGate(true); sweepLap(); sweepTimer=setInterval(sweepLap,6000); }
+  if(on){ if(squelching) setSquelch(false); if(!playing) setGate(true); sweepLap(); sweepTimer=setInterval(sweepLap,6000); }
   else{
     clearInterval(sweepTimer);
     const t=ctx.currentTime;
@@ -308,19 +324,57 @@ function setSweep(on){
   }
 }
 
-// the one-button payoff: 24 dB + resonance + sweep = the squelch
-function squelch(){
+/* The one-button payoff. A held saw through a slow sweep is a pad, not acid —
+   the squelch is *plucky, resonant and repeating*. So this fires a little acid
+   riff: every 8th-note it re-articulates the note and snaps the cutoff wide
+   open, then lets it decay down through the harmonics (env-mod + decay, which
+   we build properly in Module 2). Pitch walks an A-minor-pentatonic bass line.
+   A tiny lookahead scheduler (foreshadowing lesson 10) keeps the timing tight. */
+const SQ_STEP=0.25, SQ_PEAK=2600, SQ_FLOOR=180, SQ_FDECAY=0.22;
+const SQ_SEMIS=[0,0,12,0,3,0,7,10,0,12,5,3];   // A minor pentatonic over 110 Hz
+function scheduleSquelchStep(t){
+  const f=FREQ*Math.pow(2, SQ_SEMIS[squelchStep%SQ_SEMIS.length]/12);
+  osc.frequency.setValueAtTime(f, t);
+  [f1.frequency,f2.frequency].forEach(p=>{
+    p.cancelScheduledValues(t);
+    p.setValueAtTime(SQ_PEAK, t);
+    p.exponentialRampToValueAtTime(SQ_FLOOR, t+SQ_FDECAY);   // the "eeow"
+  });
+  const L=outLevel();
+  vca.gain.cancelScheduledValues(t);
+  vca.gain.setValueAtTime(0.0001, t);
+  vca.gain.linearRampToValueAtTime(L, t+0.006);              // pluck attack
+  vca.gain.exponentialRampToValueAtTime(0.05*L, t+SQ_STEP*0.9);
+  squelchStep++;
+}
+function setSquelch(on){
   if(!ctx) return;
-  setSlope(true);
-  resEl.value=15; resEl.dispatchEvent(new Event("input"));
-  if(!sweeping) setSweep(true);
+  squelching=on;
+  squelchBtn.classList.toggle("on",on);
+  if(on){
+    if(sweeping) setSweep(false);
+    setSlope(true);
+    resEl.value=13; resEl.dispatchEvent(new Event("input"));      // whistly, not screaming
+    playing=true; gateBtn.classList.add("on"); gateBtn.textContent="■ stop";
+    squelchStep=0; squelchNext=ctx.currentTime+0.12;
+    squelchTimer=setInterval(()=>{
+      while(squelchNext < ctx.currentTime+0.18){ scheduleSquelchStep(squelchNext); squelchNext+=SQ_STEP; }
+    }, 40);
+  }else{
+    clearInterval(squelchTimer);
+    const t=ctx.currentTime;
+    osc.frequency.cancelScheduledValues(t); osc.frequency.setValueAtTime(FREQ,t);
+    [f1.frequency,f2.frequency].forEach(p=>{ p.cancelScheduledValues(t); p.setValueAtTime(p.value,t); p.setTargetAtTime(curCut,t,0.05); });
+    vca.gain.cancelScheduledValues(t); vca.gain.setValueAtTime(Math.max(vca.gain.value,1e-4),t); vca.gain.linearRampToValueAtTime(0,t+0.05);
+    playing=false; gateBtn.classList.remove("on"); gateBtn.textContent="▶ hold note";
+  }
 }
 
 powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
-gateBtn.onclick=()=>setGate(!playing);
+gateBtn.onclick=()=>{ if(squelching) setSquelch(false); else setGate(!playing); };
 pingBtn.onclick=ping;
 sweepBtn.onclick=()=>setSweep(!sweeping);
-squelchBtn.onclick=squelch;
+squelchBtn.onclick=()=>setSquelch(!squelching);
 document.querySelectorAll(".slope").forEach(b=>b.onclick=()=>setSlope(b.dataset.m==="24"));
 
 document.querySelectorAll(".src").forEach(b=>b.onclick=()=>{
@@ -348,6 +402,7 @@ function fmtRes(q){
 }
 cutEl.oninput=()=>{
   if(sweeping) setSweep(false);
+  if(squelching) setSquelch(false);           // hand on the knob overrides the riff
   curCut=sliderToCut(+cutEl.value);
   cutVal.textContent=fmtCut(curCut);
   if(ctx){ const t=ctx.currentTime;
@@ -358,11 +413,13 @@ cutEl.oninput=()=>{
 resEl.oninput=()=>{
   reso=+resEl.value;
   resVal.textContent=fmtRes(reso);
-  if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01);
+  if(!ctx) return;
+  f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01);
+  if(playing && !squelching) vca.gain.setTargetAtTime(outLevel(),ctx.currentTime,0.02);  // makeup follows Q
 };
 levEl.oninput=()=>{
   level=+levEl.value/100; levVal.textContent=levEl.value+"%";
-  if(playing) vca.gain.setTargetAtTime(level,ctx.currentTime,0.01);
+  if(playing && !squelching) vca.gain.setTargetAtTime(outLevel(),ctx.currentTime,0.01);
 };
 cutVal.textContent=fmtCut(curCut);
 resVal.textContent=fmtRes(reso);
