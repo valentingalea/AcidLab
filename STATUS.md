@@ -95,7 +95,7 @@ Will later get its own DNS/host (M7). Spec agreed with Valentin 2026-07-03.
 |---|-----------|-------|-------|
 | M1 | Foundation | ✅ done | New self-contained `acidbox/` dir; lesson-16 instrument ported verbatim (303 voice + drum kit + one shared scheduler + dub delay/reverb); lesson chrome (idea panels, next/back nav) stripped; app header/footer; lesson 16 ↔ app + hub cross-links; iOS touch hardening kept |
 | M2 | UX overhaul | ✅ done | **(pulled earlier — Valentin's priority)** **card-grid** layout (chosen from 3 on-device mocks — tabbed / scroll / cards): 6 cards — `303 · filter · drums · space · transport · generate` — stack in portrait, reflow 2-up at ≥640px so **303 + its filter pair on the top row** (Valentin's ask), drums+space / transport+generate below. Full-length **"DJ" faders** (chunky long-throw, big tabular readouts) on cutoff/reso/env/decay/accent · delay/fb/reverb/**volume (new)** · tempo/swing. Sticky transport bar: power/play/🎲 jam + 💾🔗⬇ placeholders tagged M3/M4; generate card dimmed/disabled til M5. Engine unchanged from M1. Headless-verified: grids fire, faders drive params live, 303+filter same row in landscape, 0 JS errors. Decision mocks (`acidbox/mocks/`) removed after the pick. Cards = seed for M6 |
-| M3 | Persistence & sharing | ⬜ planned | one state model (patterns + all controls) → (a) localStorage autosave + named slots, (b) compact URL-hash share links (base64url, version-tagged) with a "copy link" button |
+| M3 | Persistence & sharing | ✅ done | one bit-packed state token (~38 bytes → **51 url-safe chars**, version-tagged) drives BOTH transports: **localStorage autosave** (debounced; restores on reload) + **named slots** (💾 modal — name/save/load/🗑) and **`#s=` share links** (🔗 copies to clipboard; opening a link applies it then strips the hash so autosave takes over = "import once"). Stores raw slider values so restore = set+dispatch (re-derives internal state, audio, readouts); power-on now reads the fx/vol sliders too (restore-safe, also fixes a latent M2 gap). Headless-verified: 40/40 codec round-trips, apply-fidelity, reload-restore, share-restore + hash-strip, slots CRUD, 0 JS errors |
 | M4 | WAV export | ⬜ planned | faithful offline render of the groovebox graph (drums + reverb included, unlike lesson 18's slim engine) via OfflineAudioContext → dependency-free WAV download |
 | M5 | Generators & clear | ⬜ planned | split the single 🎲 into per-instrument **[generate · clear]** for 303 and drums; wire in the lesson-17 algos (Euclidean drums, scale-locked random-walk melody) each with its own small (collapsible) generator control group |
 | M6 | Floating control surface | ⬜ planned | **(stretch)** the control clusters become a draggable/dockable "area" that floats & repositions to suit grip/orientation — additive on M2's area architecture |
@@ -117,3 +117,8 @@ DJ sliders + float/reposition, phone-first) → M2 (+ M6).
   chosen so a 2-col reflow pairs 303 with its filter. Added a **volume** fader
   (wired to `master.gain`) that M1/lesson-16 lacked. Generate + save/share/export
   kept as visible-but-disabled placeholders so the layout is final now.
+- 2026-07-03: **persistence codec** (M3) = one bit-packed token for both
+  localStorage and the `#s=` share link (not two codecs), version byte first so
+  old links can be rejected/migrated. Share links are **import-once**: applied
+  then the hash is stripped so local autosave owns the session afterwards (the
+  🔗 button always mints a fresh link from current state). ⬇ export still M4.

@@ -119,6 +119,16 @@
     background:#0a0c08;border:1px solid var(--acid);color:var(--acid);border-radius:10px;padding:9px 16px;
     font-size:13px;opacity:0;pointer-events:none;transition:.2s}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ── save/load slots modal (M3) ─────────────────────────────── */
+  #slots{position:fixed;inset:0;background:#000a;z-index:70;display:flex;align-items:flex-start;justify-content:center;padding:56px 14px}
+  #slots .sheet{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(440px,94vw);padding:14px 16px;max-height:80vh;overflow:auto}
+  .sheethd{display:flex;justify-content:space-between;align-items:center;color:var(--orange);text-transform:uppercase;letter-spacing:2px;font-size:12px;margin-bottom:10px}
+  #slotName{flex:1;min-width:110px;background:#0f140b;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px 10px;font:inherit;font-size:13px;-webkit-user-select:text;user-select:text;touch-action:auto}
+  #slotName:focus{outline:none;border-color:var(--acid)}
+  .slot{display:flex;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0}
+  .slot .nm{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .slot .ld{border-color:var(--acid);color:var(--acid)}
 </style>
 </head>
 <body>
@@ -128,8 +138,8 @@
   <button id="play" disabled>▶ play</button>
   <button id="rnd" disabled>🎲 jam</button>
   <span class="spacer"></span>
-  <button class="io soon" data-soon="Save to this browser — M3" data-tag="M3">💾</button>
-  <button class="io soon" data-soon="Copy a share link — M3" data-tag="M3">🔗</button>
+  <button class="io" id="saveBtn" title="save / load patterns">💾</button>
+  <button class="io" id="shareBtn" title="copy a share link">🔗</button>
   <button class="io soon" data-soon="Render a .wav — M4" data-tag="M4">⬇</button>
   <a class="hlp" href="../lessons/16-groovebox/index.html">how it works →</a>
 </div>
@@ -209,6 +219,19 @@
   <span class="hint">AcidBox — the standalone instrument from <a href="../lessons/16-groovebox/index.html">Acid Lab · lesson 16</a>. Pure Web Audio, no samples. <a href="../index.html">← all lessons</a></span>
 </footer>
 
+<!-- save/load slots (M3) -->
+<div id="slots" hidden>
+  <div class="sheet">
+    <div class="sheethd"><span>saved patterns</span><button id="slotsX" class="sm">✕ close</button></div>
+    <div class="row" style="margin:2px 0 10px">
+      <input id="slotName" type="text" placeholder="name this jam" maxlength="24" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button id="slotSave">💾 save current</button>
+    </div>
+    <div id="slotList"></div>
+    <div class="hint" id="slotEmpty">Nothing saved yet. Name a jam and hit save — it stays in this browser. Use 🔗 to send one to someone.</div>
+  </div>
+</div>
+
 <script>
 "use strict";
 /* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
@@ -265,12 +288,12 @@ function powerOn(){
   acidBus=ctx.createGain(); drumBus=ctx.createGain(); acidBus.connect(master); drumBus.connect(master);
   // tempo-synced dub delay (feedback loop)
   delay=ctx.createDelay(1.0); delayFb=ctx.createGain(); delayWet=ctx.createGain();
-  delayFb.gain.value=0.4; delayWet.gain.value=0.28;
+  delayFb.gain.value=(+$("#fb").value)/100; delayWet.gain.value=(+$("#dl").value)/100;   // read sliders (restore-safe)
   delay.connect(delayFb); delayFb.connect(delay); delay.connect(delayWet); delayWet.connect(master);
   acidBus.connect(delay);                               // the acid line trails into the delay
   delay.delayTime.value=3*(60/bpm/4);                   // dotted-8th, exact from the first hit
   // synthesised reverb
-  conv=ctx.createConvolver(); conv.buffer=makeIR(); revWet=ctx.createGain(); revWet.gain.value=0.14;
+  conv=ctx.createConvolver(); conv.buffer=makeIR(); revWet=ctx.createGain(); revWet.gain.value=(+$("#rv").value)/100;
   conv.connect(revWet); revWet.connect(master); acidBus.connect(conv); drumBus.connect(conv);
   // the 303 voice
   osc=ctx.createOscillator(); osc.type=waveform; osc.frequency.value=mf(ROOT);
@@ -338,7 +361,7 @@ function setPlay(on){
 /* ── build the grids ───────────────────────────────────────────── */
 function el(tag,cls,txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
 function pnum(i){ const s=el("div","stepnum"+(i%4===0?" b":"")); s.textContent=i%4===0?(i/4+1):""; return s; }
-const pcols=[], accs=[], slds=[], octs=[], dcells={};
+const pcols=[], accs=[], slds=[], octs=[], dcells={}, dlabels={};
 const acidGrid=$("#acidgrid"), drumGrid=$("#drumgrid");
 // acid: header + NOTE/ACC/SLD/OCT rows
 acidGrid.appendChild(el("div","lbl","")); for(let i=0;i<16;i++) acidGrid.appendChild(pnum(i));
@@ -353,7 +376,7 @@ acidGrid.appendChild(el("div","lbl","OCT"));
 for(let i=0;i<16;i++){ const c=el("div","tog oct"+(i%4===0?" beat":"")); c.textContent="·"; c.addEventListener("pointerdown",e=>{ e.preventDefault(); OCT[i]=OCT[i]===0?1:OCT[i]===1?-1:0; paintOct(i); paintPitch(i); }); acidGrid.appendChild(c); octs.push(c); }
 // drums: header + a row per drum
 drumGrid.appendChild(el("div","lbl","")); for(let i=0;i<16;i++) drumGrid.appendChild(pnum(i));
-DRUMS.forEach(d=>{ const lbl=el("div","lbl mut",d.l); lbl.onclick=()=>{ dmute[d.k]=!dmute[d.k]; lbl.classList.toggle("muted",dmute[d.k]); dcells[d.k].forEach(c=>c.classList.toggle("mutedrow",dmute[d.k])); };
+DRUMS.forEach(d=>{ const lbl=el("div","lbl mut",d.l); dlabels[d.k]=lbl; lbl.onclick=()=>setMute(d.k,!dmute[d.k]);
   drumGrid.appendChild(lbl); dcells[d.k]=[];
   for(let i=0;i<16;i++){ const c=el("div","dcell"+(i%4===0?" beat":"")+(d.k==="kick"?" kick":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); DP[d.k][i]=!DP[d.k][i]; c.classList.toggle("on",DP[d.k][i]); }); drumGrid.appendChild(c); dcells[d.k].push(c); } });
 
@@ -363,6 +386,7 @@ function paintOct(i){ const o=OCT[i],c=octs[i]; c.textContent=o>0?"▲":o<0?"▼
 function repaintAcid(){ for(let i=0;i<16;i++){ paintPitch(i); accs[i].classList.toggle("on",ACCENT[i]); slds[i].classList.toggle("on",SLIDE[i]); paintOct(i); } }
 function setScale(idx){ curScale=idx; SCALE=SCALES[idx].s; NP=SCALE.length; for(let i=0;i<16;i++) if(PITCH[i]>NP) PITCH[i]=NP; scaleBtn.textContent="scale: "+SCALES[idx].n; repaintAcid(); }
 function repaintDrums(){ DRUMS.forEach(d=>{ for(let i=0;i<16;i++) dcells[d.k][i].classList.toggle("on",DP[d.k][i]); }); }
+function setMute(k,on){ dmute[k]=on; dlabels[k].classList.toggle("muted",on); dcells[k].forEach(c=>c.classList.toggle("mutedrow",on)); }
 function loadDrums(name){ const p=DPRE[name]; DRUMS.forEach(d=>{ DP[d.k]=new Array(16).fill(false); (p[d.k]||[]).forEach(i=>DP[d.k][i]=true); }); repaintDrums(); }
 function randomize(){
   for(let i=0;i<16;i++){
@@ -400,8 +424,101 @@ function toast(m){ if(!toastEl){ toastEl=el("div"); toastEl.id="toast"; document
   toastEl.textContent=m; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove("show"),1700); }
 document.querySelectorAll("[data-soon]").forEach(b=>b.addEventListener("click",()=>toast(b.dataset.soon)));
 
+/* ══ M3 · persistence & sharing ═══════════════════════════════════
+   ONE compact state token drives both localStorage and the #s= share
+   link. Bit-packed (~38 bytes) → ~51 url-safe chars. We store the raw
+   *slider* values so restore is just "set value + fire input", which
+   re-derives internal state, readouts and (when powered) audio params. */
+const ST_VER=1;
+function getState(){ return {
+  bpm:+$("#bpm").value, sw:+$("#sw").value, cut:+$("#cut").value, res:Math.round(+$("#res").value*2),
+  env:+$("#env-mod").value, dec:+$("#dec").value, acc:+$("#acc").value,
+  dl:+$("#dl").value, fb:+$("#fb").value, rv:+$("#rv").value, vol:+$("#vol").value,
+  wave:waveform==="square"?1:0, scale:curScale,
+  pitch:PITCH.slice(), oct:OCT.map(o=>o+1), accg:ACCENT.map(b=>b?1:0), sld:SLIDE.map(b=>b?1:0),
+  drums:DRUMS.map(d=>DP[d.k].map(b=>b?1:0)), mute:DRUMS.map(d=>dmute[d.k]?1:0),
+}; }
+function setSlider(sel,v){ const el=$(sel); if(!el)return; el.value=v; el.dispatchEvent(new Event("input",{bubbles:true})); }
+function applyState(s){
+  setSlider("#bpm",s.bpm); setSlider("#sw",s.sw); setSlider("#cut",s.cut); setSlider("#res",s.res/2);
+  setSlider("#env-mod",s.env); setSlider("#dec",s.dec); setSlider("#acc",s.acc);
+  setSlider("#dl",s.dl); setSlider("#fb",s.fb); setSlider("#rv",s.rv); setSlider("#vol",s.vol);
+  waveform=s.wave?"square":"sawtooth"; waveBtn.textContent=s.wave?"▨ square":"◿ saw"; if(osc) osc.type=waveform;
+  curScale=s.scale; SCALE=SCALES[s.scale].s; NP=SCALE.length; scaleBtn.textContent="scale: "+SCALES[s.scale].n;
+  for(let i=0;i<16;i++){ PITCH[i]=Math.min(s.pitch[i],NP); OCT[i]=s.oct[i]-1; ACCENT[i]=!!s.accg[i]; SLIDE[i]=!!s.sld[i]; }
+  repaintAcid();
+  DRUMS.forEach((d,di)=>{ for(let i=0;i<16;i++) DP[d.k][i]=!!s.drums[di][i]; }); repaintDrums();
+  DRUMS.forEach((d,di)=>setMute(d.k,!!s.mute[di]));
+}
+// bit-packed token (field order must match between encode & decode)
+function encodeState(){ const s=getState(), W=[]; let cur=0,nb=0;
+  const w=(v,n)=>{ for(let i=n-1;i>=0;i--){ cur=(cur<<1)|((v>>i)&1); if(++nb===8){W.push(cur);cur=0;nb=0;} } };
+  w(ST_VER,4);
+  w(s.bpm-90,6); w(s.sw,7); w(s.cut,10); w(s.res,6); w(s.env,7); w(s.dec-30,10); w(s.acc,7);
+  w(s.dl,7); w(s.fb,7); w(s.rv,7); w(s.vol,7); w(s.wave,1); w(s.scale,3);
+  for(let i=0;i<16;i++) w(s.pitch[i],4);
+  for(let i=0;i<16;i++) w(s.oct[i],2);
+  for(let i=0;i<16;i++) w(s.accg[i],1);
+  for(let i=0;i<16;i++) w(s.sld[i],1);
+  for(let d=0;d<5;d++) for(let i=0;i<16;i++) w(s.drums[d][i],1);
+  for(let d=0;d<5;d++) w(s.mute[d],1);
+  if(nb>0){ cur=cur<<(8-nb); W.push(cur); }
+  let bin=""; for(const b of W) bin+=String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function decodeState(tok){
+  const bin=atob(tok.replace(/-/g,"+").replace(/_/g,"/")); const U=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) U[i]=bin.charCodeAt(i);
+  let bi=0,bit=0; const r=n=>{ let v=0; for(let k=0;k<n;k++){ v=(v<<1)|((U[bi]>>(7-bit))&1); if(++bit===8){bit=0;bi++;} } return v; };
+  if(r(4)!==ST_VER) throw new Error("bad token version");
+  const s={}; s.bpm=r(6)+90; s.sw=r(7); s.cut=r(10); s.res=r(6); s.env=r(7); s.dec=r(10)+30; s.acc=r(7);
+  s.dl=r(7); s.fb=r(7); s.rv=r(7); s.vol=r(7); s.wave=r(1); s.scale=r(3);
+  s.pitch=[]; s.oct=[]; s.accg=[]; s.sld=[];
+  for(let i=0;i<16;i++) s.pitch.push(r(4));
+  for(let i=0;i<16;i++) s.oct.push(r(2));
+  for(let i=0;i<16;i++) s.accg.push(r(1));
+  for(let i=0;i<16;i++) s.sld.push(r(1));
+  s.drums=[]; for(let d=0;d<5;d++){ const row=[]; for(let i=0;i<16;i++) row.push(r(1)); s.drums.push(row); }
+  s.mute=[]; for(let d=0;d<5;d++) s.mute.push(r(1));
+  return s;
+}
+
+/* autosave (debounced) — any fader move or grid/button tap */
+let saveT=null;
+function scheduleSave(){ clearTimeout(saveT); saveT=setTimeout(()=>{ try{ localStorage.setItem("acidbox:auto",encodeState()); }catch(e){} },400); }
+document.addEventListener("input",scheduleSave);
+document.addEventListener("pointerup",scheduleSave);
+
+/* 🔗 share link — encode current state into #s=, copy to clipboard */
+$("#shareBtn").onclick=()=>{ const url=location.origin+location.pathname+"#s="+encodeState();
+  const ok=()=>toast("share link copied"), fb=()=>prompt("copy this link:",url);
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok,fb); else fb(); };
+
+/* 💾 slots — named patterns in localStorage */
+const slotsEl=$("#slots"), slotList=$("#slotList"), slotName=$("#slotName"), slotEmpty=$("#slotEmpty");
+function getSlots(){ try{ return JSON.parse(localStorage.getItem("acidbox:slots")||"[]"); }catch(e){ return []; } }
+function putSlots(a){ try{ localStorage.setItem("acidbox:slots",JSON.stringify(a)); }catch(e){} }
+function renderSlots(){ const a=getSlots(); slotList.innerHTML=""; slotEmpty.style.display=a.length?"none":"block";
+  a.forEach((sl,ix)=>{ const row=el("div","slot"), nm=el("div","nm",sl.n), ld=el("button","ld","load"), rm=el("button","sm","🗑");
+    ld.onclick=()=>{ try{ applyState(decodeState(sl.t)); slotsEl.hidden=true; toast("loaded “"+sl.n+"”"); }catch(e){ toast("couldn't load that one"); } };
+    rm.onclick=()=>{ const b=getSlots(); b.splice(ix,1); putSlots(b); renderSlots(); };
+    row.append(nm,ld,rm); slotList.appendChild(row); }); }
+$("#saveBtn").onclick=()=>{ renderSlots(); slotsEl.hidden=false; };
+$("#slotsX").onclick=()=>{ slotsEl.hidden=true; };
+slotsEl.addEventListener("pointerdown",e=>{ if(e.target===slotsEl) slotsEl.hidden=true; });
+$("#slotSave").onclick=()=>{ const n=(slotName.value||"").trim()||("jam "+(getSlots().length+1)), a=getSlots(), rec={n,t:encodeState()};
+  const ix=a.findIndex(x=>x.n===n); if(ix>=0) a[ix]=rec; else a.push(rec); putSlots(a); slotName.value=""; renderSlots(); toast("saved “"+n+"”"); };
+
+/* restore on load: a #s= share link wins, else the autosave */
+function initState(){
+  const m=location.hash.match(/[#&]s=([A-Za-z0-9\-_]+)/);
+  if(m){ try{ applyState(decodeState(m[1])); toast("loaded shared pattern"); }catch(e){}
+    history.replaceState(null,"",location.pathname+location.search); return; }
+  const a=localStorage.getItem("acidbox:auto"); if(a){ try{ applyState(decodeState(a)); }catch(e){} }
+}
+
 /* ── init grids + playhead ─────────────────────────────────────── */
-loadDrums("house"); repaintAcid();
+loadDrums("house"); repaintAcid(); initState();
 function setCur(s,on){ pcols[s].classList.toggle("cur",on); accs[s].classList.toggle("cur",on); slds[s].classList.toggle("cur",on); octs[s].classList.toggle("cur",on); DRUMS.forEach(d=>dcells[d.k][s].classList.toggle("cur",on)); }
 function draw(){ requestAnimationFrame(draw); if(!ctx) return;
   if(playing){ let ns=playStep; while(schedQ.length && schedQ[0].t<=ctx.currentTime){ ns=schedQ.shift().s; }
