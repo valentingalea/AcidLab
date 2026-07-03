@@ -60,3 +60,11 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 - 2026-07-02: **Game target = web** (JS/Canvas/Phaser/Pixi). Big implication: the
   synth/sequencer engine we build can be embedded live in the game — Module 6
   favours a reusable JS engine over rendering loops to files.
+- 2026-07-03: **iOS touch hardening** on all 8 widget pages (ported from
+  Mudline's pattern): viewport `maximum-scale=1,user-scalable=no`,
+  `-webkit-touch-callout/user-select/tap-highlight` off, `format-detection=no`,
+  JS veto of `gesture*`/`contextmenu` — so the long-press loupe, tap flash and
+  pinch/double-tap zoom stop fighting the sliders & keyboard. Deviation from
+  Mudline: body is NOT pinned (`touch-action:pan-x pan-y`, no `overflow:hidden`)
+  so the lesson text still scrolls. Side effect: lesson text is no longer
+  selectable — revisit if copy/zoom accessibility is wanted on the reading pages.

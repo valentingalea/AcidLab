@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
 <title>03 · Resonance &amp; the squelch — Acid Lab</title>
 <style>
   :root{
@@ -10,6 +11,15 @@
     --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
   }
   *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Vertical scrolling of the lesson text
+     is deliberately preserved (pan-y; the body is NOT pinned). ===== */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  html,body{touch-action:pan-x pan-y;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  button,label,a{touch-action:manipulation}
+  input[type=range]{touch-action:none}
   body{
     margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
     color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
@@ -192,6 +202,12 @@
 
 <script>
 "use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
 /* Lesson 03 — resonance & slope. Signal path:
 
      saw/square osc ─┐
