@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>11 · Synthesizing drums — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  canvas{width:100%;height:130px;display:block;background:#0a0c08;border:1px solid var(--line);border-radius:10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:13px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.08s}
+  button:hover{border-color:var(--acid)}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:16px;padding:12px 22px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #beat{font-weight:700;font-size:15px;padding:11px 20px}
+  #beat.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #beat:disabled,.pad:disabled{opacity:.35;cursor:not-allowed}
+  .pads{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:10px 0}
+  .pad{height:74px;border-radius:10px;font-weight:700;font-size:14px;background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+  .pad .kk{font-size:10px;color:var(--dim);font-weight:400}
+  .pad.hit{background:var(--acid);color:#0a0c08;border-color:var(--acid);transform:translateY(1px)}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  ul{margin:8px 0;padding-left:22px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">11</span> · Synthesizing drums</h1>
+  <p class="sub">No samples. A drum is just a synth voice that starts loud and dies fast — you already have every ingredient. Let's build a whole kit from sine waves and noise.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <canvas id="scope"></canvas>
+    <div class="pads">
+      <div class="pad" data-d="kick" >KICK<span class="kk">A</span></div>
+      <div class="pad" data-d="snare">SNARE<span class="kk">S</span></div>
+      <div class="pad" data-d="chat" >CL HAT<span class="kk">D</span></div>
+      <div class="pad" data-d="ohat" >OP HAT<span class="kk">F</span></div>
+      <div class="pad" data-d="clap" >CLAP<span class="kk">G</span></div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="beat" disabled>▶ demo beat</button>
+      <div class="ctrl" style="max-width:220px"><label>tempo <b id="bpmVal">124 BPM</b></label><input id="bpm" type="range" min="90" max="150" value="124"></div>
+    </div>
+
+    <div class="row">
+      <div class="ctrl"><label>kick tune <b id="ktVal">50 Hz</b></label><input id="ktune" type="range" min="35" max="90" value="50"></div>
+      <div class="ctrl"><label>kick decay <b id="kdVal">400 ms</b></label><input id="kdec" type="range" min="80" max="800" value="400"></div>
+      <div class="ctrl"><label>snare snap <b id="ssVal">60%</b></label><input id="ssnap" type="range" min="0" max="100" value="60"></div>
+      <div class="ctrl"><label>hat brightness <b id="hbVal">8000 Hz</b></label><input id="hbri" type="range" min="3000" max="12000" value="8000"></div>
+    </div>
+    <p class="hint">Hit the pads (or keys <code>A S D F G</code>). Tweak the knobs and re-hit. Then press
+      <span class="kbd">▶ demo beat</span> — the synthesized kit, sequenced on the rock-solid clock from lesson 10.</p>
+  </div>
+
+  <!-- ── idea 1 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>A drum is a synth voice that dies fast</h2>
+    <p>You might assume drum machines play little recordings. The classics — the Roland <b>TR-808</b> and
+    <b>TR-909</b> that built house, techno and hip-hop — don't. Every sound is <b class="hl">synthesised on the
+    fly</b> from the exact primitives you've been using: oscillators, noise, filters, and envelopes. A drum is
+    just a <b>very short, very percussive synth note</b>: it slams on and decays in a fraction of a second.
+    That's the whole trick — <b class="hl">fast envelopes</b>.</p>
+    <p>Two ingredients cover an entire kit: a <b>tone</b> (a pitched oscillator) for anything with body — kicks,
+    toms, the "thud" of a snare — and <b>noise</b> (random samples, from lesson P3) for anything hissy — hats,
+    the "snap" of a snare, claps. Mix and shape those two with envelopes and you have drums.</p>
+  </div>
+
+  <!-- ── idea 2 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>The kick — a sine that falls</h2>
+    <p>The kick is the most elegant. It's a single <b class="hl">sine wave</b> (deep, pure, no harshness) with
+    two envelopes firing at once:</p>
+    <ul>
+      <li>a <b class="hl">pitch envelope</b> — the sine starts high (~150 Hz) and <b>drops</b> to its base
+        pitch (~50 Hz) in about 50 ms. That fast downward swoop <i>is</i> the "thump" / punch of the attack.</li>
+      <li>an <b class="hl">amp envelope</b> — full volume instantly, then a decay to silence (the
+        <span class="kbd">kick decay</span> knob). Long = a booming 808 sub; short = a tight 909 thud.</li>
+    </ul>
+    <p>That's it — a sine, a pitch drop, a volume drop. Turn <span class="kbd">kick tune</span> down and
+    <span class="kbd">kick decay</span> up for a chest-caving 808; tune up and decay down for a punchy techno
+    kick. On the scope you can literally see the wave slow down (the pitch falling) as it fades.</p>
+  </div>
+
+  <!-- ── idea 3 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Noise makes the rest — snare, hats, clap</h2>
+    <p>Everything hissy is <b class="hl">filtered noise</b> plus an envelope. Same recipe, different filter and
+    decay:</p>
+    <table>
+      <tr><th>drum</th><th>recipe</th></tr>
+      <tr><td><b class="hl">Snare</b></td><td>a <b>tone body</b> (two triangle waves ~180 Hz — the "thud") + <b>noise</b> through a high-pass (the "snap"). The <span class="kbd">snare snap</span> knob sets how much noise vs body.</td></tr>
+      <tr><td><b class="hl">Closed hat</b></td><td>bright noise (high-pass, <span class="kbd">hat brightness</span>) with a <b>tiny</b> decay (~40 ms). A short "tss".</td></tr>
+      <tr><td><b class="hl">Open hat</b></td><td>the <i>same</i> noise, but a <b>long</b> decay (~300 ms) — a sizzling "tssssss". Closed and open are one sound, two envelope lengths.</td></tr>
+      <tr><td><b class="hl">Clap</b></td><td>the clever one: <b>3–4 quick noise bursts</b> ~12 ms apart (imitating many hands not quite in sync), then a short noise tail. That stutter is what makes a clap sound like a clap and not a snare.</td></tr>
+    </table>
+    <p>Hit each pad and watch the scope: the kick is a smooth low wave, the hats are a dense high-frequency
+    fuzz, the snare is a fuzz riding on a tone, the clap is those little repeated bursts.</p>
+    <div class="nerd"><b>// CS corner:</b> noise = an <code>AudioBuffer</code> of
+    <code>Math.random()*2−1</code> (from P3), replayed through a <code>BiquadFilter</code>. Every drum here is
+    a handful of nodes created, scheduled with <code>setValueAtTime</code>/<code>exponentialRampToValueAtTime</code>
+    envelopes, and left to auto-stop — created fresh per hit (one-shot voices), unlike the 303's one persistent
+    voice. No node graph is kept alive between hits.</div>
+  </div>
+
+  <!-- ── idea 4 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>Put it on the clock</h2>
+    <p>A kit is nothing without <b>time</b> — so the <span class="kbd">▶ demo beat</span> hangs these voices on
+    the lookahead scheduler from lesson 10: kick on every beat (four-on-the-floor), a snare backbeat, hats on
+    the off-beats, a clap. Rock-solid timing, entirely synthesised, zero samples. Tweak the drum knobs
+    <i>while</i> it plays and reshape the kit live.</p>
+    <p>This is the other half of a groovebox. You have the melodic voice (the 303, lessons 05–09) and now the
+    rhythm (a synth drum kit). Next we give the drums a <b>16-step grid</b> so you can program your own beats —
+    the drum machine.</p>
+    <a class="next" href="../../index.html">Next → 12 · The drum machine (soon)</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Lesson 11 — drum synthesis. Each drum is a one-shot voice: nodes created per
+   hit, scheduled with envelopes, auto-stopped. Noise = a shared random buffer
+   (P3) replayed through filters. The demo beat sequences them on the lesson-10
+   lookahead scheduler.                                                          */
+
+let ctx, master, noiseBuf, scopeAna;
+let kTune=50, kDecay=0.4, snSnap=0.6, hatBri=8000;
+let bpm=124, playing=false, timer=null, nextT=0, stepIx=0;
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), beatBtn=$("#beat"), scopeC=$("#scope");
+const pads=[...document.querySelectorAll(".pad")];
+
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  master=ctx.createGain(); master.gain.value=0.45;   // headroom for the 4-drum backbeat stack
+  scopeAna=ctx.createAnalyser(); scopeAna.fftSize=2048;
+  master.connect(scopeAna); scopeAna.connect(ctx.destination);
+  // 2 s of white noise, shared by every noisy drum
+  noiseBuf=ctx.createBuffer(1, 2*ctx.sampleRate, ctx.sampleRate);
+  const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  beatBtn.disabled=false; pads.forEach(p=>p.classList.remove("disabled"));
+  draw();
+}
+const noiseSrc=()=>{ const s=ctx.createBufferSource(); s.buffer=noiseBuf; return s; };
+
+/* ── the drum voices ───────────────────────────────────────────── */
+function kick(t){
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type="sine";
+  o.frequency.setValueAtTime(kTune+120, t);                 // start ~150 Hz…
+  o.frequency.exponentialRampToValueAtTime(kTune, t+0.05);  // …drop to base = the punch
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.95,t+0.003);
+  g.gain.exponentialRampToValueAtTime(0.0004, t+kDecay);
+  o.connect(g).connect(master); o.start(t); o.stop(t+kDecay+0.02);
+}
+function snare(t){
+  // tonal body: two triangles
+  const bg=ctx.createGain(); bg.gain.setValueAtTime(0.5,t); bg.gain.exponentialRampToValueAtTime(0.001,t+0.11); bg.connect(master);
+  [190,295].forEach(f=>{ const o=ctx.createOscillator(); o.type="triangle"; o.frequency.value=f; o.connect(bg); o.start(t); o.stop(t+0.14); });
+  // noise snap through a high-pass
+  const n=noiseSrc(), hp=ctx.createBiquadFilter(), ng=ctx.createGain();
+  hp.type="highpass"; hp.frequency.value=1400; hp.Q.value=0.7;
+  ng.gain.setValueAtTime(0.85*snSnap,t); ng.gain.exponentialRampToValueAtTime(0.001, t+0.16);
+  n.connect(hp).connect(ng).connect(master); n.start(t); n.stop(t+0.2);
+}
+function hat(t, open){
+  const n=noiseSrc(), hp=ctx.createBiquadFilter(), g=ctx.createGain(), dec=open?0.30:0.045;
+  hp.type="highpass"; hp.frequency.value=hatBri;
+  g.gain.setValueAtTime(0.34,t); g.gain.exponentialRampToValueAtTime(0.001, t+dec);
+  n.connect(hp).connect(g).connect(master); n.start(t); n.stop(t+dec+0.02);
+}
+function clap(t){
+  const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1100; bp.Q.value=1.0; bp.connect(master);
+  [[0,.5],[0.012,.5],[0.024,.5],[0.038,.4]].forEach(([o,a])=>{     // the multi-burst stutter
+    const n=noiseSrc(), g=ctx.createGain(); g.gain.setValueAtTime(a,t+o); g.gain.exponentialRampToValueAtTime(0.001,t+o+0.02);
+    n.connect(g).connect(bp); n.start(t+o); n.stop(t+o+0.05);
+  });
+  const n=noiseSrc(), g=ctx.createGain(); g.gain.setValueAtTime(0.3,t+0.05); g.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+  n.connect(g).connect(bp); n.start(t+0.05); n.stop(t+0.26);
+}
+function fire(d, t){ d==="kick"?kick(t):d==="snare"?snare(t):d==="chat"?hat(t,false):d==="ohat"?hat(t,true):clap(t); }
+
+/* ── the demo beat (lesson-10 lookahead scheduler) ─────────────── */
+const BEAT={ //           1               2               3               4
+  kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+  snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+  chat:  [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+  ohat:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0],
+  clap:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,0,0],
+};
+function tick(){
+  const stepDur=60/bpm/4;
+  while(nextT < ctx.currentTime+0.12){
+    const s=stepIx%16;
+    for(const d in BEAT) if(BEAT[d][s]){ fire(d, nextT); if(nextT-ctx.currentTime<0.05) flashPad(d); }
+    stepIx++; nextT+=stepDur;
+  }
+}
+function setBeat(on){
+  playing=on; beatBtn.classList.toggle("on",on); beatBtn.textContent=on?"■ stop":"▶ demo beat";
+  if(on){ stepIx=0; nextT=ctx.currentTime+0.06; clearInterval(timer); timer=setInterval(tick,25); tick(); }
+  else clearInterval(timer);
+}
+
+/* ── controls ──────────────────────────────────────────────────── */
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+beatBtn.onclick=()=>setBeat(!playing);
+function hit(d){ if(!ctx) return; if(ctx.state==="suspended") ctx.resume(); fire(d, ctx.currentTime+0.015); flashPad(d); }
+function flashPad(d){ const p=pads.find(x=>x.dataset.d===d); if(!p) return; p.classList.add("hit"); setTimeout(()=>p.classList.remove("hit"),90); }
+pads.forEach(p=>p.addEventListener("pointerdown", e=>{ e.preventDefault(); hit(p.dataset.d); }));
+const KEYMAP={KeyA:"kick",KeyS:"snare",KeyD:"chat",KeyF:"ohat",KeyG:"clap"};
+addEventListener("keydown",e=>{ if(e.repeat) return; const d=KEYMAP[e.code]; if(d){ e.preventDefault(); hit(d); } });
+
+$("#bpm").oninput=e=>{ bpm=+e.target.value; $("#bpmVal").textContent=bpm+" BPM"; };
+$("#ktune").oninput=e=>{ kTune=+e.target.value; $("#ktVal").textContent=kTune+" Hz"; };
+$("#kdec").oninput=e=>{ kDecay=+e.target.value/1000; $("#kdVal").textContent=e.target.value+" ms"; };
+$("#ssnap").oninput=e=>{ snSnap=+e.target.value/100; $("#ssVal").textContent=e.target.value+"%"; };
+$("#hbri").oninput=e=>{ hatBri=+e.target.value; $("#hbVal").textContent=hatBri+" Hz"; };
+
+/* ── scope ─────────────────────────────────────────────────────── */
+function fit(c){ const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect(); c.width=r.width*dpr; c.height=r.height*dpr; const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); return [g,r.width,r.height]; }
+const buf=new Uint8Array(2048);
+function draw(){
+  requestAnimationFrame(draw);
+  if(!scopeAna) return;
+  const [g,W,H]=fit(scopeC);
+  scopeAna.getByteTimeDomainData(buf);
+  g.clearRect(0,0,W,H);
+  g.strokeStyle="#2a3320"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
+  g.lineWidth=2; g.strokeStyle="#b6ff00"; g.beginPath();
+  for(let i=0;i<buf.length;i++){ const x=(i/buf.length)*W, y=H-(buf[i]/255)*H; i===0?g.moveTo(x,y):g.lineTo(x,y); }
+  g.stroke();
+}
+</script>
+</body>
+</html>

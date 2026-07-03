@@ -28,7 +28,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 08 | Slide / glide | ✅ done | per-step slide flag → osc.frequency exp-ramp (portamento) into next note + legato tie (slid-into note skips amp attack & filter-env retrigger; note before a slide holds gate open); SLIDE TIME knob; pitch-over-time graph (diagonal=glide, vertical=jump) w/ gliding playhead; completes the 303 voice |
 | 09 | Drive / saturation | ✅ done | (was optional; built on request) WaveShaperNode drive stage after the voice: DRIVE pre-gain + clean/soft(tanh)/hard(clamp)/fold(sin) curves, 4× oversample; live transfer-curve viz w/ signal dots + output scope; drive×resonance = the hard-acid scream (Hardfloor/Josh Wink framing) |
 | 10 | The clock problem (scheduler) | ✅ done | CS centrepiece: A/B 16th-note metronome — naïve recursive setTimeout (plays on callback, drifts/jitters) vs lookahead scheduler (queues onto ctx.currentTime ~100ms ahead); 💣 main-thread busy-loop stressor exposes the difference; live beat-spacing-error bar viz + worst-jitter readout; "two clocks" framing |
-| 11 | Synthesizing drums | ⬜ planned | |
+| 11 | Synthesizing drums | ✅ done | 808/909 kit from scratch: kick (sine + pitch-drop env), snare (2 triangles body + HP noise snap), closed/open hat (HP noise, short/long decay), clap (4 stutter noise bursts + tail via bandpass). Playable pads (+A S D F G keys), scope, tune/decay/snap/brightness knobs, demo beat on the lesson-10 scheduler |
 | 12 | The drum machine | ⬜ planned | |
 | 13 | 303 step sequencer | ⬜ planned | |
 | 14 | Scales & melody | ⬜ planned | |
