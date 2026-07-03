@@ -23,7 +23,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 303 | Interlude · The TB-303 story | ✅ done | history (Roland's failed bass machine → DJ Pierre/Phuture discovery → Acid Tracks 1987) + how the real 303 is programmed; same bassline "tame vs live acid morph" demo, 16-step sequencer grid w/ playhead, panel-map of every knob→lesson. Reuses 00–06 voice, web-searched facts, sits after 06 |
 | 06 | Filter env: Env Mod + Decay | ✅ done | per-note envelope on both biquads' cutoff (floor→peak→floor, exp decay); Env Mod (0..4 oct) + Decay hero knobs; live env-shape graph + moving cutoff marker; hands-free "acid line" riff (lookahead scheduler); reuses lesson-03 resonance make-up. 2026-07-03 fix: riff sounded monotone/no-squelch — amp died to silence before the filter swept; now the note rings to ~0.28·L across the step so the sweep is audible, + baked-in accent groove (louder+brighter notes, preview of 07), punchier defaults (reso 14, floor 220, EnvMod 80) |
 | 07 | Accent | ✅ done | ACCENT amount knob + clickable 16-step accent grid; accented steps scale 3 things by amount (amp ×(1+0.9a) louder, filter-env peak ×(1+a) brighter, filter decay ×(1−0.45a) snappier); playhead, live spectrum. Reuses 06 voice |
-| 08 | Slide / glide | ⬜ planned | |
+| 08 | Slide / glide | ✅ done | per-step slide flag → osc.frequency exp-ramp (portamento) into next note + legato tie (slid-into note skips amp attack & filter-env retrigger; note before a slide holds gate open); SLIDE TIME knob; pitch-over-time graph (diagonal=glide, vertical=jump) w/ gliding playhead; completes the 303 voice |
 | 09 | Drive / saturation | ⏭️ optional | |
 | 10 | The clock problem (scheduler) | ⬜ planned | CS centrepiece |
 | 11 | Synthesizing drums | ⬜ planned | |
@@ -37,11 +37,12 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 
 ## Now / Next
 - **Now:** Prologue (3 ELI5 parts), Module 0 (00 + 01), Module 1 (02 + 03),
-  Module 2 (05 voice, 06 filter env, 07 accent), and the 303-story interlude
-  all live. Old `prologue-theory/` URL redirects to P1.
-- **Next:** Lesson 08 (Slide / glide) — portamento between legato notes, the
-  last per-note trick; completes the 303 voice. Lesson 04 (AudioWorklet ladder)
-  stays optional.
+  Module 2 complete (05 voice, 06 filter env, 07 accent, 08 slide), and the
+  303-story interlude all live. **The full 303 voice is built** — every knob and
+  the two per-note tricks. Old `prologue-theory/` URL redirects to P1.
+- **Next:** Module 3 — lesson 10 (the clock problem / lookahead scheduler, the
+  CS centrepiece), then 11 (synth drums) + 12 (drum machine). Lesson 09 (drive)
+  and 04 (AudioWorklet ladder) stay optional.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?
