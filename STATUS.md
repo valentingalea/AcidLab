@@ -19,7 +19,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 02 | Low-pass filter & cutoff | ✅ done | single biquad lowpass (Q=0.707, reso saved for 03), live getFrequencyResponse curve + cutoff marker on log spectrum, bypass A/B, auto-sweep, saw/square/noise sources |
 | 03 | Resonance & the squelch | ✅ done | reso knob (Q in dB on stage 2 only), 12/24 dB slope toggle (chained biquads), impulse "ping" that rings at cutoff, dB-scale response curve. 2026-07-03: reworked ★ squelch from a slow held sweep (clipped to 2.17, sounded like a pad) into a plucky repeating A-minor-pentatonic riff w/ per-note filter env (env-mod+decay preview) via mini lookahead scheduler; added resonance makeup-gain so high-Q no longer clips |
 | 04 | Ladder filter (AudioWorklet) | ⏭️ optional | |
-| 05 | The 303 voice | ⬜ planned | |
+| 05 | The 303 voice | ✅ done | first assembly: osc(saw/sq) → 24 dB filter → VCA amp env, monophonic (held-note stack, last-note priority), playable keyboard (mouse + A..K, Z/X octave), cutoff/reso/amp-decay/vol, live filter curve, signal-chain diagram. Filter env deferred to 06 |
 | 06 | Filter env: Env Mod + Decay | ⬜ planned | |
 | 07 | Accent | ⬜ planned | |
 | 08 | Slide / glide | ⬜ planned | |
@@ -35,11 +35,12 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 18 | Shipping it | ⬜ planned | for the game |
 
 ## Now / Next
-- **Now:** Prologue (3 ELI5 parts, rewritten 2026-07-02), Module 0
-  (lessons 00 + 01) and Module 1 (lessons 02 + 03 — the filter) all playable.
+- **Now:** Prologue (3 ELI5 parts), Module 0 (00 + 01), Module 1 (02 + 03 —
+  the filter) and the first Module 2 lesson (05 — the playable voice) all live.
   Old `prologue-theory/` URL redirects to P1.
-- **Next:** Module 2 — lesson 05 (the 303 voice: osc → 24 dB filter → VCA as
-  one playable mono synth). Lesson 04 (AudioWorklet ladder) stays optional.
+- **Next:** Lesson 06 (filter envelope: Env Mod + Decay) — point a second ADSR
+  at the cutoff so it moves per note. This is the moment it sounds acid.
+  Lesson 04 (AudioWorklet ladder) stays optional.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?

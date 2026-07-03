@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · The 303 voice — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .scopes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.scopes{grid-template-columns:1fr}}
+  .scopebox{background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .scopebox h3{margin:0 0 8px;font-size:12px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  canvas{width:100%;height:140px;display:block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px}
+  .ctrl label{font-size:12px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  .ctrl.hero label b{color:var(--orange);font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--acid);height:26px}
+  .ctrl.hero input[type=range]{accent-color:var(--orange);height:32px}
+  #power{background:var(--orange);color:#0a0c08;border:none;border-radius:8px;
+    padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;font-size:16px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  .note{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:110px;text-align:center}
+  .note .nm{font-size:20px;color:var(--acid);font-weight:700}
+  .note .hz{font-size:11px;color:var(--dim)}
+
+  /* signal chain diagram */
+  .chain{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:6px 0 2px}
+  .chain .stage{flex:1;min-width:96px;background:#0a0c08;border:1px solid var(--line);border-radius:8px;padding:8px 6px;text-align:center;transition:.1s}
+  .chain .stage .t{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+  .chain .stage .n{font-size:13px;color:var(--ink);margin-top:3px}
+  .chain .stage .from{font-size:10px;color:var(--dim);margin-top:2px}
+  .chain .stage.osc{border-color:#3a5a1a}.chain .stage.filt{border-color:#5a3a00}.chain .stage.amp{border-color:#1a4a5a}
+  .chain .stage.amp.lit{background:#12303a;border-color:var(--blue)}
+  .chain .arrow{align-self:center;color:var(--dim);padding:0 6px;font-size:16px}
+  @media(max-width:600px){.chain .arrow{display:none}.chain .stage{min-width:44%}}
+
+  /* keyboard */
+  #kbwrap{position:relative;height:130px;margin:6px 0 2px;user-select:none;touch-action:none}
+  .wkey,.bkey{position:absolute;bottom:0;border:1px solid #000;border-radius:0 0 5px 5px;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;font-size:9px;padding-bottom:5px}
+  .wkey{top:0;background:linear-gradient(#e6eede,#c3ccb8);color:#4a5540}
+  .bkey{top:0;height:62%;background:linear-gradient(#2a3220,#12160d);color:#8fa073;z-index:2;font-size:8px}
+  .wkey.press{background:linear-gradient(#e9ffc0,#b6ff00);color:#2a3a00}
+  .bkey.press{background:linear-gradient(#7aa800,#4c6a00);color:#eaffc0}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  td,th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{color:var(--orange);font-weight:600}
+  ul{margin:8px 0;padding-left:22px}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">05</span> · The 303 voice</h1>
+  <p class="sub">Three lessons, three modules. Solder them in a row and you have a synth you can play.</p>
+
+  <!-- ── The instrument ─────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="scopes">
+      <div class="scopebox">
+        <h3>Oscilloscope · what you hear</h3>
+        <canvas id="scope"></canvas>
+      </div>
+      <div class="scopebox">
+        <h3>Spectrum · harmonics + filter</h3>
+        <canvas id="spectrum"></canvas>
+      </div>
+    </div>
+
+    <div class="chain">
+      <div class="stage osc"><div class="t">1 · source</div><div class="n" id="chOsc">◿ saw</div><div class="from">lesson 00</div></div>
+      <span class="arrow">▶</span>
+      <div class="stage filt"><div class="t">2 · filter</div><div class="n">24 dB low-pass</div><div class="from">lessons 02–03</div></div>
+      <span class="arrow">▶</span>
+      <div class="stage amp" id="chAmp"><div class="t">3 · amp (VCA)</div><div class="n">env on each note</div><div class="from">lesson 01</div></div>
+    </div>
+
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <div class="note"><div class="nm" id="noteName">—</div><div class="hz" id="noteHz">off</div></div>
+      <span class="hint">wave:</span>
+      <button class="wave on" data-w="sawtooth">◿ saw</button>
+      <button class="wave" data-w="square">▨ square</button>
+    </div>
+
+    <div class="row">
+      <div class="ctrl hero">
+        <label>CUTOFF <b id="cutVal">800 Hz</b></label>
+        <input id="cut" type="range" min="0" max="1000" value="524">
+      </div>
+      <div class="ctrl hero">
+        <label>RESONANCE <b id="resVal">8 dB</b></label>
+        <input id="res" type="range" min="0" max="26" value="8" step="0.5">
+      </div>
+      <div class="ctrl">
+        <label>AMP DECAY <b id="decVal">300 ms</b></label>
+        <input id="dec" type="range" min="40" max="1600" value="300">
+      </div>
+      <div class="ctrl" style="max-width:150px">
+        <label>volume <b id="levVal">35%</b></label>
+        <input id="lev" type="range" min="0" max="100" value="35">
+      </div>
+    </div>
+
+    <div id="kbwrap"></div>
+    <p class="hint">Play the keys, or use your computer keyboard
+      <code>A W S E D F T G Y H U J K</code> (one octave) — <code>Z</code>/<code>X</code> shift octave down/up.
+      It's <b>monophonic</b>: one note at a time, just like a real 303.</p>
+  </div>
+
+  <!-- ── idea 1: the chain ──────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>A synth voice is just modules in a row</h2>
+    <p>Nothing new is invented in this lesson — you already built every piece. A synthesizer "voice" is just
+    those pieces wired in order, each one feeding the next:</p>
+    <table>
+      <tr><th>stage</th><th>what it does</th><th>you built it in</th></tr>
+      <tr><td><b>1 · Oscillator</b></td><td>makes the raw, harmonically-rich tone (saw or square)</td><td>lesson 00</td></tr>
+      <tr><td><b>2 · Filter</b></td><td>the 24 dB low-pass with resonance — carves &amp; colours the tone</td><td>lessons 02–03</td></tr>
+      <tr><td><b>3 · Amplifier (VCA)</b></td><td>an envelope shapes each note's loudness so it doesn't just drone</td><td>lesson 01</td></tr>
+    </table>
+    <p>That's the whole signal chain drawn above the keyboard. Sound flows left → right: a constant buzzy
+    wave, sculpted by the filter, then switched on and off in shape by the amp. Press a key and watch the
+    <span style="color:var(--blue)">amp</span> box light up — that's the envelope opening the gate.</p>
+  </div>
+
+  <!-- ── idea 2: play it ────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>Monophonic — one note at a time</h2>
+    <p>A real 303 has <b>one</b> oscillator, so it can only play <b class="hl">one note at a time</b> — press a
+    second key and it just steals the pitch of the first. Try it: hold one key, press another. That's not a
+    limitation to apologise for — acid <i>is</i> a single snaking bassline, and monophony is why it sounds so
+    focused and hypnotic. Melody, not chords.</p>
+    <p>Each key press re-fires the <b>amp envelope</b> — a fast attack then a decay set by the
+    <span class="kbd">AMP DECAY</span> knob. Short decay = a percussive <i>blip</i> (the classic 303 amp,
+    which has essentially zero sustain); long decay = notes that ring into each other. This is exactly the
+    ADSR from lesson 01, just permanently wired to the amplifier.</p>
+    <div class="nerd"><b>// CS corner:</b> monophony is a one-slot voice allocator. We keep a stack of
+    currently-held keys; <code>noteOn</code> pushes and steals the single oscillator's pitch,
+    <code>noteOff</code> pops and hands the voice back to whatever key is still down (last-note priority).
+    One <code>OscillatorNode</code> runs forever; we only ever change its <code>frequency</code> and
+    re-trigger the amp gain — no per-note node churn.</div>
+  </div>
+
+  <!-- ── idea 3: the knobs ──────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>Everything on this panel, you already understand</h2>
+    <p>Five controls, zero mystery — each is a knob from an earlier lesson:</p>
+    <ul>
+      <li><b class="hl">wave</b> (saw / square) — the two the 303 offers. Saw = all harmonics (brighter),
+        square = odd only (hollower, fatter lows). <i>Lesson 00.</i></li>
+      <li><b class="hl">cutoff</b> — how bright, where the filter starts carving. The soul knob. <i>Lesson 02.</i></li>
+      <li><b class="hl">resonance</b> — the emphasis/whistle at the cutoff edge. <i>Lesson 03.</i></li>
+      <li><b class="hl">amp decay</b> — how long each note rings. <i>Lesson 01.</i></li>
+      <li><b class="hl">volume</b> — overall level (with resonance make-up so high Q doesn't clip).</li>
+    </ul>
+    <p>Set saw + cutoff low + a little resonance + short decay and play a low run — that's already a recognisable
+    acid bass <i>tone</i>. Set square + high cutoff for a brighter lead. You have a real, playable subtractive
+    synth.</p>
+  </div>
+
+  <!-- ── idea 4: what's missing ─────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 4</span>It's a synth… but it isn't <i>acid</i> yet</h2>
+    <p>Play a line and listen hard. It's a good bass, but every note has the <b>same</b> brightness — the
+    filter just sits at whatever you set. The thing that makes acid <i>talk</i> is the cutoff
+    <b class="hl">moving on every single note</b>, exactly like the ping and squelch in lesson 03 — but
+    triggered automatically by each note instead of by your hand.</p>
+    <p>That's one wire away: point a <i>second</i> envelope (another ADSR, like lesson 01's) at the
+    <b>cutoff</b> instead of the volume. That's the <b class="hl">filter envelope</b> — <b>Env Mod</b> and
+    <b>Decay</b> — and it's the single biggest step toward the sound. It gets its own lesson next.</p>
+    <p><b class="hl">Experiments before you go:</b></p>
+    <ul>
+      <li><b>Acid bass tone:</b> saw, cutoff ~400 Hz, resonance ~12, decay ~200 ms — play a low <code>A</code>-root run.</li>
+      <li><b>Dub sub:</b> square, cutoff right down, resonance 0, long decay — a round sub-bass with no edge.</li>
+      <li><b>Bright lead:</b> saw, cutoff wide open, resonance ~6, play up high with <code>X</code>.</li>
+      <li><b>Blip vs drone:</b> park cutoff + reso, then sweep AMP DECAY from 40 ms to max while repeating a note.</li>
+    </ul>
+    <a class="next" href="../../index.html">Next → 06 · Filter envelope: Env Mod + Decay (soon)</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* Lesson 05 — the 303 voice: the first time we wire the modules into one
+   playable instrument. Signal path:
+
+     OscillatorNode(saw/square) ──► f1 lowpass ──► f2 lowpass(+reso) ──► VCA ──► Analyser ──► out
+                                    └──────── 24 dB/oct (two biquads) ────┘        ▲
+                                                                          amp envelope, per note
+
+   The oscillator runs forever; playing a note just sets osc.frequency and
+   re-triggers the amp gain envelope. Monophonic: a stack of held keys drives
+   one voice (last-note priority).                                              */
+
+let ctx, osc, f1, f2, vca, analyser;
+let waveform="sawtooth", level=0.35, reso=8, ampDecay=0.30;
+let curFreq=110;
+
+const C_MIN=40, C_MAX=12000;
+const sliderToCut = v => C_MIN*Math.pow(C_MAX/C_MIN, v/1000);
+const mf = m => 440*Math.pow(2,(m-69)/12);
+const NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const nameOf = m => NAMES[((m%12)+12)%12] + (Math.floor(m/12)-1);
+
+// resonance make-up gain (from lesson 03): keep high Q from clipping
+const outLevel = () => level / (1 + 0.14*(Math.pow(10,reso/20)-1));
+
+const $ = s => document.querySelector(s);
+const powerBtn=$("#power");
+const cutEl=$("#cut"), cutVal=$("#cutVal"), resEl=$("#res"), resVal=$("#resVal");
+const decEl=$("#dec"), decVal=$("#decVal"), levEl=$("#lev"), levVal=$("#levVal");
+const noteName=$("#noteName"), noteHz=$("#noteHz");
+const scope=$("#scope"), spectrum=$("#spectrum"), chAmp=$("#chAmp");
+let curCut = sliderToCut(+cutEl.value);
+
+function powerOn(){
+  ctx = new (window.AudioContext||window.webkitAudioContext)();
+  osc = ctx.createOscillator(); osc.type=waveform; osc.frequency.value=curFreq;
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.frequency.value=curCut; f1.Q.value=-3;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.frequency.value=curCut; f2.Q.value=reso;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  analyser=ctx.createAnalyser(); analyser.fftSize=4096; analyser.smoothingTimeConstant=0.6;
+  osc.connect(f1); f1.connect(f2); f2.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start();
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  draw();
+}
+
+/* ── monophonic voice ──────────────────────────────────────────── */
+const held=[];                                 // stack of held MIDI notes
+function ampAttack(){
+  const t=ctx.currentTime, g=vca.gain, L=outLevel();
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(Math.max(g.value,1e-4), t);
+  g.linearRampToValueAtTime(L, t+0.004);                 // fast attack
+  g.exponentialRampToValueAtTime(0.0008, t+0.004+ampDecay); // decay to ~silence (303 = no sustain)
+  chAmp.classList.add("lit"); clearTimeout(ampAttack._t);
+  ampAttack._t=setTimeout(()=>chAmp.classList.remove("lit"), Math.min(ampDecay*1000,400));
+}
+function setPitch(m){
+  curFreq=mf(m);
+  if(osc) osc.frequency.setValueAtTime(curFreq, ctx.currentTime);  // instant (glide is lesson 08)
+  noteName.textContent=nameOf(m); noteHz.textContent=curFreq.toFixed(1)+" Hz";
+}
+function noteOn(m){
+  if(!ctx) return;
+  if(ctx.state==="suspended") ctx.resume();
+  const i=held.indexOf(m); if(i>=0) held.splice(i,1);
+  held.push(m);
+  setPitch(m); ampAttack();
+  flash(m,true);
+}
+function noteOff(m){
+  const i=held.indexOf(m); if(i>=0) held.splice(i,1);
+  flash(m,false);
+  if(held.length){ setPitch(held[held.length-1]); }   // hand voice back (last-note priority)
+  else{
+    const t=ctx.currentTime, g=vca.gain;               // release the tail
+    g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t);
+    g.linearRampToValueAtTime(0.0001, t+0.03);
+    noteHz.textContent="off";
+  }
+}
+
+/* ── keyboard (C2..C4) ─────────────────────────────────────────── */
+const LO=36, HI=60, WHITE=[0,2,4,5,7,9,11];
+const kbwrap=$("#kbwrap"), keyEls={};
+let pointerNote=null;
+(function buildKeyboard(){
+  const whiteCount=[...Array(HI-LO+1).keys()].filter(i=>WHITE.includes((LO+i)%12)).length;
+  const Wk=100/whiteCount, Wb=Wk*0.62; let wi=0;
+  for(let m=LO;m<=HI;m++){
+    const pc=m%12, el=document.createElement("div"); el.dataset.midi=m;
+    if(WHITE.includes(pc)){
+      el.className="wkey"; el.style.left=(wi*Wk)+"%"; el.style.width=Wk+"%";
+      el.textContent = pc===0?nameOf(m):""; wi++;
+    }else{
+      el.className="bkey"; el.style.left=(wi*Wk - Wb/2)+"%"; el.style.width=Wb+"%";
+    }
+    el.addEventListener("pointerdown", e=>{ e.preventDefault(); pointerNote=m; noteOn(m); });
+    el.addEventListener("pointerenter", e=>{ if(e.buttons){ if(pointerNote!=null&&pointerNote!==m) noteOff(pointerNote); pointerNote=m; noteOn(m); } }); // drag = glissando
+    el.addEventListener("pointerup",   e=>{ e.preventDefault(); if(pointerNote===m) pointerNote=null; noteOff(m); });
+    kbwrap.appendChild(el); keyEls[m]=el;
+  }
+})();
+// release safely even if the pointer lifts off the keyboard
+addEventListener("pointerup", ()=>{ if(pointerNote!=null){ noteOff(pointerNote); pointerNote=null; } });
+function flash(m,on){ const el=keyEls[m]; if(el) el.classList.toggle("press",on); }
+
+// computer keyboard, one octave from a shiftable base
+let kbBase=36;                                  // C2
+const KEYMAP={KeyA:0,KeyW:1,KeyS:2,KeyE:3,KeyD:4,KeyF:5,KeyT:6,KeyG:7,KeyY:8,KeyH:9,KeyU:10,KeyJ:11,KeyK:12};
+const downKeys=new Set();
+addEventListener("keydown",e=>{
+  if(e.code==="KeyZ"){ kbBase=Math.max(12,kbBase-12); return; }
+  if(e.code==="KeyX"){ kbBase=Math.min(96,kbBase+12); return; }
+  if(e.repeat) return;
+  const off=KEYMAP[e.code]; if(off==null) return;
+  e.preventDefault(); const m=kbBase+off;
+  if(!downKeys.has(e.code)){ downKeys.add(e.code); noteOn(m); }
+});
+addEventListener("keyup",e=>{
+  const off=KEYMAP[e.code]; if(off==null) return;
+  e.preventDefault(); downKeys.delete(e.code); noteOff(kbBase+off);
+});
+
+/* ── controls ──────────────────────────────────────────────────── */
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+document.querySelectorAll(".wave").forEach(b=>b.onclick=()=>{
+  waveform=b.dataset.w;
+  document.querySelectorAll(".wave").forEach(x=>x.classList.toggle("on",x===b));
+  $("#chOsc").textContent = waveform==="square" ? "▨ square" : "◿ saw";
+  if(osc) osc.type=waveform;
+});
+function fmtCut(f){
+  const lbl=f>=10000?"wide open":f>=3000?"bright":f>=800?"warm":f>=250?"muffled":"underwater";
+  return Math.round(f)+" Hz ("+lbl+")";
+}
+function fmtRes(q){ const lbl=q<1?"off":q<6?"gentle":q<12?"peaky":q<19?"whistly":"screaming"; return q+" dB ("+lbl+")"; }
+cutEl.oninput=()=>{
+  curCut=sliderToCut(+cutEl.value); cutVal.textContent=fmtCut(curCut);
+  if(ctx){ const t=ctx.currentTime; f1.frequency.setTargetAtTime(curCut,t,0.008); f2.frequency.setTargetAtTime(curCut,t,0.008); }
+};
+resEl.oninput=()=>{
+  reso=+resEl.value; resVal.textContent=fmtRes(reso);
+  if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01);
+};
+decEl.oninput=()=>{ ampDecay=+decEl.value/1000; decVal.textContent=decEl.value+" ms"; };
+levEl.oninput=()=>{ level=+levEl.value/100; levVal.textContent=levEl.value+"%"; };
+cutVal.textContent=fmtCut(curCut); resVal.textContent=fmtRes(reso);
+
+/* ── visualization ─────────────────────────────────────────────── */
+function fitCanvas(c){
+  const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect();
+  c.width=r.width*dpr; c.height=r.height*dpr;
+  const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return [g,r.width,r.height];
+}
+const V_MIN=40, V_MAX=16000;
+const fx=(f,W)=>W*Math.log(f/V_MIN)/Math.log(V_MAX/V_MIN);
+const DB_TOP=30, DB_BOT=-42;
+const dby=(db,H)=>H*(1-(Math.min(Math.max(db,DB_BOT),DB_TOP)-DB_BOT)/(DB_TOP-DB_BOT));
+const RESP_N=160;
+const respFreqs=new Float32Array(RESP_N), m1=new Float32Array(RESP_N), m2=new Float32Array(RESP_N), ph=new Float32Array(RESP_N);
+for(let i=0;i<RESP_N;i++) respFreqs[i]=V_MIN*Math.pow(V_MAX/V_MIN,i/(RESP_N-1));
+
+function draw(){
+  requestAnimationFrame(draw);
+  if(!analyser) return;
+  // scope
+  {
+    const [g,W,H]=fitCanvas(scope);
+    const buf=new Uint8Array(analyser.fftSize); analyser.getByteTimeDomainData(buf);
+    g.clearRect(0,0,W,H);
+    g.strokeStyle="#2a3320"; g.beginPath(); g.moveTo(0,H/2); g.lineTo(W,H/2); g.stroke();
+    g.lineWidth=2; g.strokeStyle="#b6ff00"; g.beginPath();
+    const span=Math.max(2,Math.min(buf.length,Math.round(ctx.sampleRate/curFreq*2)));
+    for(let i=0;i<span;i++){ const x=(i/span)*W, y=H-(buf[i]/255)*H; i===0?g.moveTo(x,y):g.lineTo(x,y); }
+    g.stroke();
+  }
+  // spectrum + filter curve
+  {
+    const [g,W,H]=fitCanvas(spectrum);
+    const bins=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(bins);
+    g.clearRect(0,0,W,H);
+    g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace";
+    [[100,"100"],[1000,"1k"],[10000,"10k"]].forEach(([f,l])=>{ const x=fx(f,W); g.fillRect(x,0,1,H); g.fillText(l+"Hz",x+3,H-4); });
+    g.fillStyle="#25301c"; g.fillRect(0,dby(0,H),W,1);
+    const binHz=ctx.sampleRate/2/bins.length, COLS=Math.floor(W/3);
+    for(let i=0;i<COLS;i++){
+      const f0=V_MIN*Math.pow(V_MAX/V_MIN,i/COLS), f1b=V_MIN*Math.pow(V_MAX/V_MIN,(i+1)/COLS);
+      let v=0; for(let b=Math.floor(f0/binHz); b<=Math.min(bins.length-1,Math.floor(f1b/binHz)); b++) v=Math.max(v,bins[b]);
+      const h=(v/255)*H, t=i/COLS;
+      g.fillStyle=`rgb(${Math.round(120+135*t)},255,0)`;
+      g.fillRect(i*(W/COLS), H-h, Math.max(W/COLS-1,1), h);
+    }
+    f1.getFrequencyResponse(respFreqs,m1,ph); f2.getFrequencyResponse(respFreqs,m2,ph);
+    g.lineWidth=2; g.strokeStyle="#ff7a00"; g.beginPath();
+    for(let i=0;i<RESP_N;i++){ const mm=m1[i]*m2[i]; const y=dby(20*Math.log10(Math.max(mm,1e-4)),H); const x=fx(respFreqs[i],W); i===0?g.moveTo(x,y):g.lineTo(x,y); }
+    g.stroke();
+    const cx=fx(f2.frequency.value,W);
+    g.strokeStyle="#ff7a00"; g.setLineDash([4,4]); g.beginPath(); g.moveTo(cx,0); g.lineTo(cx,H); g.stroke(); g.setLineDash([]);
+  }
+}
+</script>
+</body>
+</html>
