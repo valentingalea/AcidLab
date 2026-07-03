@@ -2,7 +2,7 @@
 
 Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum.
 
-**Last updated:** 2026-07-02
+**Last updated:** 2026-07-03
 
 ## Legend
 `⬜ planned` · `🟨 in progress` · `✅ done` · `⏭️ optional/skipped`
@@ -79,3 +79,35 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
   `touch-action:pan-x pan-y` lives on the `*` selector (touch-action doesn't
   inherit, so an `auto` `<p>` would still double-tap-zoom); sliders + `#kbwrap`
   override to `none`.
+
+---
+
+## Standalone app — AcidBox (`acidbox/`)
+
+The lesson-16 groovebox, lifted out of the course into a self-contained mini
+app at repo root (`acidbox/index.html`) — a phone-first acid instrument with
+save/load, WAV export, and shareable-link patterns. The course/lessons are
+untouched; lesson 16 stays as the teaching capstone and cross-links to the app.
+Will later get its own DNS/host (M7). Spec agreed with Valentin 2026-07-03.
+
+### Milestones
+| # | Milestone | State | Notes |
+|---|-----------|-------|-------|
+| M1 | Foundation | ✅ done | New self-contained `acidbox/` dir; lesson-16 instrument ported verbatim (303 voice + drum kit + one shared scheduler + dub delay/reverb); lesson chrome (idea panels, next/back nav) stripped; app header/footer; lesson 16 ↔ app + hub cross-links; iOS touch hardening kept |
+| M2 | UX overhaul | ⬜ planned | **(pulled earlier — Valentin's priority)** full-page-length "DJ" faders (long-throw, big touch targets), controls regrouped ergonomically into clusters (filter: cutoff/reso/env/decay · space: delay/feedback/reverb · transport: tempo/swing), phone-first but good on desktop, portrait vs landscape orientation handling. Layout built as repositionable "areas" so M6 is additive |
+| M3 | Persistence & sharing | ⬜ planned | one state model (patterns + all controls) → (a) localStorage autosave + named slots, (b) compact URL-hash share links (base64url, version-tagged) with a "copy link" button |
+| M4 | WAV export | ⬜ planned | faithful offline render of the groovebox graph (drums + reverb included, unlike lesson 18's slim engine) via OfflineAudioContext → dependency-free WAV download |
+| M5 | Generators & clear | ⬜ planned | split the single 🎲 into per-instrument **[generate · clear]** for 303 and drums; wire in the lesson-17 algos (Euclidean drums, scale-locked random-walk melody) each with its own small (collapsible) generator control group |
+| M6 | Floating control surface | ⬜ planned | **(stretch)** the control clusters become a draggable/dockable "area" that floats & repositions to suit grip/orientation — additive on M2's area architecture |
+| M7 | Deploy | ⬜ planned | AcidBox gets its own DNS/host (separate from the lessons site); see `DEPLOY.md` for the existing Caddy path |
+
+### Requests → milestones (from Valentin's spec, 2026-07-03)
+1 self-contained root dir → M1 · 2 localStorage save/load → M3 · 3 WAV download → M4 ·
+4 URL-encoded share links → M3 · 5 separate clear+gen per instrument → M5 ·
+6 generate via the lesson-17 algos + own controls → M5 · 7 UX (groups + full-length
+DJ sliders + float/reposition, phone-first) → M2 (+ M6).
+
+### Decisions (AcidBox)
+- 2026-07-03: dir = `acidbox/`; lesson 16 left intact + cross-linked (not
+  replaced/redirected); UX (M2) pulled ahead of the feature milestones per
+  Valentin; deploy split out as its own milestone (M7).
