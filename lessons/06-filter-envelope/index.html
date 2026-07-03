@@ -113,8 +113,8 @@
 
     <div class="row">
       <div class="ctrl hero">
-        <label>ENV MOD — how far each note kicks the cutoff up <b id="envVal">70%</b></label>
-        <input id="env-mod" type="range" min="0" max="100" value="70">
+        <label>ENV MOD — how far each note kicks the cutoff up <b id="envVal">80%</b></label>
+        <input id="env-mod" type="range" min="0" max="100" value="80">
       </div>
       <div class="ctrl hero">
         <label>DECAY — how fast it falls back <b id="decVal">220 ms</b></label>
@@ -124,12 +124,12 @@
 
     <div class="row">
       <div class="ctrl">
-        <label>CUTOFF (base / floor) <b id="cutVal">250 Hz</b></label>
-        <input id="cut" type="range" min="0" max="1000" value="321">
+        <label>CUTOFF (base / floor) <b id="cutVal">220 Hz</b></label>
+        <input id="cut" type="range" min="0" max="1000" value="299">
       </div>
       <div class="ctrl">
-        <label>RESONANCE <b id="resVal">12 dB</b></label>
-        <input id="res" type="range" min="0" max="26" value="12" step="0.5">
+        <label>RESONANCE <b id="resVal">14 dB</b></label>
+        <input id="res" type="range" min="0" max="26" value="14" step="0.5">
       </div>
       <div class="ctrl" style="max-width:150px">
         <label>volume <b id="levVal">35%</b></label>
@@ -139,8 +139,9 @@
 
     <div id="kbwrap"></div>
     <p class="hint">Press <span class="kbd">▶ acid line</span> for a hands-free riff, then turn ENV MOD and DECAY
-      while it plays. Or play the keys (<code>A W S E D F T G Y H U J K</code>, <code>Z</code>/<code>X</code> octave) —
-      each note fires the filter envelope.</p>
+      while it plays — <i>that's</i> the squelch. Or play the keys (<code>A W S E D F T G Y H U J K</code>,
+      <code>Z</code>/<code>X</code> octave). The riff also has built-in <b>accents</b> (the punchier, brighter
+      notes) so it grooves — those get their own knob in lesson 07.</p>
   </div>
 
   <!-- ── idea 1: the problem ────────────────────────────────────── -->
@@ -245,7 +246,7 @@ addEventListener("contextmenu", e=>e.preventDefault());
    `decay`. That is the acid movement.                                          */
 
 let ctx, osc, f1, f2, vca, analyser;
-let waveform="sawtooth", level=0.35, reso=12, envMod=0.70, decay=0.22;
+let waveform="sawtooth", level=0.35, reso=14, envMod=0.80, decay=0.22;
 let curFreq=110;
 
 const C_MIN=40, C_MAX=12000, ENV_OCT=4;              // Env Mod 0..1 → up to 4 octaves of sweep
@@ -277,8 +278,8 @@ function powerOn(){
 }
 
 /* ── the filter envelope: floor → peak → floor, on both biquads ─── */
-function filterEnv(t){
-  const floor=curCut, peak=Math.min(floor*Math.pow(2, envMod*ENV_OCT), C_MAX), atk=0.003;
+function filterEnv(t, boost){
+  const floor=curCut, peak=Math.min(floor*Math.pow(2, envMod*ENV_OCT)*boost, C_MAX), atk=0.003;
   [f1.frequency,f2.frequency].forEach(p=>{
     p.cancelScheduledValues(t);
     p.setValueAtTime(floor, t);
@@ -286,16 +287,28 @@ function filterEnv(t){
     p.exponentialRampToValueAtTime(Math.max(floor,C_MIN), t+atk+decay); // decay back to floor
   });
 }
-// strike a note: pitch + filter env (+ amp: sustain for held keys, pluck for the riff)
-function strike(t, midi, pluck){
+// a held keyboard note: amp SUSTAINS so you can hear the filter sweep in full
+function strike(t, midi){
+  curFreq=mf(midi);
+  if(osc) osc.frequency.setValueAtTime(curFreq, t);
+  filterEnv(t, 1);
+  const L=outLevel(), g=vca.gain;
+  g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4), t);
+  g.linearRampToValueAtTime(L, t+0.004);
+}
+// one riff step: the note RINGS across the step (decays to ~0.28·L, not to
+// silence) so the filter sweep is heard as a squelch, not a dry blip — then it
+// releases just before the next. Accented steps are louder AND brighter: a taste
+// of Accent (lesson 07) so the line grooves instead of marching in monotone.
+function strikeRiff(t, midi, accent){
   curFreq=mf(midi);
   osc.frequency.setValueAtTime(curFreq, t);
-  filterEnv(t);
-  const L=outLevel(), g=vca.gain;
-  g.cancelScheduledValues(t);
-  g.setValueAtTime(Math.max(g.value,1e-4), t);
-  g.linearRampToValueAtTime(L, t+0.004);
-  if(pluck) g.exponentialRampToValueAtTime(0.0008, t+0.004+Math.min(decay*1.1,0.24));
+  filterEnv(t, accent ? 1.6 : 1);
+  const L=outLevel()*(accent ? 1.0 : 0.72), g=vca.gain;
+  g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4), t);
+  g.linearRampToValueAtTime(L, t+0.005);
+  g.exponentialRampToValueAtTime(0.28*L, t+RIFF_STEP*0.86);   // ring through the note
+  g.exponentialRampToValueAtTime(0.0006, t+RIFF_STEP*0.98);   // release before the next
 }
 
 /* ── monophonic keyboard voice (sustain while held) ────────────── */
@@ -306,7 +319,7 @@ function noteOn(m){
   if(riffing) setRiff(false);
   const i=held.indexOf(m); if(i>=0) held.splice(i,1);
   held.push(m);
-  strike(ctx.currentTime, m, false);         // sustain: amp holds so you hear the filter decay
+  strike(ctx.currentTime, m);                // sustain: amp holds so you hear the filter decay
   noteName.textContent=nameOf(m); noteHz.textContent=curFreq.toFixed(1)+" Hz";
   flash(m,true);
 }
@@ -326,15 +339,17 @@ function noteOff(m){
 /* ── the hands-free acid line (a lookahead scheduler, foreshadowing L10) ─ */
 let riffing=false, riffTimer=null, riffNext=0, riffStep=0;
 const RIFF_STEP=0.25, RIFF_ROOT=45;                 // A2, 8th notes
-const RIFF_SEMIS=[0,0,12,0,3,0,7,10,0,12,5,3];      // A minor pentatonic bass line
+const RIFF_SEMIS =[0,0,12,0,3,0,7,10,0,12,5,3];     // A minor pentatonic bass line
+const RIFF_ACCENT=[1,0,1,0,1,0,0,1,0,1,0,1];        // where the groove punches (Accent, lesson 07)
 function setRiff(on){
   if(!ctx) return;
   riffing=on; acidBtn.classList.toggle("on",on); acidBtn.textContent = on ? "■ stop" : "▶ acid line";
   if(on){ riffStep=0; riffNext=ctx.currentTime+0.1;
     riffTimer=setInterval(()=>{
       while(riffNext < ctx.currentTime+0.18){
-        const m=RIFF_ROOT+RIFF_SEMIS[riffStep%RIFF_SEMIS.length];
-        strike(riffNext, m, true); riffStep++; riffNext+=RIFF_STEP;
+        const s=riffStep%RIFF_SEMIS.length;
+        strikeRiff(riffNext, RIFF_ROOT+RIFF_SEMIS[s], RIFF_ACCENT[s]);
+        riffStep++; riffNext+=RIFF_STEP;
       }
     }, 40);
   }else{
