@@ -153,6 +153,7 @@
     <div class="row">
       <button id="wave" disabled>◿ saw</button>
       <button id="scale">scale: Min pent</button>
+      <button id="clr303">clear</button>
     </div>
   </div>
 
@@ -397,12 +398,14 @@ function randomize(){
   }
   if(PITCH[0]===0) PITCH[0]=1; repaintAcid();
 }
+function clearAcid(){ for(let i=0;i<16;i++){ PITCH[i]=0; ACCENT[i]=false; SLIDE[i]=false; OCT[i]=0; } repaintAcid(); }
 
 /* ── controls ──────────────────────────────────────────────────── */
 curCut=sliderToCut(+$("#cut").value);
 powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
 playBtn.onclick=()=>{ if(ctx) setPlay(!playing); };
 rndBtn.onclick=randomize;
+$("#clr303").onclick=clearAcid;
 waveBtn.onclick=()=>{ waveform=waveform==="sawtooth"?"square":"sawtooth"; waveBtn.textContent=waveform==="square"?"▨ square":"◿ saw"; if(osc) osc.type=waveform; };
 scaleBtn.onclick=()=>setScale((curScale+1)%SCALES.length);
 document.querySelectorAll(".dpre").forEach(b=>b.onclick=()=>loadDrums(b.dataset.p));
