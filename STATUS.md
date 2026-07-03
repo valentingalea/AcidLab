@@ -35,19 +35,20 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 15 | Pattern chaining | ⏭️ optional | |
 | 16 | Groovebox (capstone) | ✅ done | the 303 acid sequencer (13) + drum machine (12) on ONE shared lesson-10 scheduler (shared swing); master glue = tempo-synced dub delay (DelayNode+feedback, dotted-8th) + synthesised convolver reverb (procedural noise IR); acidBus/drumBus → dry + sends → master; 🎲 new jam, drum presets, full 303 panel. Loads a groove by default — press play = a track. 2026-07-03: acid grid gained the OCT row + scale selector (same as 13) — can do Arabic-flavoured acid over the beat |
 | 17 | Generative acid | ✅ done | the two algorithms: Euclidean drums (per-drum pulses slider → `(i·k)%n<k` even spread, Bjorklund-equivalent) + scale-constrained random-walk melody (bounded degree walk on the scale mask, density/wander/octave/accent/slide knobs, scale selector). Reuses 303 voice + kit + clock + baked dub delay; generated patterns render on editable grids; framing = seed→loop for scoring the game |
-| 18 | Shipping it | ⬜ planned | for the game |
+| 18 | Shipping it | ✅ done | **course finale.** one buildEngine() used for both the live ctx and an OfflineAudioContext render; ⏺ render 2 bars offline (reports ms + N× realtime + KB), ▶ play baked buffer (loop), ⬇ download .wav (44-byte header + int16 PCM, no lib); live audio-unlock badge (suspended→running via onstatechange); live-vs-baked / latency / memory / into-the-game framing + a full-course TOC |
 
 ## Now / Next
 - **Now:** Prologue (3 ELI5 parts), Module 0 (00 + 01), Module 1 (02 + 03),
   Module 2 complete (05–08, the full 303 voice), the 303-story interlude, and
   Module 3's opener (10 — the clock/scheduler) all live.
   Old `prologue-theory/` URL redirects to P1.
-- **Now:** **The full instrument is built** — prologue → the 303 voice (05–09)
-  → the interludes → the clock/drums/drum-machine (10–12) → the 303 sequencer
-  (13) → the groovebox capstone (16). Press play on lesson 16 for a whole track.
-- **Next (optional):** Module 6 — lesson 17 (generative acid: Euclidean rhythms,
-  scale-locked melody generators → procedural loops for a game) and 18 (shipping:
-  offline render, mobile unlock). Lesson 04 (AudioWorklet ladder) also optional.
+- **Now: THE COURSE IS COMPLETE.** Every planned lesson is built and verified:
+  prologue (P1–P3) → 303 voice (00–09) → interludes (303 story, notes-vs-tone,
+  mono-vs-poly) → rhythm/clock/drums (10–12) → sequencer (13) → groovebox
+  capstone (16) → generative (17) → shipping/WAV export (18). ~24 self-contained
+  pages, all live on the site, all headless-verified.
+- **Only optional leftover:** lesson 04 (AudioWorklet diode-ladder filter) — the
+  authentic self-oscillating 303 filter, kept as a deep-dive side-quest.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?
