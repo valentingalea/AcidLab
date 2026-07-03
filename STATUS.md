@@ -33,7 +33,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 13 | 303 step sequencer | ✅ done | working TB-303: lesson-08 voice (slide/legato + accent) driven by an editable pitch/accent/slide-per-step grid (pitch 0=rest, 1..6=A-min-pentatonic index) on the lesson-10 scheduler; full 303 panel knobs + tempo + wave, acid1/acid2/clear presets, 🎲 scale-locked random-walk generator (teaser for Module 6), playhead |
 | 14 | Scales & melody | ⬜ planned | |
 | 15 | Pattern chaining | ⏭️ optional | |
-| 16 | DS-10 groovebox (capstone) | ⬜ planned | |
+| 16 | Groovebox (capstone) | ✅ done | the 303 acid sequencer (13) + drum machine (12) on ONE shared lesson-10 scheduler (shared swing); master glue = tempo-synced dub delay (DelayNode+feedback, dotted-8th) + synthesised convolver reverb (procedural noise IR); acidBus/drumBus → dry + sends → master; 🎲 new jam, drum presets, full 303 panel. Loads a groove by default — press play = a track |
 | 17 | Generative acid | ⬜ planned | for the game |
 | 18 | Shipping it | ⬜ planned | for the game |
 
@@ -42,10 +42,12 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
   Module 2 complete (05–08, the full 303 voice), the 303-story interlude, and
   Module 3's opener (10 — the clock/scheduler) all live.
   Old `prologue-theory/` URL redirects to P1.
-- **Next:** Module 4 — lesson 13 (the 303 step sequencer: pitch/accent/slide per
-  step wired to the 303 voice), then the DS-10-style groovebox capstone (16) that
-  locks the drum machine + the acid line to one clock. Lesson 04 (AudioWorklet
-  ladder) stays optional.
+- **Now:** **The full instrument is built** — prologue → the 303 voice (05–09)
+  → the interludes → the clock/drums/drum-machine (10–12) → the 303 sequencer
+  (13) → the groovebox capstone (16). Press play on lesson 16 for a whole track.
+- **Next (optional):** Module 6 — lesson 17 (generative acid: Euclidean rhythms,
+  scale-locked melody generators → procedural loops for a game) and 18 (shipping:
+  offline render, mobile unlock). Lesson 04 (AudioWorklet ladder) also optional.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?

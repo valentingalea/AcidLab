@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>16 · The groovebox (capstone) — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the sliders & keyboard on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  h1{font-size:26px;margin:10px 0 2px}
+  h1 .n{color:var(--acid)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0}
+  .sec{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin:0 0 8px}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;font:inherit;font-size:13px;transition:.1s}
+  button:hover{border-color:var(--acid)}
+  button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:16px;padding:11px 20px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #play{font-weight:700;font-size:15px;padding:10px 18px}
+  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  #play:disabled{opacity:.35;cursor:not-allowed}
+  #rnd{border-color:var(--orange);color:var(--orange);font-weight:700}
+  .ctrl{display:flex;flex-direction:column;gap:3px;flex:1;min-width:96px}
+  .ctrl label{font-size:11px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  .ctrl.fx label b{color:var(--blue)}
+  input[type=range]{width:100%;accent-color:var(--acid);height:22px}
+  .ctrl.fx input[type=range]{accent-color:var(--blue)}
+
+  .seq{display:grid;grid-template-columns:40px repeat(16,1fr);gap:3px;margin:4px 0}
+  .seq .lbl{font-size:9.5px;color:var(--dim);display:flex;align-items:center;cursor:pointer}
+  .seq .lbl.mut{cursor:pointer}
+  .seq .lbl.mut.muted{color:#3d4a30;text-decoration:line-through}
+  .stepnum{text-align:center;font-size:9px;color:#3d4a30}
+  .stepnum.b{color:var(--dim)}
+  .pcol{height:74px;background:#0f140b;border:1px solid var(--line);border-radius:5px;position:relative;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;overflow:hidden}
+  .pcol.beat{background:#141a0e}
+  .pcol .bar{width:100%;background:linear-gradient(#e9ffc0,#b6ff00);height:0%;display:flex;align-items:flex-start;justify-content:center;padding-top:1px;font-size:9px;color:#0a3a00;font-weight:700}
+  .pcol .rst{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#2a3320;font-size:14px}
+  .pcol.note .rst{display:none}
+  .tog{height:22px;background:#0f140b;border:1px solid var(--line);border-radius:4px;cursor:pointer}
+  .tog.beat{background:#141a0e}
+  .tog.acc.on{background:linear-gradient(#ffd9a8,#ff7a00);border-color:var(--orange)}
+  .tog.sld.on{background:linear-gradient(#bfeaff,#5cc8ff);border-color:var(--blue)}
+  .dcell{height:26px;background:#0f140b;border:1px solid var(--line);border-radius:4px;cursor:pointer}
+  .dcell.beat{background:#141a0e}
+  .dcell.on{background:linear-gradient(#e9ffc0,#b6ff00);border-color:var(--acid)}
+  .dcell.on.kick{background:linear-gradient(#ffd9a8,#ff7a00);border-color:var(--orange)}
+  .dcell.mutedrow.on{filter:grayscale(.7);opacity:.4}
+  .cur{box-shadow:0 0 0 2px var(--blue) inset}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)} .blu{color:var(--blue)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  ul{margin:8px 0;padding-left:22px}
+  .done{background:linear-gradient(90deg,rgba(182,255,0,.08),transparent);border-left:3px solid var(--acid);padding:10px 14px;border-radius:0 8px 8px 0}
+  .next{display:inline-block;margin-top:6px;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--acid);color:#0a0c08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <h1><span class="n">16</span> · The groovebox — capstone</h1>
+  <p class="sub">The 303 sequencer + the drum machine, locked to one clock, glued with dub delay and reverb. Everything you built, in one box. Press play.</p>
+
+  <!-- ── transport + master ─────────────────────────────────────── -->
+  <div class="panel">
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="play" disabled>▶ play</button>
+      <button id="rnd" disabled>🎲 new jam</button>
+      <div class="ctrl"><label>tempo <b id="bpmVal">126</b></label><input id="bpm" type="range" min="90" max="150" value="126"></div>
+      <div class="ctrl"><label>swing <b id="swVal">12%</b></label><input id="sw" type="range" min="0" max="65" value="12"></div>
+    </div>
+    <div class="row">
+      <span class="sec" style="margin:0">master glue</span>
+      <div class="ctrl fx"><label>delay <b id="dlVal">28%</b></label><input id="dl" type="range" min="0" max="90" value="28"></div>
+      <div class="ctrl fx"><label>feedback <b id="fbVal">40%</b></label><input id="fb" type="range" min="0" max="80" value="40"></div>
+      <div class="ctrl fx"><label>reverb <b id="rvVal">14%</b></label><input id="rv" type="range" min="0" max="80" value="14"></div>
+    </div>
+  </div>
+
+  <!-- ── acid 303 ───────────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="sec">acid · tb-303 <span style="color:var(--dim);text-transform:none;letter-spacing:0">— tap notes / accent / slide</span></div>
+    <div class="seq" id="acidgrid"></div>
+    <div class="row">
+      <button id="wave" disabled>◿ saw</button>
+      <div class="ctrl"><label>cutoff <b id="cutVal">200</b></label><input id="cut" type="range" min="0" max="1000" value="286"></div>
+      <div class="ctrl"><label>reso <b id="resVal">16</b></label><input id="res" type="range" min="0" max="26" value="16" step="0.5"></div>
+      <div class="ctrl"><label>env <b id="envVal">80</b></label><input id="env-mod" type="range" min="0" max="100" value="80"></div>
+      <div class="ctrl"><label>decay <b id="decVal">300</b></label><input id="dec" type="range" min="30" max="1000" value="300"></div>
+      <div class="ctrl"><label>accent <b id="accVal">70</b></label><input id="acc" type="range" min="0" max="100" value="70"></div>
+    </div>
+  </div>
+
+  <!-- ── drums ──────────────────────────────────────────────────── -->
+  <div class="panel">
+    <div class="sec">drums <span style="color:var(--dim);text-transform:none;letter-spacing:0">— tap cells · tap a name to mute</span></div>
+    <div class="seq" id="drumgrid"></div>
+    <div class="row">
+      <span class="hint">kit:</span>
+      <button class="dpre" data-p="house">house</button>
+      <button class="dpre" data-p="techno">techno</button>
+      <button class="dpre" data-p="breaks">breaks</button>
+      <button class="dpre" data-p="clear">clear</button>
+    </div>
+  </div>
+
+  <!-- ── idea 1 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 1</span>Two instruments, one clock</h2>
+    <p>A groovebox is just several sequencers sharing a <b class="hl">single transport</b>. Here the acid line
+    (lessons 05–13) and the drum kit (lessons 11–12) read the <i>same</i> 16-step clock (lesson 10), so they're
+    locked in time forever — the kick and the bassline hit together because they're driven by one
+    <code>tick()</code>. Swing nudges both at once, so the whole track shuffles as one feel. That shared clock
+    is the entire concept; everything else you already built.</p>
+  </div>
+
+  <!-- ── idea 2 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 2</span>The glue — dub delay &amp; reverb</h2>
+    <p>Dry, the parts sound like a demo. The <b class="hl">master glue</b> is what makes it a <i>record</i>:</p>
+    <ul>
+      <li><b class="blu">Delay</b> — an echo of the acid line, its time <b>synced to the tempo</b> (a dotted
+        eighth), fed back on itself. Dub delay is famously half the acid vibe: each squelch trails into ghostly
+        repeats. Push <span class="kbd">delay</span> and <span class="kbd">feedback</span> and hear it bloom.</li>
+      <li><b class="blu">Reverb</b> — a synthetic room (a decaying-noise impulse) that both parts sit in, so the
+        drums and bass share one space instead of sounding pasted together.</li>
+    </ul>
+    <p>These are <b>master send effects</b>: both instruments send a slice of their signal into shared delay
+    and reverb buses, which mix back into the output. That routing — dry + wet sends → master — is how every
+    mixer and DAW works.</p>
+    <div class="nerd"><b>// CS corner:</b> <code>DelayNode → feedback Gain → back into the DelayNode</code> is
+    a literal feedback loop in the audio graph; <code>delayTime = 3·stepDur</code> keeps the echoes on the
+    grid. Reverb is a <code>ConvolverNode</code> whose impulse response we synthesise at power-on —
+    <code>noise · (1−t)^2.5</code>, a decaying burst — no sample needed. Everything routes to buses:
+    <code>acidBus/drumBus → (dry) master</code> and <code>→ (send) delay/reverb → master</code>.</div>
+  </div>
+
+  <!-- ── idea 3 ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">idea 3</span>You built a synthesizer</h2>
+    <div class="done">
+    <p style="margin-top:0">Look at what's running: a monophonic subtractive <b class="hl">TB-303</b> — oscillator,
+    24 dB resonant filter, filter envelope, accent, slide, drive — sequenced with pitch/accent/slide per step;
+    a <b class="hl">synthesised drum kit</b> — kick, snare, hats, clap from sine and noise; a rock-solid
+    <b class="hl">lookahead clock</b>; and a master <b class="hl">delay + reverb</b>. Every sample of it is
+    generated live from things you now understand from the ground up. No plugins, no samples, no magic — just
+    Web Audio and the ideas from <b>P1</b> onward.</p></div>
+    <p>Where to go from here (Module 6): teach the <span class="kbd">🎲 new jam</span> button to write
+    <i>better</i> lines — Euclidean drum rhythms, scale-locked melody generators, probability-driven
+    accents/slides — and render loops to drop into a game. But the instrument is done. <b class="hl">You made
+    acid from scratch.</b></p>
+    <a class="next" href="../../index.html">★ back to the lab</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit
+   gesture events; also suppress the long-press context menu that pops over the
+   keys and sliders. Page scrolling and normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* Lesson 16 — the capstone groovebox. The lesson-13 acid voice + the lesson-12
+   drum kit, both fired by ONE lesson-10 scheduler, both routed dry + through a
+   shared tempo-synced delay and a synthesised reverb into a master bus.        */
+
+let ctx, master, acidBus, drumBus, delay, delayFb, delayWet, conv, revWet, noiseBuf;
+let osc, f1, f2, vca;                                   // the 303 voice
+const level=0.30, C_MIN=40, C_MAX=12000, ROOT=45, slideTime=0.055;
+let waveform="sawtooth", reso=16, envMod=0.80, decay=0.30, curCut, accentAmt=0.70;
+let bpm=126, swing=0.06, playing=false, timer=null, nextT=0, stepIx=0, schedQ=[], playStep=-1;
+const mf=m=>440*Math.pow(2,(m-69)/12);
+const sliderToCut=v=>C_MIN*Math.pow(C_MAX/C_MIN,v/1000);
+const SCALE=[0,3,5,7,10,12], SNAME=["A","C","D","E","G","A"], NP=SCALE.length;
+const outBase=()=>level/(1+0.14*(Math.pow(10,reso/20)-1));
+
+// patterns
+const PITCH =[1,0,1,6, 1,0,5,0, 1,6,0,1, 1,3,1,0];
+const ACCENT=[1,0,0,1, 0,0,1,0, 1,1,0,0, 1,0,0,0].map(Boolean);
+const SLIDE =[0,0,1,0, 0,0,0,0, 0,1,0,0, 0,0,0,0].map(Boolean);
+const DRUMS=[{k:"kick",l:"KICK"},{k:"snare",l:"SNR"},{k:"chat",l:"CH"},{k:"ohat",l:"OH"},{k:"clap",l:"CLP"}];
+const DP={}, dmute={}; DRUMS.forEach(d=>{ DP[d.k]=new Array(16).fill(false); dmute[d.k]=false; });
+const DPRE={
+  house:{kick:[0,4,8,12],clap:[4,12],ohat:[2,6,10,14],chat:[],snare:[]},
+  techno:{kick:[0,4,8,12],chat:[0,2,4,6,8,10,12,14],clap:[4,12],ohat:[14],snare:[]},
+  breaks:{kick:[0,6,10],snare:[4,12],chat:[0,2,4,6,8,10,12,14],ohat:[],clap:[]},
+  clear:{kick:[],snare:[],chat:[],ohat:[],clap:[]},
+};
+
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), playBtn=$("#play"), rndBtn=$("#rnd"), waveBtn=$("#wave");
+
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  master=ctx.createGain(); master.gain.value=0.5; master.connect(ctx.destination);
+  acidBus=ctx.createGain(); drumBus=ctx.createGain(); acidBus.connect(master); drumBus.connect(master);
+  // tempo-synced dub delay (feedback loop)
+  delay=ctx.createDelay(1.0); delayFb=ctx.createGain(); delayWet=ctx.createGain();
+  delayFb.gain.value=0.4; delayWet.gain.value=0.28;
+  delay.connect(delayFb); delayFb.connect(delay); delay.connect(delayWet); delayWet.connect(master);
+  acidBus.connect(delay);                               // the acid line trails into the delay
+  delay.delayTime.value=3*(60/bpm/4);                   // dotted-8th, exact from the first hit
+  // synthesised reverb
+  conv=ctx.createConvolver(); conv.buffer=makeIR(); revWet=ctx.createGain(); revWet.gain.value=0.14;
+  conv.connect(revWet); revWet.connect(master); acidBus.connect(conv); drumBus.connect(conv);
+  // the 303 voice
+  osc=ctx.createOscillator(); osc.type=waveform; osc.frequency.value=mf(ROOT);
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.Q.value=-3; f1.frequency.value=curCut;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.Q.value=reso; f2.frequency.value=curCut;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  osc.connect(f1); f1.connect(f2); f2.connect(vca).connect(acidBus); osc.start();
+  // noise for drums
+  noiseBuf=ctx.createBuffer(1,2*ctx.sampleRate,ctx.sampleRate); const nd=noiseBuf.getChannelData(0); for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  playBtn.disabled=rndBtn.disabled=waveBtn.disabled=false; draw();
+}
+function makeIR(){ const len=(ctx.sampleRate*1.8)|0, b=ctx.createBuffer(2,len,ctx.sampleRate);
+  for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5); } return b; }
+function setDelayTime(){ if(delay) delay.delayTime.setTargetAtTime(3*(60/bpm/4), ctx.currentTime, 0.05); }  // dotted 8th
+
+/* ── the 303 voice (lesson 08/13) → acidBus ────────────────────── */
+function filterEnv(t,acc){ const a=accentAmt,fl=curCut,pk=Math.min(fl*Math.pow(2,envMod*4)*(acc?1+a:1),C_MAX),dc=decay*(acc?1-0.45*a:1),atk=0.003;
+  [f1.frequency,f2.frequency].forEach(p=>{ p.cancelScheduledValues(t); p.setValueAtTime(fl,t); if(pk>fl*1.01) p.linearRampToValueAtTime(pk,t+atk); p.exponentialRampToValueAtTime(Math.max(fl,C_MIN),t+atk+dc); }); }
+function ampShape(t,acc,slidInto,tie,sd){ const L=outBase()*(acc?1+0.9*accentAmt:1)*0.62,g=vca.gain; g.cancelScheduledValues(t);
+  if(slidInto) g.linearRampToValueAtTime(L,t+0.03); else { g.setValueAtTime(1e-4,t); g.linearRampToValueAtTime(L,t+0.005); }
+  if(tie) g.exponentialRampToValueAtTime(0.6*L,t+sd*0.98); else { g.exponentialRampToValueAtTime(0.26*L,t+sd*0.9); g.exponentialRampToValueAtTime(0.0006,t+sd*0.99); } }
+function step303(t,s,sd){
+  const pv=PITCH[s];
+  if(pv===0){ const g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.03); return; }
+  const thisF=mf(ROOT+SCALE[pv-1]), ps=(s+15)%16, prevRest=PITCH[ps]===0;
+  const slidInto=SLIDE[ps]&&!prevRest, prevF=prevRest?thisF:mf(ROOT+SCALE[PITCH[ps]-1]), tie=!!SLIDE[s], acc=!!ACCENT[s];
+  osc.frequency.cancelScheduledValues(t);
+  if(slidInto){ osc.frequency.setValueAtTime(prevF,t); osc.frequency.exponentialRampToValueAtTime(thisF,t+Math.min(slideTime,sd*0.9)); }
+  else osc.frequency.setValueAtTime(thisF,t);
+  if(!slidInto) filterEnv(t,acc);
+  ampShape(t,acc,slidInto,tie,sd);
+}
+
+/* ── drum voices (lessons 11/12) → drumBus ─────────────────────── */
+const nSrc=()=>{ const s=ctx.createBufferSource(); s.buffer=noiseBuf; return s; };
+function kick(t){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type="sine"; o.frequency.setValueAtTime(168,t); o.frequency.exponentialRampToValueAtTime(48,t+0.05);
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.95,t+0.003); g.gain.exponentialRampToValueAtTime(0.0004,t+0.42); o.connect(g).connect(drumBus); o.start(t); o.stop(t+0.45); }
+function snare(t){ const bg=ctx.createGain(); bg.gain.setValueAtTime(0.5,t); bg.gain.exponentialRampToValueAtTime(0.001,t+0.11); bg.connect(drumBus);
+  [190,295].forEach(f=>{ const o=ctx.createOscillator(); o.type="triangle"; o.frequency.value=f; o.connect(bg); o.start(t); o.stop(t+0.14); });
+  const n=nSrc(),hp=ctx.createBiquadFilter(),ng=ctx.createGain(); hp.type="highpass"; hp.frequency.value=1400; hp.Q.value=0.7; ng.gain.setValueAtTime(0.6,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.16); n.connect(hp).connect(ng).connect(drumBus); n.start(t); n.stop(t+0.2); }
+function hat(t,open){ const n=nSrc(),hp=ctx.createBiquadFilter(),g=ctx.createGain(),dec=open?0.30:0.045; hp.type="highpass"; hp.frequency.value=8500; g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+dec); n.connect(hp).connect(g).connect(drumBus); n.start(t); n.stop(t+dec+0.02); }
+function clap(t){ const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1100; bp.Q.value=1.0; bp.connect(drumBus);
+  [[0,.5],[0.012,.5],[0.024,.5],[0.038,.4]].forEach(([o,a])=>{ const n=nSrc(),g=ctx.createGain(); g.gain.setValueAtTime(a,t+o); g.gain.exponentialRampToValueAtTime(0.001,t+o+0.02); n.connect(g).connect(bp); n.start(t+o); n.stop(t+o+0.05); });
+  const n=nSrc(),g=ctx.createGain(); g.gain.setValueAtTime(0.3,t+0.05); g.gain.exponentialRampToValueAtTime(0.001,t+0.22); n.connect(g).connect(bp); n.start(t+0.05); n.stop(t+0.26); }
+function fireDrum(k,t){ k==="kick"?kick(t):k==="snare"?snare(t):k==="chat"?hat(t,false):k==="ohat"?hat(t,true):clap(t); }
+
+/* ── one shared scheduler ──────────────────────────────────────── */
+function tick(){
+  const sd=60/bpm/4;
+  while(nextT < ctx.currentTime+0.12){
+    const s=stepIx%16, when=nextT+(s%2?swing*sd:0);
+    for(const d of DRUMS) if(DP[d.k][s] && !dmute[d.k]) fireDrum(d.k, when);
+    step303(when, s, sd);
+    schedQ.push({s, t:nextT});
+    stepIx++; nextT+=sd;
+  }
+}
+function setPlay(on){
+  playing=on; playBtn.classList.toggle("on",on); playBtn.textContent=on?"■ stop":"▶ play";
+  if(on){ stepIx=0; nextT=ctx.currentTime+0.06; schedQ=[]; clearInterval(timer); timer=setInterval(tick,25); tick(); }
+  else{ clearInterval(timer); const t=ctx.currentTime,g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(0.0001,t+0.06); if(playStep>=0){ setCur(playStep,false); playStep=-1; } }
+}
+
+/* ── build the grids ───────────────────────────────────────────── */
+function el(tag,cls,txt){ const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e; }
+function pnum(i){ const s=el("div","stepnum"+(i%4===0?" b":"")); s.textContent=i%4===0?(i/4+1):""; return s; }
+const pcols=[], accs=[], slds=[], dcells={};
+const acidGrid=$("#acidgrid"), drumGrid=$("#drumgrid");
+// acid: header + NOTE/ACC/SLD rows
+acidGrid.appendChild(el("div","lbl","")); for(let i=0;i<16;i++) acidGrid.appendChild(pnum(i));
+acidGrid.appendChild(el("div","lbl","NOTE"));
+for(let i=0;i<16;i++){ const c=el("div","pcol"+(i%4===0?" beat":"")); c.innerHTML=`<div class="rst">·</div><div class="bar"></div>`;
+  c.addEventListener("pointerdown",e=>{ e.preventDefault(); PITCH[i]=(PITCH[i]+1)%(NP+1); paintPitch(i); }); acidGrid.appendChild(c); pcols.push(c); }
+acidGrid.appendChild(el("div","lbl","ACC"));
+for(let i=0;i<16;i++){ const c=el("div","tog acc"+(i%4===0?" beat":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); ACCENT[i]=!ACCENT[i]; c.classList.toggle("on",ACCENT[i]); }); acidGrid.appendChild(c); accs.push(c); }
+acidGrid.appendChild(el("div","lbl","SLD"));
+for(let i=0;i<16;i++){ const c=el("div","tog sld"+(i%4===0?" beat":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); SLIDE[i]=!SLIDE[i]; c.classList.toggle("on",SLIDE[i]); }); acidGrid.appendChild(c); slds.push(c); }
+// drums: header + a row per drum
+drumGrid.appendChild(el("div","lbl","")); for(let i=0;i<16;i++) drumGrid.appendChild(pnum(i));
+DRUMS.forEach(d=>{ const lbl=el("div","lbl mut",d.l); lbl.onclick=()=>{ dmute[d.k]=!dmute[d.k]; lbl.classList.toggle("muted",dmute[d.k]); dcells[d.k].forEach(c=>c.classList.toggle("mutedrow",dmute[d.k])); };
+  drumGrid.appendChild(lbl); dcells[d.k]=[];
+  for(let i=0;i<16;i++){ const c=el("div","dcell"+(i%4===0?" beat":"")+(d.k==="kick"?" kick":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); DP[d.k][i]=!DP[d.k][i]; c.classList.toggle("on",DP[d.k][i]); }); drumGrid.appendChild(c); dcells[d.k].push(c); } });
+
+function paintPitch(i){ const pv=PITCH[i],c=pcols[i],bar=c.querySelector(".bar"); c.classList.toggle("note",pv>0);
+  if(pv>0){ bar.style.height=(18+(pv/NP)*78)+"%"; bar.textContent=SNAME[pv-1]; } else { bar.style.height="0%"; bar.textContent=""; } }
+function repaintAcid(){ for(let i=0;i<16;i++){ paintPitch(i); accs[i].classList.toggle("on",ACCENT[i]); slds[i].classList.toggle("on",SLIDE[i]); } }
+function repaintDrums(){ DRUMS.forEach(d=>{ for(let i=0;i<16;i++) dcells[d.k][i].classList.toggle("on",DP[d.k][i]); }); }
+function loadDrums(name){ const p=DPRE[name]; DRUMS.forEach(d=>{ DP[d.k]=new Array(16).fill(false); (p[d.k]||[]).forEach(i=>DP[d.k][i]=true); }); repaintDrums(); }
+function randomize(){
+  const w=[1,1,1,6,6,2,3,4,5];
+  for(let i=0;i<16;i++){ PITCH[i]=Math.random()<0.26?0:w[Math.floor(Math.random()*w.length)]; ACCENT[i]=Math.random()<0.32; SLIDE[i]=PITCH[i]!==0&&Math.random()<0.22; }
+  if(PITCH[0]===0) PITCH[0]=1; repaintAcid();
+}
+
+/* ── controls ──────────────────────────────────────────────────── */
+curCut=sliderToCut(+$("#cut").value);
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+playBtn.onclick=()=>{ if(ctx) setPlay(!playing); };
+rndBtn.onclick=randomize;
+waveBtn.onclick=()=>{ waveform=waveform==="sawtooth"?"square":"sawtooth"; waveBtn.textContent=waveform==="square"?"▨ square":"◿ saw"; if(osc) osc.type=waveform; };
+document.querySelectorAll(".dpre").forEach(b=>b.onclick=()=>loadDrums(b.dataset.p));
+$("#bpm").oninput=e=>{ bpm=+e.target.value; $("#bpmVal").textContent=bpm; setDelayTime(); };
+$("#sw").oninput=e=>{ swing=+e.target.value/100*0.5; $("#swVal").textContent=e.target.value+"%"; };
+$("#dl").oninput=e=>{ $("#dlVal").textContent=e.target.value+"%"; if(delayWet) delayWet.gain.setTargetAtTime(+e.target.value/100,ctx.currentTime,0.02); };
+$("#fb").oninput=e=>{ $("#fbVal").textContent=e.target.value+"%"; if(delayFb) delayFb.gain.setTargetAtTime(+e.target.value/100,ctx.currentTime,0.02); };
+$("#rv").oninput=e=>{ $("#rvVal").textContent=e.target.value+"%"; if(revWet) revWet.gain.setTargetAtTime(+e.target.value/100,ctx.currentTime,0.02); };
+$("#cut").oninput=e=>{ curCut=sliderToCut(+e.target.value); $("#cutVal").textContent=Math.round(curCut); };
+$("#res").oninput=e=>{ reso=+e.target.value; $("#resVal").textContent=reso; if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01); };
+$("#env-mod").oninput=e=>{ envMod=+e.target.value/100; $("#envVal").textContent=e.target.value; };
+$("#dec").oninput=e=>{ decay=+e.target.value/1000; $("#decVal").textContent=e.target.value; };
+$("#acc").oninput=e=>{ accentAmt=+e.target.value/100; $("#accVal").textContent=e.target.value; };
+$("#cutVal").textContent=Math.round(curCut);
+
+/* ── init grids + playhead ─────────────────────────────────────── */
+loadDrums("house"); repaintAcid();
+function setCur(s,on){ pcols[s].classList.toggle("cur",on); accs[s].classList.toggle("cur",on); slds[s].classList.toggle("cur",on); DRUMS.forEach(d=>dcells[d.k][s].classList.toggle("cur",on)); }
+function draw(){ requestAnimationFrame(draw); if(!ctx) return;
+  if(playing){ let ns=playStep; while(schedQ.length && schedQ[0].t<=ctx.currentTime){ ns=schedQ.shift().s; }
+    if(ns!==playStep){ if(playStep>=0) setCur(playStep,false); if(ns>=0) setCur(ns,true); playStep=ns; } } }
+</script>
+</body>
+</html>
