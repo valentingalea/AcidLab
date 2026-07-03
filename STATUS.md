@@ -34,7 +34,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 14 | Scales & melody | ⬜ planned | |
 | 15 | Pattern chaining | ⏭️ optional | |
 | 16 | Groovebox (capstone) | ✅ done | the 303 acid sequencer (13) + drum machine (12) on ONE shared lesson-10 scheduler (shared swing); master glue = tempo-synced dub delay (DelayNode+feedback, dotted-8th) + synthesised convolver reverb (procedural noise IR); acidBus/drumBus → dry + sends → master; 🎲 new jam, drum presets, full 303 panel. Loads a groove by default — press play = a track. 2026-07-03: acid grid gained the OCT row + scale selector (same as 13) — can do Arabic-flavoured acid over the beat |
-| 17 | Generative acid | ⬜ planned | for the game |
+| 17 | Generative acid | ✅ done | the two algorithms: Euclidean drums (per-drum pulses slider → `(i·k)%n<k` even spread, Bjorklund-equivalent) + scale-constrained random-walk melody (bounded degree walk on the scale mask, density/wander/octave/accent/slide knobs, scale selector). Reuses 303 voice + kit + clock + baked dub delay; generated patterns render on editable grids; framing = seed→loop for scoring the game |
 | 18 | Shipping it | ⬜ planned | for the game |
 
 ## Now / Next
