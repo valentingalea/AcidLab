@@ -31,24 +31,24 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 11 | Synthesizing drums | ✅ done | 808/909 kit from scratch: kick (sine + pitch-drop env), snare (2 triangles body + HP noise snap), closed/open hat (HP noise, short/long decay), clap (4 stutter noise bursts + tail via bandpass). Playable pads (+A S D F G keys), scope, tune/decay/snap/brightness knobs, demo beat on the lesson-10 scheduler |
 | 12 | The drum machine | ✅ done | 16-step × 5-drum grid (pattern = {drum:bool[16]}) firing lesson-11 voices on the lesson-10 scheduler; playhead via scheduled-time queue, tempo + swing (odd-step delay), house/techno/breaks/clear presets, tap-name row mute. Completes the rhythm half |
 | 13 | 303 step sequencer | ✅ done | working TB-303: lesson-08 voice (slide/legato + accent) driven by an editable per-step grid on the lesson-10 scheduler; full 303 panel + presets + 🎲 random-walk generator, playhead. 2026-07-03: added OCT row (per-step octave switch ±12, the real 303 control) + a scale selector (min pent / nat minor / phrygian / phryg dom / harm minor / chromatic) — Phryg dom/harm minor = eastern/"Arabic" acid (P2 maqam-Hijaz); pitch now scale-index + 12·oct |
-| 14 | Scales & melody | ⬜ planned | |
-| 15 | Pattern chaining | ⏭️ optional | |
+| 14 | Scales & melody | ✅ folded | not a standalone page — content lives in P2 (scales/modes/maqam), lesson 13's scale selector + octave row, and lesson 17's scale-locked random-walk generator |
+| 15 | Pattern chaining | ⏭️ optional | not built — song-mode / chaining patterns into an arrangement, an optional future extension |
 | 16 | Groovebox (capstone) | ✅ done | the 303 acid sequencer (13) + drum machine (12) on ONE shared lesson-10 scheduler (shared swing); master glue = tempo-synced dub delay (DelayNode+feedback, dotted-8th) + synthesised convolver reverb (procedural noise IR); acidBus/drumBus → dry + sends → master; 🎲 new jam, drum presets, full 303 panel. Loads a groove by default — press play = a track. 2026-07-03: acid grid gained the OCT row + scale selector (same as 13) — can do Arabic-flavoured acid over the beat |
 | 17 | Generative acid | ✅ done | the two algorithms: Euclidean drums (per-drum pulses slider → `(i·k)%n<k` even spread, Bjorklund-equivalent) + scale-constrained random-walk melody (bounded degree walk on the scale mask, density/wander/octave/accent/slide knobs, scale selector). Reuses 303 voice + kit + clock + baked dub delay; generated patterns render on editable grids; framing = seed→loop for scoring the game |
 | 18 | Shipping it | ✅ done | **course finale.** one buildEngine() used for both the live ctx and an OfflineAudioContext render; ⏺ render 2 bars offline (reports ms + N× realtime + KB), ▶ play baked buffer (loop), ⬇ download .wav (44-byte header + int16 PCM, no lib); live audio-unlock badge (suspended→running via onstatechange); live-vs-baked / latency / memory / into-the-game framing + a full-course TOC |
 
 ## Now / Next
-- **Now:** Prologue (3 ELI5 parts), Module 0 (00 + 01), Module 1 (02 + 03),
-  Module 2 complete (05–08, the full 303 voice), the 303-story interlude, and
-  Module 3's opener (10 — the clock/scheduler) all live.
+- **THE COURSE IS COMPLETE — every lesson built, headless-verified, and live.**
+  Prologue (P1–P3) → 303 voice (00–09, incl. the 04 hardware / ladder-worklet
+  deep-dive) → interludes (303 story · notes-vs-tone · mono-vs-poly) →
+  rhythm/clock/drums (10–12) → sequencer (13) → groovebox capstone (16) →
+  generative (17) → shipping/WAV export (18). ~24 self-contained pages.
   Old `prologue-theory/` URL redirects to P1.
-- **Now: THE COURSE IS COMPLETE.** Every planned lesson is built and verified:
-  prologue (P1–P3) → 303 voice (00–09) → interludes (303 story, notes-vs-tone,
-  mono-vs-poly) → rhythm/clock/drums (10–12) → sequencer (13) → groovebox
-  capstone (16) → generative (17) → shipping/WAV export (18). ~24 self-contained
-  pages, all live on the site, all headless-verified.
-- **Only optional leftover:** lesson 04 (AudioWorklet diode-ladder filter) — the
-  authentic self-oscillating 303 filter, kept as a deep-dive side-quest.
+- **Not built, by design:** 14 (scales & melody) is folded into P2 + lesson 13's
+  scale selector/octave row + lesson 17's generator; 15 (pattern chaining /
+  song mode) is left as an optional future extension.
+- **If extending:** song-mode (15), a shared `lib/` if duplication starts to
+  hurt, and wiring the engine into the actual arcade game.
 
 ## Open questions (to align with Valentin)
 1. Build pace: lesson-by-lesson with a checkpoint each, or a few at a time?

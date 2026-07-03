@@ -1,8 +1,12 @@
 # Acid Lab 🧪🟢
 
 Learn synthesis from first principles by building a **TB-303-style acid synth**, a
-drum machine, and a sequencer in the browser — working toward a small
-"Korg DS-10"-style groovebox for generating acid / chiptune loops.
+drum machine, and a step sequencer in the browser — a complete "Korg DS-10"-style
+groovebox for generating acid / chiptune loops.
+
+**Status: complete.** ~24 self-contained, interactive lessons run start to finish
+(prologue → the 303 voice → clock/drums → sequencer → groovebox capstone →
+generative → shipping/WAV export), each headless-verified in a real browser.
 
 - **Concept & curriculum:** [`AGENTS.md`](./AGENTS.md)
 - **Progress:** [`STATUS.md`](./STATUS.md)
