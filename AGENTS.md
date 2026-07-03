@@ -92,8 +92,10 @@ asides so the main flow stays plain-language. Vanilla Web Audio, self-contained.
   Sweep the cutoff, watch harmonics disappear on the spectrum. `BiquadFilterNode`.
 - **03 · Resonance & the squelch** — Q, the whistle, self-oscillation. 12 vs
   24 dB/oct → why we chain two biquads for the 303's steeper slope.
-- **04 · (optional) A real ladder filter** — `AudioWorkletNode` diode/transistor
-  ladder for authentic self-oscillating acid. Custom DSP.
+- **04 · Under the hood — real hardware** — *(was optional; built as a hardware
+  deep-dive.)* How analog VCOs really work (capacitor-ramp saw, exp converter,
+  drift) + the 303's actual circuits (diode-ladder VCF), then the authentic
+  self-oscillating ladder as an `AudioWorkletNode` (inline Blob module). ✅ built
 
 ### Module 2 — Building the 303 voice
 - **05 · The voice** — wire osc → 4-pole LP → VCA. One playable mono synth.
