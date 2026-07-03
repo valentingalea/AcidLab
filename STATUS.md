@@ -122,6 +122,16 @@ DJ sliders + float/reposition, phone-first) → M2 (+ M6).
   old links can be rejected/migrated. Share links are **import-once**: applied
   then the hash is stripped so local autosave owns the session afterwards (the
   🔗 button always mints a fresh link from current state).
+- 2026-07-03: **unified power + play** into one button. Browsers require a user
+  gesture to start audio (an `AudioContext` is born suspended; `resume()` needs a
+  real tap) — so the first tap of ▶ play now creates+resumes the context AND
+  starts the transport, then toggles play/stop after. Removes the separate ⏻
+  power button and makes a shared-link recipient's single tap do everything.
+  wave / jam / clear are now always enabled (they edit the pattern/params, which
+  `buildGraph()` reads at power-on). NB: headless Chromium does NOT enforce the
+  autoplay policy (context is born `running` even without the bypass flag), so
+  this gating isn't visible in the Playwright suite — verified by reasoning +
+  the documented policy, not a headless test.
 - 2026-07-03: **WAV export = shared graph** (M4). Instead of duplicating the DSP
   (drift risk) or shipping lesson-18's slim 303-only render, one `buildGraph()`
   + engine-param voice/drum fns run on both the live ctx and an

@@ -41,11 +41,8 @@
   button.on{background:var(--acid);color:#0a0c08;border-color:var(--acid);font-weight:700}
   button:disabled{opacity:.4;cursor:not-allowed}
   button:disabled:hover{border-color:var(--line)}
-  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700}
-  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
-  #play{font-weight:700;min-width:74px}
-  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
-  #play:disabled{opacity:.35}
+  #play{background:var(--orange);color:#0a0c08;border:none;font-weight:700;min-width:80px}   /* unified power+play — the primary start button */
+  #play.on{background:var(--acid);color:#0a0c08}
   #rnd{border-color:var(--orange);color:var(--orange);font-weight:700}
   .io{border-color:var(--blue);color:var(--blue);padding:8px 10px}
   .sm{padding:6px 9px;font-size:12px}
@@ -135,9 +132,8 @@
 <body>
 <div class="appbar">
   <span class="brand"><span class="n">▮</span> AcidBox</span>
-  <button id="power">⏻ power</button>
-  <button id="play" disabled>▶ play</button>
-  <button id="rnd" disabled>🎲 jam</button>
+  <button id="play">▶ play</button>
+  <button id="rnd">🎲 jam</button>
   <span class="spacer"></span>
   <button class="io" id="saveBtn" title="save / load patterns">💾</button>
   <button class="io" id="shareBtn" title="copy a share link">🔗</button>
@@ -151,7 +147,7 @@
     <div class="ctitle"><span class="drag">⠿</span> acid · tb-303 <span class="sub">tap NOTE to cycle · ACC / SLD / OCT ▲▼</span></div>
     <div class="seq" id="acidgrid"></div>
     <div class="row">
-      <button id="wave" disabled>◿ saw</button>
+      <button id="wave">◿ saw</button>
       <button id="scale">scale: Min pent</button>
       <button id="clr303">clear</button>
     </div>
@@ -282,7 +278,7 @@ const DPRE={
 };
 
 const $=s=>document.querySelector(s);
-const powerBtn=$("#power"), playBtn=$("#play"), rndBtn=$("#rnd"), waveBtn=$("#wave"), scaleBtn=$("#scale");
+const playBtn=$("#play"), rndBtn=$("#rnd"), waveBtn=$("#wave"), scaleBtn=$("#scale");
 
 /* Build the WHOLE groovebox graph on ANY context — the live AudioContext or an
    OfflineAudioContext for WAV export — so the render is exactly what you hear
@@ -315,8 +311,7 @@ function powerOn(){
   ctx=new (window.AudioContext||window.webkitAudioContext)();
   LIVE=buildGraph(ctx, ctx.destination);
   ({master,acidBus,drumBus,delay,delayFb,delayWet,conv,revWet,osc,f1,f2,vca,noiseBuf}=LIVE);  // expose nodes to the control handlers
-  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
-  playBtn.disabled=rndBtn.disabled=waveBtn.disabled=false; draw();
+  draw();
 }
 function makeIR(A){ const len=(A.sampleRate*1.8)|0, b=A.createBuffer(2,len,A.sampleRate);
   for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.5); } return b; }
@@ -412,8 +407,10 @@ function clearAcid(){ for(let i=0;i<16;i++){ PITCH[i]=0; ACCENT[i]=false; SLIDE[
 
 /* ── controls ──────────────────────────────────────────────────── */
 curCut=sliderToCut(+$("#cut").value);
-powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
-playBtn.onclick=()=>{ if(ctx) setPlay(!playing); };
+/* unified power + play: the FIRST tap creates the AudioContext inside the user
+   gesture (the browser's autoplay requirement) AND starts the transport; after
+   that it just toggles play/stop, resuming if the tab suspended the context. */
+playBtn.onclick=()=>{ if(!ctx) powerOn(); if(ctx.state==="suspended") ctx.resume(); setPlay(!playing); };
 rndBtn.onclick=randomize;
 $("#clr303").onclick=clearAcid;
 waveBtn.onclick=()=>{ waveform=waveform==="sawtooth"?"square":"sawtooth"; waveBtn.textContent=waveform==="square"?"▨ square":"◿ saw"; if(osc) osc.type=waveform; };
