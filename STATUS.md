@@ -30,7 +30,7 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 10 | The clock problem (scheduler) | ✅ done | CS centrepiece: A/B 16th-note metronome — naïve recursive setTimeout (plays on callback, drifts/jitters) vs lookahead scheduler (queues onto ctx.currentTime ~100ms ahead); 💣 main-thread busy-loop stressor exposes the difference; live beat-spacing-error bar viz + worst-jitter readout; "two clocks" framing |
 | 11 | Synthesizing drums | ✅ done | 808/909 kit from scratch: kick (sine + pitch-drop env), snare (2 triangles body + HP noise snap), closed/open hat (HP noise, short/long decay), clap (4 stutter noise bursts + tail via bandpass). Playable pads (+A S D F G keys), scope, tune/decay/snap/brightness knobs, demo beat on the lesson-10 scheduler |
 | 12 | The drum machine | ✅ done | 16-step × 5-drum grid (pattern = {drum:bool[16]}) firing lesson-11 voices on the lesson-10 scheduler; playhead via scheduled-time queue, tempo + swing (odd-step delay), house/techno/breaks/clear presets, tap-name row mute. Completes the rhythm half |
-| 13 | 303 step sequencer | ⬜ planned | |
+| 13 | 303 step sequencer | ✅ done | working TB-303: lesson-08 voice (slide/legato + accent) driven by an editable pitch/accent/slide-per-step grid (pitch 0=rest, 1..6=A-min-pentatonic index) on the lesson-10 scheduler; full 303 panel knobs + tempo + wave, acid1/acid2/clear presets, 🎲 scale-locked random-walk generator (teaser for Module 6), playhead |
 | 14 | Scales & melody | ⬜ planned | |
 | 15 | Pattern chaining | ⏭️ optional | |
 | 16 | DS-10 groovebox (capstone) | ⬜ planned | |
