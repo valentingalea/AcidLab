@@ -84,7 +84,7 @@ acidlab.duckdns.org {
 	# same :8083 origin — cf. puckline's /legacy. Own subdomain later (STATUS M7).
 	redir /acidbox /acidbox/ 308
 
-	@allowed path / /index.html /lessons/* /acidbox/*
+	@allowed path / /index.html /lessons/* /acidbox/* /assets/*
 	handle @allowed {
 		reverse_proxy 127.0.0.1:8083
 	}
@@ -101,7 +101,7 @@ acidlab.duckdns.org {
 
 What this does:
 - TLS is implicit — Caddy fetches a Let's Encrypt cert on first request.
-- `@allowed path` is a named matcher listing the only paths that get proxied through to Python: `/`, `/index.html`, anything under `/lessons/` (each lesson is its own self-contained `lessons/<slug>/index.html`), and anything under `/acidbox/` (the standalone app; `acidbox/index.html`).
+- `@allowed path` is a named matcher listing the only paths that get proxied through to Python: `/`, `/index.html`, anything under `/lessons/` (each lesson is its own self-contained `lessons/<slug>/index.html`), anything under `/acidbox/` (the standalone app; `acidbox/index.html`), and anything under `/assets/` (shared images — e.g. the DS-10 chapter's screenshots/photos; **added 2026-07-04**, without which those images 404 while the pages themselves load fine).
 - `redir /acidbox /acidbox/ 308` sends the bare directory path to its trailing-slash form (the `/acidbox/*` glob only matches paths *under* `/acidbox/`), same convention the sibling sub-apps use. AcidBox rides the **same** `:8083` origin and the **same** vhost/log — no new port and **no ufw change** (cf. puckline's `/legacy`). It'll move to its own subdomain later.
 - The catch-all `handle { respond 404 }` returns 404 for everything else — `.git/`, dotfiles, `start.sh`, `server.log`, `README.md` etc. never reach the origin.
 - Every lesson page is fully self-contained (no external JS/CSS imports), so the origin only ever serves static HTML.
