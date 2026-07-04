@@ -20,6 +20,12 @@
   *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
   html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   input[type=range]{touch-action:none}
+  /* Sequencer cells are tap targets, not scroll surfaces. Like the sliders they
+     must opt OUT of pan-gesture disambiguation: on a pannable element iPadOS
+     Safari buffers pointer input to decide tap-vs-pan, and Apple Pencil taps get
+     held/dropped in that buffer (finger taps resolve fine; pen missed ~every 3rd).
+     touch-action:none delivers each tap immediately. Scroll from the gaps/labels. */
+  .pcol,.tog,.dcell,.seq .lbl.mut{touch-action:none}
   body{
     margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
     color:var(--ink);font:15px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;

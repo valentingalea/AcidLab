@@ -126,6 +126,19 @@ Will later get its own DNS/host (M7). Spec agreed with Valentin 2026-07-03.
 | M6 | Floating control surface | ⬜ planned | **(stretch)** the control clusters become a draggable/dockable "area" that floats & repositions to suit grip/orientation — additive on M2's area architecture |
 | M7 | Deploy | 🟨 partial | **Live now** at `https://acidlab.duckdns.org/acidbox/` — whitelisted in the live Caddyfile's `acidlab` block (`redir /acidbox` + `/acidbox/*` on `@allowed`, same `:8083` origin, cf. puckline's `/legacy`); ufw unchanged (no new port); runbook synced in `DEPLOY.md`. **TODO:** its own DNS/subdomain (Valentin will add) + matching Caddy vhost |
 
+### Bug fixes
+- 2026-07-04: **Apple Pencil missed sequencer taps** (iPad; finger fine, pen
+  dropped ~every 3rd tap on notes/accents/slides/octaves/drums; sliders fine).
+  Cause: the tap cells inherited `touch-action:pan-x pan-y` from the `*` rule, so
+  iPadOS Safari buffered each `pointerdown` to disambiguate tap-vs-pan — a buffer
+  the Pencil's pointer stream (hover/pressure transitions) confuses, dropping taps
+  in bursts. Sliders were immune because they already override to
+  `touch-action:none`. Fix: same override on `.pcol,.tog,.dcell,.lbl.mut` — tap
+  targets, not scroll surfaces (you pan from the gaps/labels/chrome). Mechanics
+  green headless on Chromium+WebKit (cells compute `none`, chrome stays pannable,
+  taps still toggle, 0 errors); the *pen* cure isn't headless-reproducible —
+  **pending on-device retest by Valentin** (deployed for that purpose).
+
 ### Requests → milestones (from Valentin's spec, 2026-07-03)
 1 self-contained root dir → M1 · 2 localStorage save/load → M3 · 3 WAV download → M4 ·
 4 URL-encoded share links → M3 · 5 separate clear+gen per instrument → M5 ·
