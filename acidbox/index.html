@@ -314,7 +314,9 @@ function powerOn(){
   // If the OS/browser parks the context (iOS "interrupted", tab-throttle
   // "suspended") while we think we're playing, reflect it in the ▶/■ button so
   // the UI never lies about whether sound is actually coming out.
-  ctx.onstatechange=()=>{ if(playing && ctx.state!=="running") setPlay(false); };
+  // ev.target===ctx: ignore late "closed" events from an old context we've
+  // already torn down + rebuilt, so they can't stop the fresh one.
+  ctx.onstatechange=ev=>{ if(ev.target===ctx && playing && ctx.state!=="running") setPlay(false); };
   LIVE=buildGraph(ctx, ctx.destination);
   ({master,acidBus,drumBus,delay,delayFb,delayWet,conv,revWet,osc,f1,f2,vca,noiseBuf}=LIVE);  // expose nodes to the control handlers
   draw();
@@ -438,7 +440,17 @@ playBtn.onclick=()=>{ if(!ctx) powerOn(); if(ctx.state!=="running") ctx.resume()
    gesture (the iOS-safe way to restart audio). */
 function panicStop(){ if(!ctx) return; if(playing) setPlay(false); if(ctx.state==="running") ctx.suspend().catch(()=>{}); }
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) panicStop(); });
-window.addEventListener("pagehide", panicStop);
+/* On unload / reload / bfcache, tear the context all the way DOWN (not just
+   suspend). iOS caps concurrent AudioContexts (~4); a merely-suspended one kept
+   alive in the back/forward cache still holds a slot — the classic "silent even
+   after a refresh" leak. close()+null frees the slot; the next ▶ rebuilds via
+   if(!ctx) powerOn(). Nulling is load-bearing: a closed-but-not-nulled ctx would
+   let play() run against dead nodes = silent with the button stuck on ■. */
+function teardown(){ if(!ctx) return; try{ if(playing) setPlay(false); }catch{} const dead=ctx; ctx=null; dead.close().catch(()=>{}); }
+window.addEventListener("pagehide", teardown);
+/* Restored from bfcache: the graph is gone (we closed it), so force the button
+   to ▶ — the first tap then rebuilds cleanly. */
+window.addEventListener("pageshow", e=>{ if(e.persisted && !ctx){ playing=false; playBtn.classList.remove("on"); playBtn.textContent="▶ play"; } });
 rndBtn.onclick=genMelody;                                  // 🎲 jam = roll a new acid line
 $("#clr303").onclick=clearAcid;
 $("#gen303").onclick=genMelody;

@@ -176,8 +176,16 @@ DJ sliders + float/reposition, phone-first) → M2 (+ M6).
   it now resumes on any non-`running` state. Verified on BOTH Chromium and
   **WebKit** (Safari's engine) headless — 14/14 checks green each (play→hide→
   scheduler-stops→button-resets→resume, + direct-suspend safety net, 0 JS errors).
-  **Still open:** the refresh-persistent silence is likely a *leaked* AudioContext
-  (iOS caps ~4 concurrent; each reload w/o `close()` leaks a slot → new contexts
-  born silent) + bfcache — `panicStop` suspends but doesn't `close()`, which is
-  what frees the slot. Next: `close()`+null on `pagehide`, rebuild on next ▶,
-  reset UI on `pageshow` persisted.
+  **Follow-up shipped 2026-07-04:** the refresh-persistent silence was likely a
+  *leaked* AudioContext (iOS caps ~4 concurrent; a suspended one kept alive in
+  bfcache still holds a slot → new contexts born silent). So `pagehide` now runs
+  `teardown()` = `close()` + **null** the ctx (not just suspend); the next ▶
+  rebuilds via `if(!ctx) powerOn()`, and `pageshow` (persisted/bfcache) forces the
+  button back to ▶. Nulling is load-bearing (a closed-but-not-nulled ctx would let
+  play() drive dead nodes = silent + stuck ■); `onstatechange` gained an
+  `ev.target===ctx` guard so a late "closed" from the torn-down context can't stop
+  the fresh one. **Mechanics** verified headless on Chromium + WebKit (pagehide→
+  close+null→scheduler-dead→button ▶→rebuild=exactly-one-live-ctx→no misfire, 0 JS
+  errors); the *leak cure itself* (iOS ~4-cap + bfcache eviction) is NOT
+  reproducible headless — needs real-device confirmation, same caveat class as the
+  autoplay-policy note above.
