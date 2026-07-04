@@ -70,6 +70,12 @@
   .lead{font-size:12px;color:var(--dim);text-align:center;margin-top:6px}
   .next{display:inline-block;margin-top:6px;color:var(--pink);text-decoration:none;border:1px solid var(--pink);border-radius:8px;padding:8px 14px}
   .next:hover{background:var(--pink);color:#0a0c08}
+  /* screenshots / photos */
+  figure{margin:16px 0;text-align:center}
+  figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#000}
+  figure.small img{max-width:360px}
+  figcaption{font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.45}
+  figcaption b{color:var(--silver)}
   footer{margin-top:26px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
   footer a{color:var(--dim)}
 </style>
@@ -115,6 +121,7 @@
     <p>Both are <b>subtractive, monophonic</b> synths built from the exact chain you assembled in Module 2:</p>
     <p style="text-align:center;color:var(--ink)"><b>oscillator → resonant low-pass filter → amp</b>, with an
       <b>envelope on the filter</b>.</p>
+    <figure class="small"><img src="../../assets/ds-synth-edit.jpg" alt="DS-10 synth-edit screen — VCO1/VCO2, VCF cutoff/peak/type, EG, VCA" loading="lazy"><figcaption>The DS-10's synth screen: two <b>VCO</b>s → <b>VCF</b> (cutoff, peak, LPF/HPF/BPF) → <b>VCA</b>, with an <b>EG</b>. Every knob is one you built in Module 2. <span style="opacity:.8">© Korg / AQ Interactive.</span></figcaption></figure>
     <p>Start with a harmonically rich wave, carve it with a resonant filter, and move that filter <i>per note</i> —
     that's the whole recipe for acid, and it's identical on both machines. The voice you built in lessons
     <b class="hl">05–09</b> already <i>is</i> a DS-10 synth and a 303 voice at the same time. Everything below is
@@ -124,6 +131,7 @@
   <!-- ── 2 · what's different ─────────────────────────────────────── -->
   <div class="panel explain">
     <h2><span class="k">the differences</span>Where they split</h2>
+    <figure><img src="../../assets/ms20.jpg" alt="Korg MS-20 synthesizer with its patch bay, 1978" loading="lazy"><figcaption>The <b>Korg MS-20</b> (1978) — the MS-10's semi-modular big brother. Note the <b>patch bay</b> (right third): jacks and cables to route anything into anything. The 303 has no such panel. <span style="opacity:.8">CC0, Wilfredor.</span></figcaption></figure>
     <table class="cmp">
       <tr><th></th><th>🔶 Roland TB-303</th><th>🔷 Korg DS-10 (MS-style)</th></tr>
       <tr><td class="k">Oscillator</td><td class="a">1 osc — saw or square</td><td class="b">2 oscillators per synth — detune them for a fatter tone</td></tr>
@@ -178,7 +186,9 @@
     <a href="https://en.wikipedia.org/wiki/KORG_DS-10" target="_blank" rel="noopener">KORG DS-10</a> ·
     <a href="https://en.wikipedia.org/wiki/Korg_MS-20" target="_blank" rel="noopener">Korg MS-20</a> ·
     <a href="../04-under-the-hood/index.html">lesson 04</a> (the real ladder filter).
-    Filter slopes are the nominal figures; the 303 ladder measures nearer 18 dB/oct in practice (see lesson 04).
+    Filter slopes are the nominal figures; the 303 ladder measures nearer 18 dB/oct in practice (see lesson 04).<br>
+    Images: MS-20 (CC0, Wilfredor) via <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a>;
+    DS-10 synth screen © Korg&nbsp;/&nbsp;AQ&nbsp;Interactive, shown for review/education.
   </footer>
 </div>
 

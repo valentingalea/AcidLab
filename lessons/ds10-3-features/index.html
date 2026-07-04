@@ -66,6 +66,14 @@
   .next:hover{background:var(--pink);color:#0a0c08}
   .applink{display:inline-block;margin:6px 8px 0 0;color:var(--acid);text-decoration:none;border:1px solid var(--acid);border-radius:8px;padding:8px 14px}
   .applink:hover{background:var(--acid);color:#0a0c08}
+  /* screenshots / photos */
+  figure{margin:16px 0;text-align:center}
+  figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#000}
+  figure.small img{max-width:360px}
+  figcaption{font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.45}
+  figcaption b{color:var(--silver)}
+  .shots{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .shots figure{margin:8px 0;flex:1 1 160px;max-width:250px}
   footer{margin-top:26px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
   footer a{color:var(--dim)}
 </style>
@@ -108,6 +116,7 @@
       <b class="blu">LFO→Amp</b> (tremolo); then <b class="kbd">EG→Cutoff</b> — that's the acid filter pluck of
       lesson 06 — and <b class="kbd">EG→Pitch</b> for a percussive blip. Combine them: <b>EG→Cutoff + LFO→Amp</b>
       is a whole groove from one note.</p>
+    <figure><img src="../../assets/signal-flow.jpg" alt="DS-10 signal-flow diagram: VCO to VCF to VCA, with LFO/MG and EG routed in" loading="lazy"><figcaption>How the DS-10 patches together — sound flows left→right (VCO→VCF→VCA), and the modulators (<b>MG</b>/LFO and <b>EG</b>) cable up into pitch, cutoff and amp. That's the matrix above, drawn out. <span style="opacity:.8">Diagram: tinyloops.</span></figcaption></figure>
     <div class="nerd"><b>// CS corner:</b> the two sources are two <i>different</i> kinds of modulation. The LFO cord
     is a real wire in the audio graph — <code>lfo.connect(osc.detune)</code> — a signal continuously
     <b>summed into</b> the destination parameter. The EG cord is a <b>scheduled shape</b>: every note we ramp the
@@ -125,6 +134,7 @@
     <p>One upgrade over the 303: each synth has <b>two oscillators</b>. Detune them a hair and the tone thickens;
     route <b>VCO 2 into the amp</b> instead and you get <b>ring modulation</b> — clangy, metallic, bell-like tones —
     another cord on that same patch panel.</p>
+    <figure class="small"><img src="../../assets/ds-synth-edit.jpg" alt="DS-10 synth screen showing VCO1, VCO2, VCO2 pitch and sync" loading="lazy"><figcaption>One synth: <b>VCO 1</b> + <b>VCO 2</b> (with balance, VCO2 pitch &amp; sync), a filter and an EG. You get two of these. <span style="opacity:.8">© Korg / AQ Interactive.</span></figcaption></figure>
   </div>
 
   <!-- ── 2 · drums are synths ─────────────────────────────────────── -->
@@ -138,6 +148,7 @@
       <li><b>snare/clap</b> = noise + a little tone,</li>
       <li><b>hats</b> = high-passed noise, short vs long decay.</li>
     </ul>
+    <figure class="small"><img src="../../assets/ds-drum-synth.jpg" alt="DS-10 drum-edit screen with the same synth knobs" loading="lazy"><figcaption>Editing a <b>drum voice</b> — the same VCO / VCF / EG knobs as a synth. No samples: a kick is just a synth. <span style="opacity:.8">© Korg / AQ Interactive.</span></figcaption></figure>
     <p>Because each drum is a tiny synth, you can redesign it — and even give one drum its own effect (a touch of
     chorus on just the hat) without touching the kick. <a href="../11-drums/index.html" style="color:var(--acid)">Lesson
     11</a> is, quite literally, the DS-10 drum editor.</p>
@@ -155,6 +166,11 @@
     the drum grid (<a href="../12-drum-machine/index.html" style="color:var(--acid)">12</a>), the 303 sequencer
     (<a href="../13-sequencer/index.html" style="color:var(--acid)">13</a>), and the multi-track groovebox on one
     shared clock (<a href="../16-groovebox/index.html" style="color:var(--acid)">16</a>).</p>
+    <div class="shots">
+      <figure><img src="../../assets/ds-song.jpg" alt="DS-10 step sequencer grid for a track" loading="lazy"><figcaption>A track's <b>step grid</b> — 16 columns, one note per step. The same grid you built in lesson 13.</figcaption></figure>
+      <figure><img src="../../assets/ds-patterns.jpg" alt="DS-10 patterns screen with 16 pattern slots and 6 track mute/solo" loading="lazy"><figcaption><b>16 patterns</b> to chain, and the <b>6 tracks</b> (SYN 1/2, DRUM 1–4) with mute/solo.</figcaption></figure>
+    </div>
+    <p class="hint" style="text-align:center">The real DS-10 sequencer &amp; pattern screens. © Korg / AQ Interactive.</p>
     <div class="nerd"><b>// CS corner:</b> "song mode" is just a playlist of pattern indices — an array of arrays. Each
     pattern is the per-step data you've been editing all course; the song is a list saying <code>[A,A,B,A,C,…]</code>.
     Arrangement is one more layer of the same idea: <b>music is data on a grid</b>.</div>
@@ -172,6 +188,7 @@
       <li><b class="blu">DS-10 PLUS (2009).</b> The sequel <b>doubled</b> the synths and drum machines on the DSi/3DS —
         more voices, more tracks, dual-screen. Same engine, more of it.</li>
     </ul>
+    <figure class="small"><img src="../../assets/ds-mixer.jpg" alt="DS-10 mixer with six channel strips" loading="lazy"><figcaption>The DS-10 <b>mixer</b>: the six tracks (SYN 1/2, DRUM 1–4) with level, pan and mute/solo — where the master effects live. <span style="opacity:.8">© Korg / AQ Interactive.</span></figcaption></figure>
   </div>
 
   <!-- ── 5 · finale ───────────────────────────────────────────────── -->
@@ -192,7 +209,10 @@
     <a href="https://en.wikipedia.org/wiki/KORG_DS-10" target="_blank" rel="noopener">KORG DS-10</a> ·
     <a href="https://en.wikipedia.org/wiki/Korg_MS-20" target="_blank" rel="noopener">Korg MS-20</a> (the patchbay) ·
     <a href="https://www.tinyloops.com/doc/korg_ds-10/" target="_blank" rel="noopener">DS-10 walkthrough</a>.
-    Feature details (patch routings, effects, song mode, 8-player link, DS-10 Plus) are the commonly documented specs.
+    Feature details (patch routings, effects, song mode, 8-player link, DS-10 Plus) are the commonly documented specs.<br>
+    Images: DS-10 screens © Korg&nbsp;/&nbsp;AQ&nbsp;Interactive and the signal-flow diagram, via the
+    <a href="https://www.tinyloops.com/doc/korg_ds-10/" target="_blank" rel="noopener">tinyloops walkthrough</a>;
+    shown for review/education.
   </footer>
 </div>
 

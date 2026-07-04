@@ -74,6 +74,14 @@
   .knob.todo{opacity:.6} .knob.todo .kn{color:var(--pink)} .knob.todo .kl{color:var(--dim)}
   .next{display:inline-block;margin-top:6px;color:var(--pink);text-decoration:none;border:1px solid var(--pink);border-radius:8px;padding:8px 14px}
   .next:hover{background:var(--pink);color:#0a0c08}
+  /* screenshots / photos */
+  figure{margin:16px 0;text-align:center}
+  figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#000}
+  figure.small img{max-width:360px}
+  figcaption{font-size:11.5px;color:var(--dim);margin-top:6px;line-height:1.45}
+  figcaption b{color:var(--silver)}
+  .shots{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .shots figure{margin:8px 0;flex:1 1 150px;max-width:230px}
   footer{margin-top:26px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
   footer a{color:var(--dim)}
 </style>
@@ -116,6 +124,7 @@
     <p>While Roland was building sealed little sequenced boxes, <b>Korg</b> (a Tokyo company founded in 1963) took the
     opposite bet with the <b class="hl">MS series</b> in 1978. The <b class="hl">MS-10</b> was a cheap, hands-on
     <b>monophonic</b> synth — and by now you know its whole guts:</p>
+    <figure class="small"><img src="../../assets/ms10.jpg" alt="Korg MS-10 synthesizer, 1978" loading="lazy"><figcaption>The <b>Korg MS-10</b> (1978): one oscillator, one filter, an envelope — and the patch jacks (right of the panel) it borrows from the MS-20. <span style="opacity:.8">Public-domain photo, F&nbsp;J&nbsp;Degenaar.</span></figcaption></figure>
     <ul>
       <li><b>one oscillator</b> (lesson 00),</li>
       <li><b>one resonant low-pass filter</b> — Korg's own gentler <b>12 dB/oct</b> design (lessons 02–03),</li>
@@ -138,6 +147,10 @@
     <i>Tekken</i> soundtracks) whose <b>first synth was an MS-10</b> — was fiddling with a Nintendo DS and noticed
     something: the little clamshell console <i>looked like an MS synth</i>. Two panels hinged together. And that bottom
     <b>touchscreen</b> was begging to be a Kaoss pad.</p>
+    <div class="shots">
+      <figure><img src="../../assets/nintendo-ds.jpg" alt="Nintendo DS Lite, open clamshell with two screens" loading="lazy"><figcaption>The Nintendo DS: two panels on a hinge, a touchscreen below. Sano saw an <b>MS synth</b>. <span style="opacity:.8">CC&nbsp;BY-SA&nbsp;3.0, Evan-Amos.</span></figcaption></figure>
+      <figure><img src="../../assets/ds10-box.jpg" alt="KORG DS-10 Nintendo DS box art" loading="lazy"><figcaption><b>KORG DS-10</b>, shipped 2008. <span style="opacity:.8">© Korg / AQ Interactive.</span></figcaption></figure>
+    </div>
     <p class="pull">What if the synth wasn't a game <i>about</i> music — but an actual playable Korg you could carry in
     your pocket?</p>
     <p>Korg blessed it, the studio <b>Cavia</b> built it, and <b>AQ Interactive</b> shipped
@@ -163,6 +176,11 @@
       <li><b class="pk">Play</b> — the pad becomes a fretless keyboard. Left-to-right is pitch (locked to a scale so it
         can't sound wrong), and it <b>glides</b> between notes — the same slide you built in lesson 08.</li>
     </ul>
+    <div class="shots">
+      <figure><img src="../../assets/ds-kaoss-pad-1.jpg" alt="DS-10 Kaoss screen, button 1 — X is note, Y is gate" loading="lazy"><figcaption><b>Real DS-10 · play</b><br>Kaoss button 1: X = note, Y = gate.</figcaption></figure>
+      <figure><img src="../../assets/ds-kaoss-pad-3.jpg" alt="DS-10 Kaoss screen, button 3 — X is cutoff, Y is peak" loading="lazy"><figcaption><b>Real DS-10 · ride</b><br>Kaoss button 3: X = cutoff, Y = peak (resonance).</figcaption></figure>
+    </div>
+    <p class="hint" style="text-align:center">The actual DS-10 screens — the same two jobs as the pad above. (© Korg / AQ Interactive.)</p>
     <div class="nerd"><b>// CS corner:</b> the pad is just two floats. A touch at pixel <code>(px,py)</code> becomes
     <code>x = px/width</code>, <code>y = 1 − py/height</code> — both in <code>[0,1]</code>. In ride mode we map
     <code>x</code> to cutoff on a <b>log</b> curve (<code>C_MIN·(C_MAX/C_MIN)^x</code>, so equal finger-distance = equal
@@ -197,7 +215,10 @@
     <a href="https://en.wikipedia.org/wiki/Korg_MS-10" target="_blank" rel="noopener">Korg MS-10</a> ·
     <a href="https://en.wikipedia.org/wiki/Korg_MS-20" target="_blank" rel="noopener">Korg MS-20</a> ·
     <a href="https://en.wikipedia.org/wiki/Kaoss_Pad" target="_blank" rel="noopener">Kaoss Pad</a>.
-    Dates, price and the Sano origin story are the commonly cited figures; some details are recollection and lore.
+    Dates, price and the Sano origin story are the commonly cited figures; some details are recollection and lore.<br>
+    Images: MS-10 (public domain, F&nbsp;J&nbsp;Degenaar) &amp; Nintendo DS Lite (CC&nbsp;BY-SA&nbsp;3.0, Evan-Amos) via
+    <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener">Wikimedia Commons</a>; DS-10 box art &amp;
+    Kaoss screens © Korg&nbsp;/&nbsp;AQ&nbsp;Interactive, shown for review/education.
   </footer>
 </div>
 

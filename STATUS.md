@@ -42,6 +42,17 @@ Meet the machine the course was aimed at. Interlude-style named slugs (no
 renumbering). Spec agreed with Valentin 2026-07-04: a chapter of a few lessons —
 (1) history + Kaoss X/Y, (2) DS-10 vs 303, (3) the rest of its features.
 
+**Images (2026-07-04, Valentin's ask):** real DS-10 screenshots + hardware photos
+sprinkled in at the point being explained, sourced into `assets/` (local copies,
+not hotlinks). Hardware = free-licensed Wikimedia Commons (MS-10 public-domain,
+MS-20 CC0, Nintendo DS Lite CC BY-SA 3.0 — attributed in captions/footers); DS-10
+UI shots = fair-use "review" per Valentin (© Korg/AQ Interactive, from the Wikipedia
+box art + the tinyloops walkthrough). Every image was eyeballed via the Read tool
+before captioning so nothing is mislabeled (e.g. the file named `ds-song.jpg` is
+actually a step-grid, captioned as such; the Kaoss button-1/button-3 shots map onto
+lesson 1's play/ride modes). Verified: all decode in-browser, 0 × 404, 0 JS errors,
+functional suites still green.
+
 | # | Lesson | State | Notes |
 |---|--------|-------|-------|
 | DS-1 | The DS-10 story + Kaoss pad | ✅ done | web-checked history (Korg MS-10 1978: 1 VCO, 12 dB filter, MS-20 patch cords; Nobuyoshi Sano — Ridge Racer/Tekken composer, first synth an MS-10 — sees the Nintendo DS as an MS synth; Cavia builds, AQ Interactive ships KORG DS-10 in 2008; 2 synths + drums + seq + **8-player wireless jam**; team → Detune). New interactive: the **Kaoss X/Y pad** on the reused 05–08 voice — **ride** mode (X=cutoff log-mapped, Y=reso Q, over a looping acid line) + **play** mode (X=scale-quantised pitch that glides via lesson-08 portamento, Y=brightness); canvas pad w/ fading trail + crosshair, pointer-capture, `touch-action:none`. Panel-map DS-10 feature→lesson. Headless-verified: osc starts, loop scheduler drives freq/gain, ride readout (cutoff+Q), play plays notes (E4), play-btn disabled in play mode, 0 JS errors |
