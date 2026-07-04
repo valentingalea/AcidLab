@@ -147,6 +147,24 @@ asides so the main flow stays plain-language. Vanilla Web Audio, self-contained.
 - **18 · Shipping it** — offline render vs live engine, mobile audio unlock,
   latency, memory. How the loops actually get into the game.
 
+### Bonus chapter — The Korg DS-10 (`lessons/ds10-*`)
+The machine the whole course was a homage to (see the concept line up top), given
+its own chapter after the course proper. A "meet the real thing" arc, in the
+interlude style (named slugs, not renumbering 00–18). Reuses the built voice/kit/
+clock; introduces the one interaction the course lacked — the **Kaoss X/Y pad**.
+- **ds10-1 · The DS-10 story + the Kaoss pad** — history: Korg's MS-10 (1978,
+  1 VCO, 12 dB filter, MS-20 patch cords) → Nobuyoshi Sano noticing the Nintendo
+  DS looked like an MS synth → Cavia/AQ Interactive ship KORG DS-10 (2008), a
+  2-synth + drums + sequencer studio with 8-player wireless jams. New toy: the
+  **Kaoss pad** — an X/Y touch surface (ride cutoff×reso, or play scale-locked
+  notes that glide). Panel-map: DS-10 feature → the lesson that built it. ✅ built
+- **ds10-2 · DS-10 vs the TB-303** — same/different/how-to-make-acid: filter
+  slope & VCO count, patchbay-in-your-hands vs sealed sequenced box, how you
+  *perform* each. ⬜ planned
+- **ds10-3 · The rest of the DS-10** — remaining features: 2 synths, the patch
+  panel, drums built *from* the synth engine, the 6-track/16-step sequencer +
+  song mode, effects, 8-unit wireless jam, and DS-10 PLUS. ⬜ planned
+
 ---
 
 ## Tech choices & libraries

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>DS-10 · The story + the Kaoss pad — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff; --silver:#c9d2c0; --pink:#ff5ca8;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: these are instruments, not documents =====
+     Kill the Safari gestures that fight the pad & sliders on iPhone: the
+     long-press text loupe + selection, the touch-callout sheet, the grey tap
+     flash, and pinch / double-tap zoom. Double-tap-zoom needs pan-x pan-y on
+     *every* element (touch-action doesn't inherit, so an auto <p> would still
+     zoom); the body is NOT pinned, so vertical scroll of the text survives. */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  #pad{touch-action:none}         /* the XY pad owns its gestures, no page pan */
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  .chap{color:var(--pink);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:14px 0 2px}
+  h1{font-size:25px;margin:2px 0 2px}
+  h1 .n{color:var(--pink)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)} .east{color:var(--blue)} .pk{color:var(--pink)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .pull{border-left:3px solid var(--pink);padding:2px 0 2px 14px;margin:14px 0;color:var(--ink);font-style:italic}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  ul{margin:8px 0;padding-left:22px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;font-size:13px;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:15px;padding:11px 18px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #play{font-weight:700;font-size:14px;padding:10px 16px}
+  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  /* the mode segmented toggle */
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-radius:0;background:var(--panel2)}
+  .seg button.on{background:var(--pink);color:#0a0c08;font-weight:700}
+  /* the Kaoss pad */
+  .padwrap{position:relative;margin:12px 0 6px}
+  #pad{width:100%;height:300px;display:block;background:#0a0c08;border:1px solid var(--line);border-radius:12px;cursor:crosshair}
+  .padlabels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:4px}
+  .readout{font-size:13px;color:var(--pink);min-height:20px;margin:6px 0 0;font-weight:600}
+  .readout b{color:var(--ink)}
+
+  /* panel map (DS-10 feature → the lesson that built it) */
+  .pmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0}
+  .knob{display:block;text-decoration:none;background:#0a0c08;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink)}
+  .knob .kn{font-size:14px;font-weight:700;color:var(--acid)}
+  .knob .kd{font-size:11.5px;color:var(--dim);margin-top:2px}
+  .knob .kl{font-size:11px;color:var(--orange);margin-top:6px;display:inline-block}
+  a.knob:hover{border-color:var(--acid);transform:translateX(2px)}
+  .knob.todo{opacity:.6} .knob.todo .kn{color:var(--pink)} .knob.todo .kl{color:var(--dim)}
+  .next{display:inline-block;margin-top:6px;color:var(--pink);text-decoration:none;border:1px solid var(--pink);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--pink);color:#0a0c08}
+  footer{margin-top:26px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <div class="chap">New chapter · The Korg DS-10</div>
+  <h1><span class="n">DS-10</span> · The whole studio that hid inside a toy</h1>
+  <p class="sub">The machine this course has aimed at the whole time. Here's where it came from — and its one
+    trick you haven't built yet: the <b class="pk">Kaoss pad</b>, a touch surface that rides two knobs with one finger.</p>
+
+  <!-- ── Hero: the Kaoss pad ──────────────────────────────────────── -->
+  <div class="panel">
+    <h2><span class="k">play it</span>The Kaoss pad — two knobs, one finger</h2>
+    <p class="explain">Power on, hit <b class="hl">play</b>, then <b>drag on the black pad</b>. In
+      <b class="pk">ride</b> mode your finger is two knobs at once: left↔right is <b>cutoff</b>, up↕down is
+      <b>resonance</b> — the whole squelch surface under one thumb. Switch to <b class="pk">play</b> and the pad
+      becomes an instrument: left↔right picks the <b>note</b>, up↕down opens the <b>brightness</b>.</p>
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="play" disabled>▶ play loop</button>
+      <span class="seg" role="group" aria-label="pad mode">
+        <button id="mRide" class="on" disabled>🎛 ride filter</button>
+        <button id="mPlay" disabled>🎹 play notes</button>
+      </span>
+    </div>
+    <div class="padwrap">
+      <canvas id="pad"></canvas>
+    </div>
+    <div class="padlabels"><span id="lblX">◀ cutoff ▶</span><span id="lblY">▲ resonance ▼</span></div>
+    <div class="readout" id="readout">Power on to wake the pad.</div>
+    <p class="hint">This is the Nintendo DS's touchscreen doing exactly what it did in 2008. Remember DJ Pierre in the
+      303 story, riding <i>one</i> filter knob with his hand? The Kaoss pad lets you ride <b>two at once</b>.</p>
+  </div>
+
+  <!-- ── 1 · the MS-10 ────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">1978 · the other synth</span>Korg's answer: the MS-10</h2>
+    <p>While Roland was building sealed little sequenced boxes, <b>Korg</b> (a Tokyo company founded in 1963) took the
+    opposite bet with the <b class="hl">MS series</b> in 1978. The <b class="hl">MS-10</b> was a cheap, hands-on
+    <b>monophonic</b> synth — and by now you know its whole guts:</p>
+    <ul>
+      <li><b>one oscillator</b> (lesson 00),</li>
+      <li><b>one resonant low-pass filter</b> — Korg's own gentler <b>12 dB/oct</b> design (lessons 02–03),</li>
+      <li><b>one envelope</b> (lesson 01),</li>
+      <li>and — borrowed from its bigger brother the <b class="hl">MS-20</b> — a <b>patch panel</b>: real cables you
+        plug to route anything into anything.</li>
+    </ul>
+    <p>That patchbay is the key difference in <i>philosophy</i>. The 303 hid everything behind a sequencer and asked
+    you to program notes blind. The MS put the synth <b>in your hands</b> — knobs and cables, no sequencer at all.
+    One machine to compose <i>with</i>, one machine to play <i>on</i>. The DS-10 is the second kind.</p>
+    <div class="nerd"><b>// heads-up:</b> the DS-10 is named for the MS range but isn't a strict MS-10 — each of its
+    two synths actually has <b>two</b> oscillators, where the real MS-10 had one. We'll pull the DS-10 and the 303
+    apart knob-by-knob in the next lesson.</div>
+  </div>
+
+  <!-- ── 2 · the DS ───────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">2008 · a synth in a games console</span>The idea nobody expected</h2>
+    <p>Fast-forward thirty years. <b class="hl">Nobuyoshi Sano</b> — a game composer (the <i>Ridge Racer</i> and
+    <i>Tekken</i> soundtracks) whose <b>first synth was an MS-10</b> — was fiddling with a Nintendo DS and noticed
+    something: the little clamshell console <i>looked like an MS synth</i>. Two panels hinged together. And that bottom
+    <b>touchscreen</b> was begging to be a Kaoss pad.</p>
+    <p class="pull">What if the synth wasn't a game <i>about</i> music — but an actual playable Korg you could carry in
+    your pocket?</p>
+    <p>Korg blessed it, the studio <b>Cavia</b> built it, and <b>AQ Interactive</b> shipped
+    <b class="hl">KORG DS-10</b> in 2008 for about the price of a game. For ~$40 you got <b>two synths</b>, a
+    <b>drum machine</b>, a <b>sequencer</b>, and — the party trick — up to <b class="hl">eight consoles jamming
+    together</b> over the DS's wireless link. A generation of chiptune and bedroom producers cut their teeth on it;
+    Sano's team went on to found <b>Detune</b> and keep making Korg pocket synths. <b class="hl">This</b> is the
+    machine our whole course has been quietly rebuilding.</p>
+  </div>
+
+  <!-- ── 3 · the Kaoss pad ────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">the pad</span>What a Kaoss pad actually is</h2>
+    <p>The <b class="pk">Kaoss Pad</b> is a real Korg product line from 1999: a flat <b>X/Y touch surface</b>. Where a
+    knob controls one thing, the pad reads <b>two numbers from one finger</b> — how far across (X) and how far up (Y) —
+    and maps each to a parameter. Move diagonally and you're turning two knobs in a single gesture. The Nintendo DS
+    already had the perfect hardware for it sitting right there: a touchscreen.</p>
+    <p>On the DS-10 that pad wears two hats — the two modes in the toy above:</p>
+    <ul>
+      <li><b class="pk">Ride</b> — assign any two synth parameters to X and Y and <b>perform</b> them live. The classic
+        pairing is <b>cutoff × resonance</b>: the entire "acid squelch" laid out as a 2-D surface you smear your thumb
+        across.</li>
+      <li><b class="pk">Play</b> — the pad becomes a fretless keyboard. Left-to-right is pitch (locked to a scale so it
+        can't sound wrong), and it <b>glides</b> between notes — the same slide you built in lesson 08.</li>
+    </ul>
+    <div class="nerd"><b>// CS corner:</b> the pad is just two floats. A touch at pixel <code>(px,py)</code> becomes
+    <code>x = px/width</code>, <code>y = 1 − py/height</code> — both in <code>[0,1]</code>. In ride mode we map
+    <code>x</code> to cutoff on a <b>log</b> curve (<code>C_MIN·(C_MAX/C_MIN)^x</code>, so equal finger-distance = equal
+    musical steps) and <code>y</code> straight to filter Q. In play mode <code>x</code> is quantised to a scale index
+    <code>floor(x·N)</code>. That's the entire Kaoss trick: normalise, then assign.</div>
+  </div>
+
+  <!-- ── 4 · the panel map ────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">the machine you're building</span>You've already built most of a DS-10</h2>
+    <p>Line the DS-10 up against the course and almost every block already exists — you made it in an earlier lesson.
+    Here's the map (★ = still ahead in this chapter):</p>
+    <div class="pmap">
+      <a class="knob" href="../05-the-voice/index.html"><span class="kn">2 synth voices</span><span class="kd">osc → filter → amp, monophonic</span><span class="kl">lesson 05 →</span></a>
+      <a class="knob" href="../03-resonance/index.html"><span class="kn">the VCF</span><span class="kd">resonant low-pass — the character</span><span class="kl">lessons 02–03 →</span></a>
+      <a class="knob" href="../06-filter-envelope/index.html"><span class="kn">EG + patch mod</span><span class="kd">an envelope pointed at the cutoff</span><span class="kl">lesson 06 →</span></a>
+      <a class="knob" href="../11-drums/index.html"><span class="kn">drum machine</span><span class="kd">drums built <i>from</i> the synth engine</span><span class="kl">lesson 11 →</span></a>
+      <a class="knob" href="../13-sequencer/index.html"><span class="kn">step sequencer</span><span class="kd">16 steps, notes + gate per track</span><span class="kl">lesson 13 →</span></a>
+      <a class="knob" href="../16-groovebox/index.html"><span class="kn">the whole box</span><span class="kd">synths + drums + fx on one clock</span><span class="kl">lesson 16 →</span></a>
+      <div class="knob todo"><span class="kn">Kaoss pad ★</span><span class="kd">X/Y performance — the toy above</span><span class="kl">this lesson</span></div>
+      <div class="knob todo"><span class="kn">patch panel ★</span><span class="kd">cables: route anything to anything</span><span class="kl">coming up →</span></div>
+    </div>
+    <p style="margin-top:14px">So this chapter isn't new machinery so much as <b>meeting the machine</b> — the specific
+    instrument the whole course was a homage to. Next we put it head-to-head with the 303 (what's the same, what's
+    different, and how you actually make acid on a DS-10), then tour the last features you haven't seen.</p>
+    <a class="next" href="../ds10-2-vs-303/index.html">Next → DS-10 vs the TB-303</a>
+  </div>
+
+  <footer>
+    Further reading:
+    <a href="https://en.wikipedia.org/wiki/KORG_DS-10" target="_blank" rel="noopener">KORG DS-10</a> ·
+    <a href="https://en.wikipedia.org/wiki/Korg_MS-10" target="_blank" rel="noopener">Korg MS-10</a> ·
+    <a href="https://en.wikipedia.org/wiki/Korg_MS-20" target="_blank" rel="noopener">Korg MS-20</a> ·
+    <a href="https://en.wikipedia.org/wiki/Kaoss_Pad" target="_blank" rel="noopener">Kaoss Pad</a>.
+    Dates, price and the Sano origin story are the commonly cited figures; some details are recollection and lore.
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* iOS Safari ignores user-scalable=no, so veto pinch-zoom via the WebKit gesture
+   events; also suppress the long-press context menu over the pad. Page scroll and
+   normal taps are untouched. */
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* DS-10 · lesson 1 — the same 303 voice you built (lessons 00–08), plus a Kaoss
+   X/Y pad. Two modes:
+     RIDE — a looping acid line plays; the pad rides cutoff (X) × resonance (Y).
+     PLAY — the loop stops; the pad is a mono instrument: X = scale pitch (glides),
+            Y = brightness (cutoff). Both are just two floats in [0,1] → params.   */
+
+let ctx, osc, f1, f2, vca, analyser;
+const level=0.30, C_MIN=60, C_MAX=7000, ROOT=45;        // ROOT = A2
+const mf=m=>440*Math.pow(2,(m-69)/12);
+const NAMES12=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+// A-minor pentatonic — the project's "can't sound wrong" acid scale.
+const SCALE=[0,3,5,7,10], NP=SCALE.length;
+
+// live tone state (shared by the scheduler and the pad)
+let curCut=520, reso=13, bpm=130, mode="ride";
+const RESO_MIN=0.7, RESO_MAX=22;
+const outBase=()=>level/(1+0.14*(Math.pow(10,reso/20)-1));  // resonance make-up (lesson 03)
+
+// the looping acid line (reuses lesson 13's "acid 1": pitch idx 1..5, 0=rest)
+const L_PITCH =[1,0,1,1, 1,0,5,0, 1,1,0,1, 1,3,1,0];
+const L_ACCENT=[1,0,0,1, 0,0,1,0, 1,1,0,0, 1,0,0,0];
+const L_SLIDE =[0,0,1,0, 0,0,0,0, 0,1,0,0, 0,0,0,0];
+const L_OCT   =[0,0,0,1, 0,0,0,0, 0,1,0,0, 0,0,0,0];
+
+let playing=false, timer=null, nextT=0, stepIx=0;
+
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), playBtn=$("#play"), mRide=$("#mRide"), mPlay=$("#mPlay");
+const padEl=$("#pad"), lblX=$("#lblX"), lblY=$("#lblY"), readout=$("#readout");
+
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  osc=ctx.createOscillator(); osc.type="sawtooth"; osc.frequency.value=mf(ROOT);
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.Q.value=-3; f1.frequency.value=curCut;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.Q.value=reso; f2.frequency.value=curCut;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  analyser=ctx.createAnalyser(); analyser.fftSize=1024;
+  osc.connect(f1); f1.connect(f2); f2.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start();
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  playBtn.disabled=mRide.disabled=mPlay.disabled=false;
+  readout.textContent = mode==="ride" ? "Press play, then drag: X = cutoff, Y = resonance."
+                                       : "Drag the pad to play: X = note, Y = brightness.";
+}
+
+/* ── the voice (lesson 08: per-note filter env + slide/legato) ────── */
+function filterEnv(t, accented, envMod){
+  const floor=curCut, peak=Math.min(floor*Math.pow(2,envMod*4)*(accented?1.7:1), C_MAX), dec=0.30*(accented?0.7:1), atk=0.003;
+  [f1.frequency,f2.frequency].forEach(p=>{ p.cancelScheduledValues(t); p.setValueAtTime(floor,t);
+    if(peak>floor*1.01) p.linearRampToValueAtTime(peak,t+atk);
+    p.exponentialRampToValueAtTime(Math.max(floor,C_MIN),t+atk+dec); });
+}
+function ampStep(t, accented, slidInto, tieForward, dur){
+  const L=outBase()*(accented?1.55:1)*0.62, g=vca.gain;
+  g.cancelScheduledValues(t);
+  if(slidInto) g.linearRampToValueAtTime(L,t+0.03);
+  else { g.setValueAtTime(1e-4,t); g.linearRampToValueAtTime(L,t+0.005); }
+  if(tieForward) g.exponentialRampToValueAtTime(0.6*L,t+dur*0.98);
+  else { g.exponentialRampToValueAtTime(0.26*L,t+dur*0.9); g.exponentialRampToValueAtTime(0.0006,t+dur*0.99); }
+}
+function schedStep(t, s, dur){
+  const pv=L_PITCH[s];
+  if(pv===0){ const g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(1e-4,t+0.03); return; }
+  const thisFreq=mf(ROOT+SCALE[pv-1]+12*L_OCT[s]);
+  const ps=(s+15)%16, prevRest=L_PITCH[ps]===0;
+  const slidInto=L_SLIDE[ps] && !prevRest;
+  const prevFreq=prevRest ? thisFreq : mf(ROOT+SCALE[L_PITCH[ps]-1]+12*L_OCT[ps]);
+  const accented=!!L_ACCENT[s], tieForward=!!L_SLIDE[s];
+  osc.frequency.cancelScheduledValues(t);
+  if(slidInto){ osc.frequency.setValueAtTime(prevFreq,t); osc.frequency.exponentialRampToValueAtTime(thisFreq,t+Math.min(0.055,dur*0.9)); }
+  else osc.frequency.setValueAtTime(thisFreq,t);
+  if(!slidInto) filterEnv(t, accented, 0.80);
+  ampStep(t, accented, slidInto, tieForward, dur);
+}
+function tick(){
+  const dur=60/bpm/4;
+  while(nextT < ctx.currentTime+0.12){ schedStep(nextT, stepIx%16, dur); stepIx++; nextT+=dur; }
+}
+function setPlay(on){
+  if(!ctx) return;
+  playing=on; playBtn.classList.toggle("on",on); playBtn.textContent=on?"■ stop":"▶ play loop";
+  if(on){ stepIx=0; nextT=ctx.currentTime+0.06; clearInterval(timer); timer=setInterval(tick,25); tick(); }
+  else{ clearInterval(timer); silence(0.06); }
+}
+function silence(tau){ if(!ctx) return; const t=ctx.currentTime, g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(1e-4,t+tau); }
+
+/* ── PLAY mode: the pad as a mono instrument ─────────────────────── */
+let held=false, lastMidi=null;
+function padNoteOn(nx, ny){
+  held=true;
+  setBrightness(ny);
+  const midi=padMidi(nx); lastMidi=midi;
+  osc.frequency.cancelScheduledValues(ctx.currentTime);
+  osc.frequency.setValueAtTime(mf(midi), ctx.currentTime);
+  const g=vca.gain, L=outBase()*0.7; g.cancelScheduledValues(ctx.currentTime);
+  g.setValueAtTime(Math.max(g.value,1e-4),ctx.currentTime); g.linearRampToValueAtTime(L,ctx.currentTime+0.01);
+}
+function padNoteMove(nx, ny){
+  if(!held) return;
+  setBrightness(ny);
+  const midi=padMidi(nx);
+  if(midi!==lastMidi){ osc.frequency.cancelScheduledValues(ctx.currentTime);
+    osc.frequency.setValueAtTime(osc.frequency.value,ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(mf(midi),ctx.currentTime+0.06);  // glide (lesson 08)
+    lastMidi=midi; }
+}
+function padNoteOff(){ held=false; silence(0.12); }
+// X → a scale-quantised MIDI note spanning ~2 octaves from the root.
+function padMidi(nx){ const steps=NP*2+1, k=Math.min(steps-1,Math.floor(nx*steps)); return ROOT+SCALE[k%NP]+12*Math.floor(k/NP); }
+function setBrightness(ny){ curCut=C_MIN*Math.pow(C_MAX/C_MIN, 0.15+0.85*ny); if(ctx){ f1.frequency.setTargetAtTime(curCut,ctx.currentTime,0.01); f2.frequency.setTargetAtTime(curCut,ctx.currentTime,0.01); } }
+
+/* ── RIDE mode: pad → cutoff (X) × resonance (Y) ─────────────────── */
+function ride(nx, ny){
+  curCut=C_MIN*Math.pow(C_MAX/C_MIN, nx);                 // log map: equal finger = equal octaves
+  reso=RESO_MIN+(RESO_MAX-RESO_MIN)*ny;
+  if(ctx) f2.Q.setTargetAtTime(reso,ctx.currentTime,0.01);
+}
+
+/* ── the Kaoss pad: pointer handling + rendering ─────────────────── */
+let px=0.5, py=0.5, active=false;
+const trail=[];  // recent points in [0,1] for the fading tail
+function padXY(e){
+  const r=padEl.getBoundingClientRect();
+  const nx=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
+  const ny=Math.min(1,Math.max(0,1-(e.clientY-r.top)/r.height));   // up = bigger
+  return [nx,ny];
+}
+function applyPad(nx,ny){
+  px=nx; py=ny; trail.push([nx,ny]); if(trail.length>26) trail.shift();
+  if(mode==="ride"){ ride(nx,ny); readout.innerHTML=`ride · cutoff <b>${Math.round(curCut)} Hz</b> · resonance <b>Q ${reso.toFixed(1)}</b>`; }
+  else { if(held) padNoteMove(nx,ny); const m=padMidi(nx); readout.innerHTML=`play · note <b>${NAMES12[((m)%12+12)%12]}${Math.floor(m/12)-1}</b> · brightness <b>${Math.round(curCut)} Hz</b>`; }
+}
+padEl.addEventListener("pointerdown",e=>{
+  if(!ctx){ readout.textContent="Power on first ↑"; return; }
+  e.preventDefault(); padEl.setPointerCapture(e.pointerId); active=true;
+  const [nx,ny]=padXY(e);
+  if(mode==="play") padNoteOn(nx,ny);
+  applyPad(nx,ny);
+});
+padEl.addEventListener("pointermove",e=>{ if(!active) return; e.preventDefault(); const [nx,ny]=padXY(e); applyPad(nx,ny); });
+function padUp(e){ if(!active) return; active=false; if(mode==="play") padNoteOff(); }
+padEl.addEventListener("pointerup",padUp);
+padEl.addEventListener("pointercancel",padUp);
+
+function setMode(m){
+  mode=m; mRide.classList.toggle("on",m==="ride"); mPlay.classList.toggle("on",m==="play");
+  lblX.textContent = m==="ride" ? "◀ cutoff ▶" : "◀ pitch ▶";
+  lblY.textContent = m==="ride" ? "▲ resonance ▼" : "▲ brightness ▼";
+  playBtn.disabled = (m==="play");                       // in play mode you ARE the player
+  if(m==="play" && playing) setPlay(false);
+  if(ctx) readout.textContent = m==="ride" ? "Press play, then drag: X = cutoff, Y = resonance."
+                                            : "Drag the pad to play: X = note, Y = brightness.";
+  trail.length=0;
+}
+
+/* ── canvas render (gradient bg + fading trail + crosshair dot) ──── */
+function fit(c){ const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect(); c.width=r.width*dpr; c.height=r.height*dpr; const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); return [g,r.width,r.height]; }
+function draw(){
+  requestAnimationFrame(draw);
+  const [g,W,H]=fit(padEl);
+  // background: darker → brighter left-to-right (cutoff), a hint of the mapping
+  const grad=g.createLinearGradient(0,0,W,0); grad.addColorStop(0,"#0a0c08"); grad.addColorStop(1,"#141a0e");
+  g.fillStyle=grad; g.fillRect(0,0,W,H);
+  // grid
+  g.strokeStyle="#1c2416"; g.lineWidth=1;
+  for(let i=1;i<8;i++){ const x=W*i/8; g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke(); }
+  for(let i=1;i<6;i++){ const y=H*i/6; g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }
+  const col = mode==="ride" ? "255,92,168" : "182,255,0";
+  // fading trail
+  for(let i=0;i<trail.length;i++){ const [nx,ny]=trail[i], a=(i+1)/trail.length*0.5;
+    g.fillStyle=`rgba(${col},${a})`; g.beginPath(); g.arc(nx*W,(1-ny)*H,3+4*a,0,7); g.fill(); }
+  // crosshair + dot at current pos
+  const cx=px*W, cy=(1-py)*H;
+  g.strokeStyle=`rgba(${col},0.35)`; g.lineWidth=1; g.setLineDash([4,5]);
+  g.beginPath(); g.moveTo(cx,0); g.lineTo(cx,H); g.moveTo(0,cy); g.lineTo(W,cy); g.stroke(); g.setLineDash([]);
+  g.fillStyle=`rgb(${col})`; g.beginPath(); g.arc(cx,cy,9,0,7); g.fill();
+  g.fillStyle="#0a0c08"; g.beginPath(); g.arc(cx,cy,3.5,0,7); g.fill();
+}
+draw();
+
+/* ── wire the controls ───────────────────────────────────────────── */
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+playBtn.onclick=()=>{ if(ctx) setPlay(!playing); };
+mRide.onclick=()=>setMode("ride");
+mPlay.onclick=()=>setMode("play");
+</script>
+</body>
+</html>

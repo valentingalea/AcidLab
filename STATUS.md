@@ -37,6 +37,17 @@ Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum
 | 17 | Generative acid | ✅ done | the two algorithms: Euclidean drums (per-drum pulses slider → `(i·k)%n<k` even spread, Bjorklund-equivalent) + scale-constrained random-walk melody (bounded degree walk on the scale mask, density/wander/octave/accent/slide knobs, scale selector). Reuses 303 voice + kit + clock + baked dub delay; generated patterns render on editable grids; framing = seed→loop for scoring the game |
 | 18 | Shipping it | ✅ done | **course finale.** one buildEngine() used for both the live ctx and an OfflineAudioContext render; ⏺ render 2 bars offline (reports ms + N× realtime + KB), ▶ play baked buffer (loop), ⬇ download .wav (44-byte header + int16 PCM, no lib); live audio-unlock badge (suspended→running via onstatechange); live-vs-baked / latency / memory / into-the-game framing + a full-course TOC |
 
+### Bonus chapter — The Korg DS-10 (`lessons/ds10-*`)
+Meet the machine the course was aimed at. Interlude-style named slugs (no
+renumbering). Spec agreed with Valentin 2026-07-04: a chapter of a few lessons —
+(1) history + Kaoss X/Y, (2) DS-10 vs 303, (3) the rest of its features.
+
+| # | Lesson | State | Notes |
+|---|--------|-------|-------|
+| DS-1 | The DS-10 story + Kaoss pad | ✅ done | web-checked history (Korg MS-10 1978: 1 VCO, 12 dB filter, MS-20 patch cords; Nobuyoshi Sano — Ridge Racer/Tekken composer, first synth an MS-10 — sees the Nintendo DS as an MS synth; Cavia builds, AQ Interactive ships KORG DS-10 in 2008; 2 synths + drums + seq + **8-player wireless jam**; team → Detune). New interactive: the **Kaoss X/Y pad** on the reused 05–08 voice — **ride** mode (X=cutoff log-mapped, Y=reso Q, over a looping acid line) + **play** mode (X=scale-quantised pitch that glides via lesson-08 portamento, Y=brightness); canvas pad w/ fading trail + crosshair, pointer-capture, `touch-action:none`. Panel-map DS-10 feature→lesson. Headless-verified: osc starts, loop scheduler drives freq/gain, ride readout (cutoff+Q), play plays notes (E4), play-btn disabled in play mode, 0 JS errors |
+| DS-2 | DS-10 vs the TB-303 | ⬜ planned | same/different + how to make acid on it |
+| DS-3 | The rest of the DS-10 | ⬜ planned | 2 synths · patch panel · drums-from-synths · 6-track seq + song mode · fx · 8-unit jam · DS-10 PLUS |
+
 ## Now / Next
 - **THE COURSE IS COMPLETE — every lesson built, headless-verified, and live.**
   Prologue (P1–P3) → 303 voice (00–09, incl. the 04 hardware / ladder-worklet
