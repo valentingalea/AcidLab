@@ -164,3 +164,20 @@ DJ sliders + float/reposition, phone-first) → M2 (+ M6).
   globals for the control handlers). Export is therefore always exactly the live
   sound. Renders 2 bars + 1.3 s tail — a clip, not a seamless loop (tail bleed);
   fine for a game clip, revisit if gapless looping is wanted.
+- 2026-07-04: **background / interruption hardening** (Safari flakiness; a friend
+  hit "no sound" that survived a refresh). Three coordinated changes: (1) a
+  `panicStop()` on `visibilitychange`+`pagehide` — when the tab hides / phone
+  locks / another app grabs the audio session, kill the scheduler, fade the
+  voice, reset ■→▶, and `suspend()`; user re-taps ▶ to resume inside a fresh
+  gesture (iOS-safe). (2) `ctx.onstatechange` flips the button back to ▶ if the
+  OS parks the context with no visibility event (call/Siri/BT). (3) fixed a
+  latent resume bug: the play tap resumed only `if(state==="suspended")`, but iOS
+  parks a backgrounded context in the **non-standard `"interrupted"` state** — so
+  it now resumes on any non-`running` state. Verified on BOTH Chromium and
+  **WebKit** (Safari's engine) headless — 14/14 checks green each (play→hide→
+  scheduler-stops→button-resets→resume, + direct-suspend safety net, 0 JS errors).
+  **Still open:** the refresh-persistent silence is likely a *leaked* AudioContext
+  (iOS caps ~4 concurrent; each reload w/o `close()` leaks a slot → new contexts
+  born silent) + bfcache — `panicStop` suspends but doesn't `close()`, which is
+  what frees the slot. Next: `close()`+null on `pagehide`, rebuild on next ▶,
+  reset UI on `pageshow` persisted.

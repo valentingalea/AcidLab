@@ -311,6 +311,10 @@ function buildGraph(A,out){
 }
 function powerOn(){
   ctx=new (window.AudioContext||window.webkitAudioContext)();
+  // If the OS/browser parks the context (iOS "interrupted", tab-throttle
+  // "suspended") while we think we're playing, reflect it in the ▶/■ button so
+  // the UI never lies about whether sound is actually coming out.
+  ctx.onstatechange=()=>{ if(playing && ctx.state!=="running") setPlay(false); };
   LIVE=buildGraph(ctx, ctx.destination);
   ({master,acidBus,drumBus,delay,delayFb,delayWet,conv,revWet,osc,f1,f2,vca,noiseBuf}=LIVE);  // expose nodes to the control handlers
   draw();
@@ -421,8 +425,20 @@ function clearAcid(){ for(let i=0;i<16;i++){ PITCH[i]=0; ACCENT[i]=false; SLIDE[
 curCut=sliderToCut(+$("#cut").value);
 /* unified power + play: the FIRST tap creates the AudioContext inside the user
    gesture (the browser's autoplay requirement) AND starts the transport; after
-   that it just toggles play/stop, resuming if the tab suspended the context. */
-playBtn.onclick=()=>{ if(!ctx) powerOn(); if(ctx.state==="suspended") ctx.resume(); setPlay(!playing); };
+   that it just toggles play/stop, resuming if the tab/OS parked the context.
+   NB resume-if-not-running (not just =="suspended"): iOS Safari parks a
+   backgrounded context in the non-standard "interrupted" state, and only a
+   resume() inside a fresh tap brings it back. */
+playBtn.onclick=()=>{ if(!ctx) powerOn(); if(ctx.state!=="running") ctx.resume().catch(()=>{}); setPlay(!playing); };
+/* Background / interruption hardening. Safari (esp. iOS) interrupts or throttles
+   audio the moment the tab is hidden, the phone locks, or another app grabs the
+   audio session — and frequently wakes in a wedged, silent state. So the instant
+   we lose visibility we STOP cleanly: kill the scheduler, fade the voice, flip
+   ■→▶, and suspend the context. The user re-taps ▶ to resume inside a fresh
+   gesture (the iOS-safe way to restart audio). */
+function panicStop(){ if(!ctx) return; if(playing) setPlay(false); if(ctx.state==="running") ctx.suspend().catch(()=>{}); }
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) panicStop(); });
+window.addEventListener("pagehide", panicStop);
 rndBtn.onclick=genMelody;                                  // 🎲 jam = roll a new acid line
 $("#clr303").onclick=clearAcid;
 $("#gen303").onclick=genMelody;
