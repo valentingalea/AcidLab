@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>DS-10 vs the TB-303 — Acid Lab</title>
+<style>
+  :root{
+    --bg:#0d0f0c; --panel:#161a14; --panel2:#1e2419; --ink:#e8ffcf; --dim:#7c8a6a;
+    --acid:#b6ff00; --orange:#ff7a00; --line:#2a3320; --blue:#5cc8ff; --silver:#c9d2c0; --pink:#ff5ca8;
+  }
+  *{box-sizing:border-box}
+  /* ===== iOS/touch: instruments, not documents (see lesson 13 note) ===== */
+  *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y}
+  html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  input[type=range]{touch-action:none}
+  body{
+    margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
+    color:var(--ink);font:15px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:860px;margin:0 auto}
+  a.back{color:var(--dim);text-decoration:none;font-size:13px}
+  a.back:hover{color:var(--acid)}
+  .chap{color:var(--pink);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin:14px 0 2px}
+  h1{font-size:25px;margin:2px 0 2px}
+  h1 .n{color:var(--pink)}
+  .sub{color:var(--dim);margin:0 0 22px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{font-size:18px;margin:0 0 12px;color:var(--orange);letter-spacing:.5px}
+  h2 .k{color:var(--dim);font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:2px}
+  p{margin:10px 0} b{color:var(--ink)}
+  .explain{color:var(--dim);font-size:14px}
+  .explain b{color:var(--ink)}
+  .hl{color:var(--acid)} .kbd{color:var(--orange)} .blu{color:var(--blue)} .pk{color:var(--pink)}
+  code{color:var(--acid);background:#0a0c08;padding:1px 5px;border-radius:4px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .nerd{border:1px dashed var(--blue);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:13px;color:var(--dim)}
+  .nerd b{color:var(--blue)} .nerd code{color:var(--blue)}
+  ul{margin:8px 0;padding-left:22px}
+  canvas{width:100%;height:150px;display:block;background:#0a0c08;border:1px solid var(--line);border-radius:10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;font-size:13px;transition:.12s}
+  button:hover{border-color:var(--acid)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  #power{background:var(--orange);color:#0a0c08;border:none;font-weight:700;font-size:15px;padding:11px 18px}
+  #power.on{background:var(--panel2);color:var(--acid);border:1px solid var(--acid)}
+  #play{font-weight:700}
+  #play.on{background:var(--acid);color:#0a0c08;border-color:var(--acid)}
+  /* slope A/B segmented toggle */
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;border-radius:0}
+  #s303.on{background:var(--orange);color:#0a0c08;font-weight:700}
+  #s10.on{background:var(--pink);color:#0a0c08;font-weight:700}
+  #lfo.on{background:var(--blue);color:#0a0c08;border-color:var(--blue);font-weight:700}
+  .ctrl{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
+  .ctrl label{font-size:11.5px;color:var(--dim);display:flex;justify-content:space-between}
+  .ctrl label b{color:var(--acid);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--acid);height:24px}
+  .modeline{font-size:12.5px;color:var(--dim);min-height:18px;margin:4px 0}
+  .modeline b{color:var(--pink)}
+  /* comparison table */
+  table.cmp{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  table.cmp th{color:var(--dim);font-weight:600;background:#0f140b}
+  table.cmp td.k{color:var(--ink);font-weight:600;white-space:nowrap}
+  table.cmp td.a{color:var(--orange)} table.cmp td.b{color:var(--pink)}
+  table.cmp tr.same td.a,table.cmp tr.same td.b{color:var(--silver)}
+  .lead{font-size:12px;color:var(--dim);text-align:center;margin-top:6px}
+  .next{display:inline-block;margin-top:6px;color:var(--pink);text-decoration:none;border:1px solid var(--pink);border-radius:8px;padding:8px 14px}
+  .next:hover{background:var(--pink);color:#0a0c08}
+  footer{margin-top:26px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html">← Acid Lab</a>
+  <div class="chap">The Korg DS-10 · 2 / 3</div>
+  <h1><span class="n">DS-10</span> vs the TB-303</h1>
+  <p class="sub">Two machines, one idea. The Roland and the Korg both make acid — but they descend from opposite
+    philosophies. Here's what's identical, what diverges, and how you squeeze acid out of the Korg.</p>
+
+  <!-- ── Hear the difference ──────────────────────────────────────── -->
+  <div class="panel">
+    <h2><span class="k">hear it</span>Same line, two filters</h2>
+    <p class="explain">One acid bassline, one voice. Flip the <b>filter</b> between the two machines: the 303's steep
+      <b class="kbd">4-pole</b> ladder vs the DS-10's gentler <b class="pk">2-pole</b> Korg filter. Same notes, same
+      cutoff — listen to how much <i>rawer</i> the 12 dB slope leaves things. Then plug in the
+      <b class="blu">LFO patch cord</b> — modulation the 303 has no socket for.</p>
+    <canvas id="scope"></canvas>
+    <div class="lead">filter response — steeper skirt = more harmonics removed above the cutoff</div>
+    <div class="row">
+      <button id="power">⏻ power on</button>
+      <button id="play" disabled>▶ play</button>
+      <span class="seg" role="group" aria-label="filter slope">
+        <button id="s303" class="on" disabled>🔶 303 · 24 dB</button>
+        <button id="s10" disabled>🔷 DS-10 · 12 dB</button>
+      </span>
+      <button id="lfo" disabled>🔌 LFO → cutoff</button>
+    </div>
+    <div class="modeline" id="modeline">Power on, press play, then flip the filter.</div>
+    <div class="row">
+      <div class="ctrl"><label>cutoff <b id="cutVal">380</b></label><input id="cut" type="range" min="0" max="1000" value="360"></div>
+      <div class="ctrl"><label>resonance <b id="resVal">14</b></label><input id="res" type="range" min="1" max="24" value="14" step="0.5"></div>
+    </div>
+    <p class="hint">Push <span class="kbd">resonance</span> up on the <b class="pk">DS-10</b> filter — a single 2-pole
+      stage peaks and screams more readily than the 303's four interacting poles. That edge is the Korg sound.</p>
+  </div>
+
+  <!-- ── 1 · what's the same ──────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">the same</span>Under the hood, they're twins</h2>
+    <p>Both are <b>subtractive, monophonic</b> synths built from the exact chain you assembled in Module 2:</p>
+    <p style="text-align:center;color:var(--ink)"><b>oscillator → resonant low-pass filter → amp</b>, with an
+      <b>envelope on the filter</b>.</p>
+    <p>Start with a harmonically rich wave, carve it with a resonant filter, and move that filter <i>per note</i> —
+    that's the whole recipe for acid, and it's identical on both machines. The voice you built in lessons
+    <b class="hl">05–09</b> already <i>is</i> a DS-10 synth and a 303 voice at the same time. Everything below is
+    a difference of <b>degree and control</b>, not of kind.</p>
+  </div>
+
+  <!-- ── 2 · what's different ─────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">the differences</span>Where they split</h2>
+    <table class="cmp">
+      <tr><th></th><th>🔶 Roland TB-303</th><th>🔷 Korg DS-10 (MS-style)</th></tr>
+      <tr><td class="k">Oscillator</td><td class="a">1 osc — saw or square</td><td class="b">2 oscillators per synth — detune them for a fatter tone</td></tr>
+      <tr><td class="k">Filter</td><td class="a">4-pole diode <b>ladder</b>, ~24 dB/oct — smooth, liquid, tuned <i>not</i> to self-oscillate</td><td class="b">2-pole Korg filter, <b>12 dB/oct</b> — rawer, buzzier, screams &amp; self-oscillates</td></tr>
+      <tr><td class="k">Modulation</td><td class="a">none — no LFO. Movement = the filter envelope + your hands</td><td class="b">an <b>LFO</b> (MG) plus a <b>patch panel</b> to cable it into pitch, cutoff or amp</td></tr>
+      <tr><td class="k">Articulation</td><td class="a">dedicated per-step <b>accent</b> + <b>slide</b> — the acid grammar, baked in</td><td class="b">gate / legato + per-step volume + Kaoss X/Y automation</td></tr>
+      <tr><td class="k">How you drive it</td><td class="a">its own (notoriously cryptic) 16-step sequencer — program, then ride the knobs</td><td class="b">a 16-step sequencer too, <b>6 tracks</b>, but also playable live on the Kaoss pad</td></tr>
+      <tr><td class="k">The body</td><td class="a">one sealed silver box, 1981</td><td class="b">software in a Nintendo DS, 2008 — up to 8 consoles jamming</td></tr>
+      <tr class="same"><td class="k">Core voice</td><td class="a" colspan="2" style="text-align:center">identical: osc → resonant LP → amp, envelope on the filter (lessons 05–09)</td></tr>
+    </table>
+    <div class="nerd"><b>// CS corner:</b> the filter slope is literally how many biquads we chain. Each biquad low-pass
+    is <b>2-pole = 12 dB/oct</b> — that's the DS-10. Cascade <b>two</b> and the poles add to <b>4-pole = 24 dB/oct</b>
+    — the 303 (we did exactly this A/B back in lesson 03). The response curve above redraws its skirt as you flip:
+    twice as steep means it kills the harmonics above the cutoff twice as fast. And the "patch cord" is one line of
+    code — <code>lfo.connect(cutoff)</code> — an oscillator <b>summed into</b> the cutoff AudioParam. The 303 simply
+    has no such wire.</div>
+  </div>
+
+  <!-- ── 3 · making acid on a DS-10 ───────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">the recipe</span>How to make acid on a DS-10</h2>
+    <p>The DS-10 is a general MS-style synth, not a purpose-built acid box — so you <i>assemble</i> the acid sound
+    the 303 gives you for free. Reach for one synth as the bass and:</p>
+    <ul>
+      <li><b class="hl">Saw + low-pass.</b> Pick the sawtooth oscillator, a low-pass VCF, cutoff low, resonance
+        high — the bright-then-carve start you know from lesson 02.</li>
+      <li><b class="hl">Patch the envelope to the cutoff.</b> Cable the EG into the filter and keep the decay short —
+        that's the per-note filter pluck of lesson 06, the moment it sounds acid.</li>
+      <li><b class="blu">Legato + short gate for slides.</b> Overlap two steps (legato gate) to get the 303's glide;
+        the DS-10 portamentos between them — lesson 08.</li>
+      <li><b class="pk">Automate the cutoff.</b> Put the filter on the Kaoss pad's X axis and record a sweep, or draw
+        a cutoff automation lane per step. That baked-in ride <i>is</i> DJ Pierre's hand, stored in the pattern.</li>
+      <li><b class="kbd">Compensate for the gentler filter.</b> The 12 dB slope leaves more buzz, so lean into more
+        resonance (and a touch of drive) to reach the squelch — or just enjoy the rawer Korg character.</li>
+    </ul>
+    <p>Same technique, different tool. The lesson underneath: <b>"acid" was never a machine — it's a resonant filter
+    swept in time.</b> The 303 made that easy by accident; the DS-10 lets you build it on purpose.</p>
+  </div>
+
+  <!-- ── 4 · next ─────────────────────────────────────────────────── -->
+  <div class="panel explain">
+    <h2><span class="k">next</span>The rest of the machine</h2>
+    <p>You've now placed the DS-10 next to the 303 and made acid on it. But the Korg does a lot the 303 never
+    dreamed of — two synths at once, drums built <i>out of</i> those synths, a full patchbay, a six-track sequencer
+    with song mode, effects, and those eight-player jams. Let's tour what's left.</p>
+    <a class="next" href="../ds10-3-features/index.html">Next → The rest of the DS-10</a>
+  </div>
+
+  <footer>
+    Further reading:
+    <a href="https://en.wikipedia.org/wiki/Roland_TB-303" target="_blank" rel="noopener">TB-303</a> ·
+    <a href="https://en.wikipedia.org/wiki/KORG_DS-10" target="_blank" rel="noopener">KORG DS-10</a> ·
+    <a href="https://en.wikipedia.org/wiki/Korg_MS-20" target="_blank" rel="noopener">Korg MS-20</a> ·
+    <a href="../04-under-the-hood/index.html">lesson 04</a> (the real ladder filter).
+    Filter slopes are the nominal figures; the 303 ladder measures nearer 18 dB/oct in practice (see lesson 04).
+  </footer>
+</div>
+
+<script>
+"use strict";
+for(const ev of ["gesturestart","gesturechange","gestureend"])
+  addEventListener(ev, e=>e.preventDefault(), {passive:false});
+addEventListener("contextmenu", e=>e.preventDefault());
+
+/* DS-10 · lesson 2 — the reused acid voice (lessons 05–08) with a switchable
+   FILTER SLOPE and an optional LFO patch cord:
+     303  = f1 → f2 (two cascaded biquads, 4-pole/24 dB); resonance on f2.
+     DS-10 = f1 only (one biquad, 2-pole/12 dB), f2 pinned open; resonance on f1.
+   The LFO is an oscillator summed into the active filter's cutoff — the "patch
+   cord" the 303 lacks.                                                          */
+
+let ctx, osc, f1, f2, vca, analyser, lfo, lfoGain;
+const level=0.30, C_MIN=60, C_MAX=9000, ROOT=45, bpm=130;
+const mf=m=>440*Math.pow(2,(m-69)/12);
+const SCALE=[0,3,5,7,10];                                 // A-minor pentatonic
+let curCut=380, reso=14, slope=24, lfoOn=false;
+const sliderToCut=v=>C_MIN*Math.pow(C_MAX/C_MIN,v/1000);
+const outBase=()=>level/(1+0.14*(Math.pow(10,reso/20)-1));   // resonance make-up (lesson 03)
+
+// looping acid line (lesson 13 "acid 1"): pitch idx 1..5, 0=rest
+const L_PITCH =[1,0,1,1, 1,0,5,0, 1,1,0,1, 1,3,1,0];
+const L_ACCENT=[1,0,0,1, 0,0,1,0, 1,1,0,0, 1,0,0,0];
+const L_SLIDE =[0,0,1,0, 0,0,0,0, 0,1,0,0, 0,0,0,0];
+const L_OCT   =[0,0,0,1, 0,0,0,0, 0,1,0,0, 0,0,0,0];
+let ACTIVE=[];   // the resonant filter stage(s) the envelope drives
+
+let playing=false, timer=null, nextT=0, stepIx=0;
+const $=s=>document.querySelector(s);
+const powerBtn=$("#power"), playBtn=$("#play"), s303=$("#s303"), s10=$("#s10"), lfoBtn=$("#lfo"),
+      modeline=$("#modeline"), scope=$("#scope");
+
+function powerOn(){
+  ctx=new (window.AudioContext||window.webkitAudioContext)();
+  osc=ctx.createOscillator(); osc.type="sawtooth"; osc.frequency.value=mf(ROOT);
+  f1=ctx.createBiquadFilter(); f1.type="lowpass"; f1.frequency.value=curCut;
+  f2=ctx.createBiquadFilter(); f2.type="lowpass"; f2.frequency.value=curCut;
+  vca=ctx.createGain(); vca.gain.value=0.0001;
+  analyser=ctx.createAnalyser(); analyser.fftSize=2048; analyser.smoothingTimeConstant=0.6;
+  // the LFO patch cord: an oscillator → depth gain → the active cutoff param
+  lfo=ctx.createOscillator(); lfo.type="triangle"; lfo.frequency.value=5.2;
+  lfoGain=ctx.createGain(); lfoGain.gain.value=0;
+  lfo.connect(lfoGain);
+  osc.connect(f1); f1.connect(f2); f2.connect(vca).connect(analyser).connect(ctx.destination);
+  osc.start(); lfo.start();
+  setSlope(slope);
+  powerBtn.classList.add("on"); powerBtn.textContent="⏻ powered";
+  playBtn.disabled=s303.disabled=s10.disabled=lfoBtn.disabled=false;
+  modeline.innerHTML="Powered. Press <b>play</b>, then flip the filter or plug in the LFO.";
+  draw();
+}
+
+/* ── slope: reconfigure which biquads filter, and where resonance sits ─ */
+function setSlope(n){
+  slope=n; s303.classList.toggle("on",n===24); s10.classList.toggle("on",n===12);
+  if(!ctx) return;
+  const t=ctx.currentTime;
+  // detach the LFO, re-point it at the new active stage, reattach if on
+  try{ lfoGain.disconnect(); }catch(e){}
+  if(n===24){ f1.Q.setValueAtTime(-3,t); f2.Q.setValueAtTime(reso,t); ACTIVE=[f1,f2]; }
+  else { f1.Q.setValueAtTime(reso,t); f2.Q.setValueAtTime(0.0001,t); f2.frequency.cancelScheduledValues(t); f2.frequency.setValueAtTime(C_MAX,t); ACTIVE=[f1]; }
+  if(lfoOn) lfoGain.connect(ACTIVE[0].frequency);
+  if(playing) modeline.innerHTML = n===24
+    ? "<b>303 · 24 dB:</b> four poles, a steep skirt — smooth and liquid."
+    : "<b>DS-10 · 12 dB:</b> two poles, a gentle skirt — rawer, more buzz, screams sooner.";
+}
+function applyReso(){ if(!ctx) return; const t=ctx.currentTime, stage=slope===24?f2:f1; stage.Q.setTargetAtTime(reso,t,0.01); }
+
+/* ── the voice (lesson 08) ──────────────────────────────────────── */
+function filterEnv(t, accented, envMod){
+  const floor=curCut, peak=Math.min(floor*Math.pow(2,envMod*4)*(accented?1.7:1), C_MAX), dec=0.30*(accented?0.7:1), atk=0.003;
+  ACTIVE.forEach(p0=>{ const p=p0.frequency; p.cancelScheduledValues(t); p.setValueAtTime(floor,t);
+    if(peak>floor*1.01) p.linearRampToValueAtTime(peak,t+atk);
+    p.exponentialRampToValueAtTime(Math.max(floor,C_MIN),t+atk+dec); });
+}
+function ampStep(t, accented, slidInto, tieForward, dur){
+  const L=outBase()*(accented?1.55:1)*0.62, g=vca.gain;
+  g.cancelScheduledValues(t);
+  if(slidInto) g.linearRampToValueAtTime(L,t+0.03);
+  else { g.setValueAtTime(1e-4,t); g.linearRampToValueAtTime(L,t+0.005); }
+  if(tieForward) g.exponentialRampToValueAtTime(0.6*L,t+dur*0.98);
+  else { g.exponentialRampToValueAtTime(0.26*L,t+dur*0.9); g.exponentialRampToValueAtTime(0.0006,t+dur*0.99); }
+}
+function schedStep(t, s, dur){
+  const pv=L_PITCH[s];
+  if(pv===0){ const g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(1e-4,t+0.03); return; }
+  const thisFreq=mf(ROOT+SCALE[pv-1]+12*L_OCT[s]);
+  const ps=(s+15)%16, prevRest=L_PITCH[ps]===0;
+  const slidInto=L_SLIDE[ps] && !prevRest;
+  const prevFreq=prevRest ? thisFreq : mf(ROOT+SCALE[L_PITCH[ps]-1]+12*L_OCT[ps]);
+  const accented=!!L_ACCENT[s], tieForward=!!L_SLIDE[s];
+  osc.frequency.cancelScheduledValues(t);
+  if(slidInto){ osc.frequency.setValueAtTime(prevFreq,t); osc.frequency.exponentialRampToValueAtTime(thisFreq,t+Math.min(0.055,dur*0.9)); }
+  else osc.frequency.setValueAtTime(thisFreq,t);
+  if(!slidInto) filterEnv(t, accented, 0.80);
+  ampStep(t, accented, slidInto, tieForward, dur);
+}
+function tick(){ const dur=60/bpm/4; while(nextT < ctx.currentTime+0.12){ schedStep(nextT, stepIx%16, dur); stepIx++; nextT+=dur; } }
+function setPlay(on){
+  if(!ctx) return;
+  playing=on; playBtn.classList.toggle("on",on); playBtn.textContent=on?"■ stop":"▶ play";
+  if(on){ stepIx=0; nextT=ctx.currentTime+0.06; clearInterval(timer); timer=setInterval(tick,25); tick(); setSlope(slope); }
+  else{ clearInterval(timer); const t=ctx.currentTime,g=vca.gain; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(g.value,1e-4),t); g.linearRampToValueAtTime(1e-4,t+0.06); }
+}
+
+/* ── the LFO patch cord ──────────────────────────────────────────── */
+function setLfo(on){
+  lfoOn=on; lfoBtn.classList.toggle("on",on); lfoBtn.textContent = on ? "🔌 LFO ✓ (patched)" : "🔌 LFO → cutoff";
+  if(!ctx) return; const t=ctx.currentTime;
+  try{ lfoGain.disconnect(); }catch(e){}
+  if(on){ lfoGain.connect(ACTIVE[0].frequency); lfoGain.gain.setTargetAtTime(320,t,0.05); }  // ±320 Hz wobble
+  else lfoGain.gain.setTargetAtTime(0,t,0.05);
+  if(playing) modeline.innerHTML = on
+    ? "<b class='blu'>LFO patched →</b> the cutoff now wobbles on its own. The 303 can't do this."
+    : (slope===24 ? "<b>303 · 24 dB</b>" : "<b>DS-10 · 12 dB</b>");
+}
+
+/* ── response curve (product of the ACTIVE biquads) ─────────────── */
+function fit(c){ const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect(); c.width=r.width*dpr; c.height=r.height*dpr; const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); return [g,r.width,r.height]; }
+const V_MIN=40,V_MAX=16000, fx=(f,W)=>W*Math.log(f/V_MIN)/Math.log(V_MAX/V_MIN);
+const DB_TOP=24,DB_BOT=-48, dby=(db,H)=>H*(1-(Math.min(Math.max(db,DB_BOT),DB_TOP)-DB_BOT)/(DB_TOP-DB_BOT));
+const RN=160, rf=new Float32Array(RN), am=new Float32Array(RN), ph=new Float32Array(RN), acc=new Float32Array(RN);
+for(let i=0;i<RN;i++) rf[i]=V_MIN*Math.pow(V_MAX/V_MIN,i/(RN-1));
+function draw(){
+  requestAnimationFrame(draw);
+  if(!analyser) return;
+  const [g,W,H]=fit(scope);
+  g.clearRect(0,0,W,H);
+  // freq gridlines
+  g.fillStyle="#3a4530"; g.font="10px ui-monospace,monospace";
+  [[100,"100"],[1000,"1k"],[10000,"10k"]].forEach(([f,l])=>{ const x=fx(f,W); g.fillStyle="#1c2416"; g.fillRect(x,0,1,H); g.fillStyle="#3a4530"; g.fillText(l,x+3,H-4); });
+  // live spectrum bars
+  const bins=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(bins);
+  const binHz=ctx.sampleRate/2/bins.length, COLS=Math.floor(W/3);
+  for(let i=0;i<COLS;i++){
+    const f0=V_MIN*Math.pow(V_MAX/V_MIN,i/COLS), f1b=V_MIN*Math.pow(V_MAX/V_MIN,(i+1)/COLS);
+    let v=0; for(let b=Math.floor(f0/binHz); b<=Math.min(bins.length-1,Math.floor(f1b/binHz)); b++) v=Math.max(v,bins[b]);
+    const h=(v/255)*H, tcol=i/COLS; g.fillStyle=`rgba(${Math.round(120+135*tcol)},255,0,0.5)`; g.fillRect(i*(W/COLS),H-h,Math.max(W/COLS-1,1),h);
+  }
+  // filter response = product of the active biquads → shows 12 vs 24 dB skirt
+  acc.fill(1);
+  ACTIVE.forEach(fl=>{ fl.getFrequencyResponse(rf,am,ph); for(let i=0;i<RN;i++) acc[i]*=am[i]; });
+  g.lineWidth=2.4; g.strokeStyle = slope===24 ? "#ff7a00" : "#ff5ca8"; g.beginPath();
+  for(let i=0;i<RN;i++){ const y=dby(20*Math.log10(Math.max(acc[i],1e-4)),H), x=fx(rf[i],W); i===0?g.moveTo(x,y):g.lineTo(x,y); }
+  g.stroke();
+  // cutoff marker
+  const cx=fx(curCut,W); g.strokeStyle="rgba(255,255,255,.25)"; g.setLineDash([4,4]); g.beginPath(); g.moveTo(cx,0); g.lineTo(cx,H); g.stroke(); g.setLineDash([]);
+}
+
+/* ── wire controls ──────────────────────────────────────────────── */
+powerBtn.onclick=()=>{ if(!ctx) powerOn(); else if(ctx.state==="suspended") ctx.resume(); };
+playBtn.onclick=()=>{ if(ctx) setPlay(!playing); };
+s303.onclick=()=>setSlope(24);
+s10.onclick=()=>setSlope(12);
+lfoBtn.onclick=()=>setLfo(!lfoOn);
+$("#cut").oninput=e=>{ curCut=sliderToCut(+e.target.value); $("#cutVal").textContent=Math.round(curCut); };
+$("#res").oninput=e=>{ reso=+e.target.value; $("#resVal").textContent=reso; applyReso(); };
+$("#cutVal").textContent=Math.round(curCut);
+</script>
+</body>
+</html>
