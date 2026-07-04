@@ -159,11 +159,13 @@ clock; introduces the one interaction the course lacked — the **Kaoss X/Y pad*
   **Kaoss pad** — an X/Y touch surface (ride cutoff×reso, or play scale-locked
   notes that glide). Panel-map: DS-10 feature → the lesson that built it. ✅ built
 - **ds10-2 · DS-10 vs the TB-303** — same/different/how-to-make-acid: filter
-  slope & VCO count, patchbay-in-your-hands vs sealed sequenced box, how you
-  *perform* each. ⬜ planned
-- **ds10-3 · The rest of the DS-10** — remaining features: 2 synths, the patch
-  panel, drums built *from* the synth engine, the 6-track/16-step sequencer +
-  song mode, effects, 8-unit wireless jam, and DS-10 PLUS. ⬜ planned
+  slope A/B (2 vs 4 biquads = 12 vs 24 dB) over a live response curve + the LFO
+  "patch cord" the 303 lacks, a comparison table, and a make-acid recipe. ✅ built
+- **ds10-3 · The rest of the DS-10** — remaining features, anchored by an
+  interactive **patch panel** (LFO/EG → pitch/cutoff/amp, the MS-20 semi-modular
+  idea): 2 synths, drums built *from* the synth engine, the 6-track/16-step
+  sequencer + song mode, effects, 8-unit wireless jam, and DS-10 PLUS. Closes on
+  "AcidBox is your DS-10." ✅ built
 
 ---
 
