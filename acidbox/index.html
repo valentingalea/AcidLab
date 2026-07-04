@@ -617,6 +617,53 @@ function setCur(s,on){ pcols[s].classList.toggle("cur",on); accs[s].classList.to
 function draw(){ requestAnimationFrame(draw); if(!ctx) return;
   if(playing){ let ns=playStep; while(schedQ.length && schedQ[0].t<=ctx.currentTime){ ns=schedQ.shift().s; }
     if(ns!==playStep){ if(playStep>=0) setCur(playStep,false); if(ns>=0) setCur(ns,true); playStep=ns; } } }
+
+/* ── DEBUG pointer tracer — enable by adding #debug to the URL ─────────────────
+   Diagnoses the "Apple Pencil misses ~every 3rd sequencer tap" report. Logs the
+   RAW pointer/touch/gesture stream + live counters at the document (capture
+   phase, before any handler), plus a HIT line from each cell's own handler, so a
+   missed tap is unambiguous: no `down` = Safari swallowed it; `cancel` = the pen
+   got canceled mid-gesture; `down` but no `hit` = it never reached the cell;
+   `down` count > taps = double-fire toggling back. Zero effect without #debug. */
+if(location.hash.toLowerCase().includes("debug")) initDebug();
+function initDebug(){
+  const css=document.createElement("style"); css.textContent=`
+    #dbg{position:fixed;left:0;right:0;bottom:0;z-index:99999;height:34vh;display:flex;flex-direction:column;
+      background:rgba(6,8,4,.95);border-top:2px solid var(--acid);color:#cfe8b0;font:11px/1.32 ui-monospace,Menlo,monospace}
+    #dbgbar{display:flex;gap:6px;align-items:center;padding:5px 8px;background:#0c1207;border-bottom:1px solid var(--line)}
+    #dbgbar b{color:var(--acid)} #dbgcount{flex:1;min-width:0;color:#ffd9a8;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #dbg button{background:#1e2a12;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 9px;font:inherit;touch-action:none}
+    #dbglog{flex:1;overflow:auto;white-space:pre;padding:6px 8px;touch-action:auto;-webkit-user-select:text;user-select:text;-webkit-overflow-scrolling:touch}`;
+  document.head.appendChild(css);
+  const panel=document.createElement("div"); panel.id="dbg";
+  panel.innerHTML=`<div id="dbgbar"><b>ptr trace</b><span id="dbgcount"></span><button id="dbgclr">clear</button><button id="dbgcopy">copy</button></div><div id="dbglog"></div>`;
+  document.body.appendChild(panel);
+  const logEl=panel.querySelector("#dbglog"), countEl=panel.querySelector("#dbgcount");
+  const buf=[]; let last=0; const c={down:0,up:0,cancel:0,drag:0,click:0,gest:0,tcancel:0,hit:0};
+  const cls=t=>{ if(!t||typeof t.className!=="string") return (t&&t.tagName)||"?";
+    return t.className.split(" ").find(x=>["pcol","tog","dcell","lbl"].includes(x)) || t.className.split(" ")[0] || t.tagName; };
+  function push(s){ buf.push(s); if(buf.length>500) buf.shift(); logEl.textContent=buf.join("\n"); logEl.scrollTop=logEl.scrollHeight; }
+  function count(){ countEl.textContent=`down:${c.down} up:${c.up} CANCEL:${c.cancel} hit:${c.hit} drag:${c.drag} click:${c.click} tcxl:${c.tcancel} gest:${c.gest}`; }
+  function log(e,tag){ const now=Math.round(performance.now()), dt=last?now-last:0; last=now;
+    if(dt>250 && buf.length) push("──── new tap ────");
+    const pt=(e.pointerType||"").padEnd(5), id=e.pointerId!=null?("#"+e.pointerId):"", b=e.buttons!=null?(" b"+e.buttons):"",
+      sec=e.isPrimary===false?" 2nd":"", xy=e.clientX!=null?` @${Math.round(e.clientX)},${Math.round(e.clientY)}`:"";
+    push(`+${String(dt).padStart(4)} ${(tag||e.type).padEnd(15)} ${pt}${id}${b}${sec}${xy} [${cls(e.target)}]`); count(); }
+  const D=document, on=(t,f)=>D.addEventListener(t,f,true);
+  on("pointerdown",e=>{c.down++;log(e);}); on("pointerup",e=>{c.up++;log(e);});
+  on("pointermove",e=>{ if(e.buttons){c.drag++;log(e);} });               // only drag-moves (pen contact), not hover
+  on("pointercancel",e=>{c.cancel++;log(e);}); on("gotpointercapture",e=>log(e)); on("lostpointercapture",e=>log(e));
+  on("click",e=>{c.click++;log(e);}); on("contextmenu",e=>log(e));
+  on("touchstart",e=>log(e)); on("touchend",e=>log(e)); on("touchcancel",e=>{c.tcancel++;log(e);});
+  for(const g of ["gesturestart","gesturechange","gestureend"]) on(g,e=>{c.gest++;log(e);});
+  // HIT: fires from inside a cell's own pointerdown handler (bubble) — proves the
+  // handler actually ran for this tap. Delegated so no per-cell edits are needed.
+  const grids=[$("#acidgrid"),$("#drumgrid")];
+  for(const gr of grids) if(gr) gr.addEventListener("pointerdown",e=>{ const cell=e.target.closest(".pcol,.tog,.dcell"); if(cell){c.hit++;log(e,"HIT-handler");} });
+  panel.querySelector("#dbgclr").onclick=()=>{ buf.length=0; logEl.textContent=""; for(const k in c)c[k]=0; count(); last=0; };
+  panel.querySelector("#dbgcopy").onclick=async()=>{ const cp=panel.querySelector("#dbgcopy"); try{ await navigator.clipboard.writeText(buf.join("\n")); cp.textContent="✓"; }catch(_){ cp.textContent="⚠ select"; } setTimeout(()=>cp.textContent="copy",1200); };
+  push("ready — tap the sequencer a few times; read the counters, then 'copy' + paste back"); count();
+}
 </script>
 </body>
 </html>

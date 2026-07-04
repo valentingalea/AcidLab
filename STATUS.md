@@ -136,8 +136,17 @@ Will later get its own DNS/host (M7). Spec agreed with Valentin 2026-07-03.
   `touch-action:none`. Fix: same override on `.pcol,.tog,.dcell,.lbl.mut` — tap
   targets, not scroll surfaces (you pan from the gaps/labels/chrome). Mechanics
   green headless on Chromium+WebKit (cells compute `none`, chrome stays pannable,
-  taps still toggle, 0 errors); the *pen* cure isn't headless-reproducible —
-  **pending on-device retest by Valentin** (deployed for that purpose).
+  taps still toggle, 0 errors); the *pen* cure isn't headless-reproducible.
+  **UPDATE 2026-07-04: `touch-action:none` did NOT fix it** — Valentin retested,
+  same drop. So the pointerdown is being swallowed/canceled at the event layer,
+  not lost to pan disambiguation. Added a `#debug` **pointer tracer** (append
+  `#debug` to the URL): a fixed panel logging the raw pointer/touch/gesture stream
+  at document-capture + a HIT line from the cell handler, with live counters
+  (`down/up/CANCEL/hit/drag/click/tcxl/gest`) + copy button — so a missed pen tap
+  is unambiguous (no `down`=OS swallowed · `CANCEL`>0=gesture-canceled · `down` w/o
+  `hit`=didn't reach cell · `down`>taps=double-fire). Panel is absent without
+  `#debug` (public app untouched; verified headless). Awaiting Valentin's on-device
+  trace to pick the real fix.
 
 ### Requests → milestones (from Valentin's spec, 2026-07-03)
 1 self-contained root dir → M1 · 2 localStorage save/load → M3 · 3 WAV download → M4 ·
