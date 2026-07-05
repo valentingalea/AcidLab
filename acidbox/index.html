@@ -52,6 +52,8 @@
   #rnd,.gen{border-color:var(--orange);color:var(--orange);font-weight:700}
   .io{border-color:var(--blue);color:var(--blue);padding:8px 10px}
   .sm{padding:6px 9px;font-size:12px}
+  .und{color:var(--dim)}
+  .und:not(:disabled){border-color:var(--acid);color:var(--acid)}   /* lights up only when there IS an action to undo */
   /* native scale <select> — styled to match the buttons, with a custom caret */
   .selwrap{position:relative;display:inline-flex;align-items:center;gap:6px}
   .selwrap::after{content:"▾";position:absolute;right:11px;color:var(--dim);font-size:11px;pointer-events:none}
@@ -159,6 +161,7 @@
       <button id="wave">◿ saw</button>
       <label class="selwrap"><span class="hint">scale</span><select id="scale" aria-label="scale"></select></label>
       <button id="clr303">clear</button>
+      <button id="undo303" class="und" title="undo last change" disabled>↶ undo</button>
     </div>
   </div>
 
@@ -182,6 +185,7 @@
       <button class="dpre" data-p="techno">techno</button>
       <button class="dpre" data-p="breaks">breaks</button>
       <button class="dpre" data-p="clear">clear</button>
+      <button id="undodrums" class="und" title="undo last change" disabled>↶ undo</button>
     </div>
   </div>
 
@@ -391,18 +395,18 @@ const acidGrid=$("#acidgrid"), drumGrid=$("#drumgrid");
 acidGrid.appendChild(el("div","lbl","")); for(let i=0;i<16;i++) acidGrid.appendChild(pnum(i));
 acidGrid.appendChild(el("div","lbl","NOTE"));
 for(let i=0;i<16;i++){ const c=el("div","pcol"+(i%4===0?" beat":"")); c.innerHTML=`<div class="rst">·</div><div class="bar"></div>`;
-  c.addEventListener("pointerdown",e=>{ e.preventDefault(); PITCH[i]=(PITCH[i]+1)%(NP+1); paintPitch(i); }); acidGrid.appendChild(c); pcols.push(c); }
+  c.addEventListener("pointerdown",e=>{ e.preventDefault(); mark303(); PITCH[i]=(PITCH[i]+1)%(NP+1); paintPitch(i); }); acidGrid.appendChild(c); pcols.push(c); }
 acidGrid.appendChild(el("div","lbl","ACC"));
-for(let i=0;i<16;i++){ const c=el("div","tog acc"+(i%4===0?" beat":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); ACCENT[i]=!ACCENT[i]; c.classList.toggle("on",ACCENT[i]); }); acidGrid.appendChild(c); accs.push(c); }
+for(let i=0;i<16;i++){ const c=el("div","tog acc"+(i%4===0?" beat":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); mark303(); ACCENT[i]=!ACCENT[i]; c.classList.toggle("on",ACCENT[i]); }); acidGrid.appendChild(c); accs.push(c); }
 acidGrid.appendChild(el("div","lbl","SLD"));
-for(let i=0;i<16;i++){ const c=el("div","tog sld"+(i%4===0?" beat":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); SLIDE[i]=!SLIDE[i]; c.classList.toggle("on",SLIDE[i]); }); acidGrid.appendChild(c); slds.push(c); }
+for(let i=0;i<16;i++){ const c=el("div","tog sld"+(i%4===0?" beat":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); mark303(); SLIDE[i]=!SLIDE[i]; c.classList.toggle("on",SLIDE[i]); }); acidGrid.appendChild(c); slds.push(c); }
 acidGrid.appendChild(el("div","lbl","OCT"));
-for(let i=0;i<16;i++){ const c=el("div","tog oct"+(i%4===0?" beat":"")); c.textContent="·"; c.addEventListener("pointerdown",e=>{ e.preventDefault(); OCT[i]=OCT[i]===0?1:OCT[i]===1?-1:0; paintOct(i); paintPitch(i); }); acidGrid.appendChild(c); octs.push(c); }
+for(let i=0;i<16;i++){ const c=el("div","tog oct"+(i%4===0?" beat":"")); c.textContent="·"; c.addEventListener("pointerdown",e=>{ e.preventDefault(); mark303(); OCT[i]=OCT[i]===0?1:OCT[i]===1?-1:0; paintOct(i); paintPitch(i); }); acidGrid.appendChild(c); octs.push(c); }
 // drums: header + a row per drum
 drumGrid.appendChild(el("div","lbl","")); for(let i=0;i<16;i++) drumGrid.appendChild(pnum(i));
-DRUMS.forEach(d=>{ const lbl=el("div","lbl mut",d.l); dlabels[d.k]=lbl; lbl.onclick=()=>setMute(d.k,!dmute[d.k]);
+DRUMS.forEach(d=>{ const lbl=el("div","lbl mut",d.l); dlabels[d.k]=lbl; lbl.onclick=()=>{ markDrums(); setMute(d.k,!dmute[d.k]); };
   drumGrid.appendChild(lbl); dcells[d.k]=[];
-  for(let i=0;i<16;i++){ const c=el("div","dcell"+(i%4===0?" beat":"")+(d.k==="kick"?" kick":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); DP[d.k][i]=!DP[d.k][i]; c.classList.toggle("on",DP[d.k][i]); }); drumGrid.appendChild(c); dcells[d.k].push(c); } });
+  for(let i=0;i<16;i++){ const c=el("div","dcell"+(i%4===0?" beat":"")+(d.k==="kick"?" kick":"")); c.addEventListener("pointerdown",e=>{ e.preventDefault(); markDrums(); DP[d.k][i]=!DP[d.k][i]; c.classList.toggle("on",DP[d.k][i]); }); drumGrid.appendChild(c); dcells[d.k].push(c); } });
 
 function paintPitch(i){ const pv=PITCH[i],c=pcols[i],bar=c.querySelector(".bar"); c.classList.toggle("note",pv>0);
   if(pv>0){ const semi=SCALE[pv-1]+12*OCT[i]; bar.style.height=(14+(Math.max(-12,Math.min(24,semi))+12)/36*82)+"%"; bar.textContent=pcName(SCALE[pv-1]); } else { bar.style.height="0%"; bar.textContent=""; } }
@@ -411,7 +415,7 @@ function repaintAcid(){ for(let i=0;i<16;i++){ paintPitch(i); accs[i].classList.
 function setScale(idx){ curScale=idx; SCALE=SCALES[idx].s; NP=SCALE.length; for(let i=0;i<16;i++) if(PITCH[i]>NP) PITCH[i]=NP; scaleSel.value=idx; repaintAcid(); }
 function repaintDrums(){ DRUMS.forEach(d=>{ for(let i=0;i<16;i++) dcells[d.k][i].classList.toggle("on",DP[d.k][i]); }); }
 function setMute(k,on){ dmute[k]=on; dlabels[k].classList.toggle("muted",on); dcells[k].forEach(c=>c.classList.toggle("mutedrow",on)); }
-function loadDrums(name){ const p=DPRE[name]; DRUMS.forEach(d=>{ DP[d.k]=new Array(16).fill(false); (p[d.k]||[]).forEach(i=>DP[d.k][i]=true); }); repaintDrums(); }
+function loadDrums(name,user){ if(user) markDrums(); const p=DPRE[name]; DRUMS.forEach(d=>{ DP[d.k]=new Array(16).fill(false); (p[d.k]||[]).forEach(i=>DP[d.k][i]=true); }); repaintDrums(); if(user && name==="clear") persist(UKEYD,undoDrums); }
 /* ── generators (lesson 17): Euclidean drums + scale random-walk melody ── */
 let pulses={kick:4,snare:0,chat:7,ohat:3,clap:2};
 let restProb=0.30, gWander=2, octProb=0.18, gAccP=0.35, gSlideP=0.22;
@@ -420,7 +424,7 @@ function euclid(k,n){ const p=new Array(n); for(let i=0;i<n;i++) p[i]=((i*k)%n)<
 function genDrum(k){ const p=euclid(pulses[k],16); for(let i=0;i<16;i++) DP[k][i]=!!p[i]; }
 function genDrums(){ DRUMS.forEach(d=>genDrum(d.k)); repaintDrums(); }
 // Melody: a bounded random walk over the current scale mask → always in key, has contour.
-function genMelody(){ let deg=0;
+function genMelody(){ mark303(); let deg=0;
   for(let i=0;i<16;i++){
     if(Math.random()<restProb){ PITCH[i]=0; OCT[i]=0; ACCENT[i]=false; SLIDE[i]=false; continue; }
     deg=Math.max(0,Math.min(NP-1, deg+(1+Math.floor(Math.random()*gWander))*(Math.random()<0.5?-1:1)));
@@ -430,7 +434,32 @@ function genMelody(){ let deg=0;
   if(PITCH[0]===0) PITCH[0]=1;                            // land the downbeat
   repaintAcid();
 }
-function clearAcid(){ for(let i=0;i<16;i++){ PITCH[i]=0; ACCENT[i]=false; SLIDE[i]=false; OCT[i]=0; } repaintAcid(); }
+function clearAcid(){ mark303(); for(let i=0;i<16;i++){ PITCH[i]=0; ACCENT[i]=false; SLIDE[i]=false; OCT[i]=0; } repaintAcid(); persist(UKEY3,undo303); }
+
+/* ══ undo · single-level, one snapshot per instrument ════════════════
+   A snapshot is taken BEFORE each pattern-mutating action, so the button
+   reverts the last thing you did: a note cycle, an acc/sld toggle, an
+   octave step, a whole drag-stroke, a jam, a preset, a mute — or a clear.
+   A CLEAR also stashes its snapshot in localStorage, so a wipe stays
+   undoable across a reload; mark() drops that stash once a newer action
+   supersedes it (so undo always reverts the *latest* action). Applying an
+   undo clamps notes to the current scale (guards a scale change in between). */
+const undoBtn303=$("#undo303"), undoBtnDrums=$("#undodrums");
+let undo303=null, undoDrums=null;
+const UKEY3="acidbox:undo303", UKEYD="acidbox:undodrums";
+function snap303(){ return {p:PITCH.slice(),a:ACCENT.map(b=>b?1:0),s:SLIDE.map(b=>b?1:0),o:OCT.slice()}; }
+function snapDrums(){ const d={}; DRUMS.forEach(x=>d[x.k]=DP[x.k].map(b=>b?1:0)); return {d,m:DRUMS.map(x=>dmute[x.k]?1:0)}; }
+function apply303(u){ for(let i=0;i<16;i++){ PITCH[i]=Math.min(u.p[i],NP); ACCENT[i]=!!u.a[i]; SLIDE[i]=!!u.s[i]; OCT[i]=u.o[i]; } repaintAcid(); }
+function applyDrums(u){ DRUMS.forEach(x=>{ DP[x.k]=u.d[x.k].map(Boolean); }); repaintDrums(); DRUMS.forEach((x,i)=>setMute(x.k,!!u.m[i])); }
+function persist(key,snap){ try{ localStorage.setItem(key,JSON.stringify(snap)); }catch(e){} }
+// mark = capture pre-action state; a non-clear action drops any stale persisted clear-undo
+function mark303(){ undo303=snap303(); undoBtn303.disabled=false; try{ localStorage.removeItem(UKEY3); }catch(e){} }
+function markDrums(){ undoDrums=snapDrums(); undoBtnDrums.disabled=false; try{ localStorage.removeItem(UKEYD); }catch(e){} }
+function resetUndo(){ undo303=undoDrums=null; undoBtn303.disabled=undoBtnDrums.disabled=true; try{ localStorage.removeItem(UKEY3); localStorage.removeItem(UKEYD); }catch(e){} }
+function loadPersistedUndo(){ try{ const a=localStorage.getItem(UKEY3); if(a){ undo303=JSON.parse(a); undoBtn303.disabled=false; } }catch(e){}
+  try{ const b=localStorage.getItem(UKEYD); if(b){ undoDrums=JSON.parse(b); undoBtnDrums.disabled=false; } }catch(e){} }
+undoBtn303.onclick=()=>{ if(!undo303) return; apply303(undo303); undo303=null; undoBtn303.disabled=true; try{ localStorage.removeItem(UKEY3); }catch(e){} toast("undone"); };
+undoBtnDrums.onclick=()=>{ if(!undoDrums) return; applyDrums(undoDrums); undoDrums=null; undoBtnDrums.disabled=true; try{ localStorage.removeItem(UKEYD); }catch(e){} toast("undone"); };
 
 /* ── drag-to-paint (stylus hardening) ───────────────────────────────
    iPadOS/WebKit drops ~1-in-6 discrete Apple Pencil taps: a glide-and-press
@@ -503,8 +532,11 @@ rndBtn.onclick=genMelody;                                  // 🎲 jam = roll a 
 $("#clr303").onclick=clearAcid;
 $("#gen303").onclick=genMelody;
 // pulse sliders regenerate their drum live (Euclidean is deterministic → instant preview)
+let pulseArmed=false;
 document.querySelectorAll(".pulse").forEach(inp=>{ const b=inp.closest(".mini").querySelector("b");
-  inp.oninput=()=>{ pulses[inp.dataset.k]=+inp.value; b.textContent=inp.value; genDrum(inp.dataset.k); repaintDrums(); }; });
+  inp.addEventListener("pointerdown",()=>{ pulseArmed=true; });                 // one undo snapshot per drag, not per input tick
+  inp.oninput=()=>{ if(pulseArmed){ markDrums(); pulseArmed=false; }
+    pulses[inp.dataset.k]=+inp.value; b.textContent=inp.value; genDrum(inp.dataset.k); repaintDrums(); }; });
 // melody knobs set the walk's params for the next roll (stochastic → applied on 🎲)
 [["gDen",v=>restProb=1-v/100],["gWan",v=>gWander=v],["gOct",v=>octProb=v/100],["gAcc",v=>gAccP=v/100],["gSld",v=>gSlideP=v/100]]
   .forEach(([id,fn])=>{ const el=$("#"+id),b=el.closest(".mini").querySelector("b"); el.oninput=()=>{ b.textContent=el.value; fn(+el.value); }; });
@@ -513,7 +545,7 @@ waveBtn.onclick=()=>{ waveform=waveform==="sawtooth"?"square":"sawtooth"; waveBt
 SCALES.forEach((sc,i)=>{ const o=el("option"); o.value=i; o.textContent=sc.n+(i===0?" · default":""); scaleSel.appendChild(o); });
 scaleSel.value=curScale;
 scaleSel.onchange=()=>setScale(+scaleSel.value);
-document.querySelectorAll(".dpre").forEach(b=>b.onclick=()=>loadDrums(b.dataset.p));
+document.querySelectorAll(".dpre").forEach(b=>b.onclick=()=>loadDrums(b.dataset.p,true));
 $("#bpm").oninput=e=>{ bpm=+e.target.value; $("#bpmVal").textContent=bpm; setDelayTime(); };
 $("#sw").oninput=e=>{ swing=+e.target.value/100*0.5; $("#swVal").textContent=e.target.value+"%"; };
 $("#dl").oninput=e=>{ $("#dlVal").textContent=e.target.value+"%"; if(delayWet) delayWet.gain.setTargetAtTime(+e.target.value/100,ctx.currentTime,0.02); };
@@ -608,7 +640,7 @@ function getSlots(){ try{ return JSON.parse(localStorage.getItem("acidbox:slots"
 function putSlots(a){ try{ localStorage.setItem("acidbox:slots",JSON.stringify(a)); }catch(e){} }
 function renderSlots(){ const a=getSlots(); slotList.innerHTML=""; slotEmpty.style.display=a.length?"none":"block";
   a.forEach((sl,ix)=>{ const row=el("div","slot"), nm=el("div","nm",sl.n), ld=el("button","ld","load"), rm=el("button","sm","🗑");
-    ld.onclick=()=>{ try{ applyState(decodeState(sl.t)); slotsEl.hidden=true; toast("loaded “"+sl.n+"”"); }catch(e){ toast("couldn't load that one"); } };
+    ld.onclick=()=>{ try{ applyState(decodeState(sl.t)); resetUndo(); slotsEl.hidden=true; toast("loaded “"+sl.n+"”"); }catch(e){ toast("couldn't load that one"); } };
     rm.onclick=()=>{ const b=getSlots(); b.splice(ix,1); putSlots(b); renderSlots(); };
     row.append(nm,ld,rm); slotList.appendChild(row); }); }
 $("#saveBtn").onclick=()=>{ renderSlots(); slotsEl.hidden=false; };
@@ -621,8 +653,9 @@ $("#slotSave").onclick=()=>{ const n=(slotName.value||"").trim()||("jam "+(getSl
 function initState(){
   const m=location.hash.match(/[#&]s=([A-Za-z0-9\-_]+)/);
   if(m){ try{ applyState(decodeState(m[1])); toast("loaded shared pattern"); }catch(e){}
-    history.replaceState(null,"",location.pathname+location.search); return; }
+    history.replaceState(null,"",location.pathname+location.search); resetUndo(); return; }
   const a=localStorage.getItem("acidbox:auto"); if(a){ try{ applyState(decodeState(a)); }catch(e){} }
+  loadPersistedUndo();
 }
 
 /* ══ M4 · WAV export ══════════════════════════════════════════════

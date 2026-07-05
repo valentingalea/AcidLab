@@ -251,3 +251,26 @@ DJ sliders + float/reposition, phone-first) → M2 (+ M6).
   re-masks the grid, switching to a smaller scale clamps out-of-range pitch,
   save/restore round-trips the scale through the select, sibling controls (wave /
   grid tap) intact, 0 JS errors.
+- 2026-07-05: **undo (per-instrument, single-level)**. A `↶ undo` button on the
+  303 card and the drums card, each with ONE snapshot that reverts the *last*
+  action on that instrument, then disables. `mark303()`/`markDrums()` snapshot
+  the pattern BEFORE each mutation; the button restores it. Covered: 303 = note
+  cycle / acc / sld / oct tap, a whole drag-stroke (one action, mark fires once
+  on the stroke's pointerdown, not per painted cell), 🎲 jam/generate, clear;
+  drums = cell tap, drag-stroke, preset (house/techno/breaks/clear), mute, and
+  euclidean pulse-slider drags (one snapshot per drag via a `pulseArmed` flag,
+  not per input tick). The two undo slots are independent. **Clear survives a
+  reload** (Valentin's ask): a clear also stashes its pre-clear snapshot in
+  `localStorage` (`acidbox:undo303` / `acidbox:undodrums`); `loadPersistedUndo()`
+  re-arms the button on startup, so a wipe stays undoable across a reload. Any
+  newer non-clear action drops that stash (mark removes the key) so undo always
+  means the *latest* action, never a stale clear; loading a slot / share link
+  `resetUndo()`s. Scope: pattern-only — undo ignores voice/FX faders, wave and
+  the scale selector (not "pattern actions"); only clear persists across reload
+  (jam/preset/taps are in-memory). Applying an undo clamps notes to the current
+  scale (guards a scale change in between). Undo button `.und` lights acid-green
+  only when armed (`:not(:disabled)`), dim otherwise. Verified 25/25 headless on
+  the live page (Chromium): every action type reverts, single-level (two toggles
+  → one undo reverts only the last), drag = one undoable stroke, clear→persist→
+  **reload**→undo restores the exact pre-clear pattern, staleness drop, 0 JS
+  errors; the scale-dropdown suite stayed 11/11 green.
