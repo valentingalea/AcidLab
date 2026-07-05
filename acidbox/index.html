@@ -429,6 +429,45 @@ function genMelody(){ let deg=0;
 }
 function clearAcid(){ for(let i=0;i<16;i++){ PITCH[i]=0; ACCENT[i]=false; SLIDE[i]=false; OCT[i]=0; } repaintAcid(); }
 
+/* ── drag-to-paint (stylus hardening) ───────────────────────────────
+   iPadOS/WebKit drops ~1-in-6 discrete Apple Pencil taps: a glide-and-press
+   onto a cell is read as continued hover, so no pointerdown/pressure/anything
+   reaches JS (proven via #debug — nothing to intercept). But once a contact IS
+   registered, its buttons=1 move-stream is flawless. So after a tap, dragging
+   across cells of the SAME row PAINTS them to the tapped value — one good
+   contact fills a run of steps, so a dropped tap-down no longer blocks entry.
+   Purely additive: tap-to-toggle is unchanged; a plain tap's jitter can't paint
+   a neighbour (a >10px move is required before painting engages). */
+const CELLSEL=".pcol,.tog,.dcell";
+function locateCell(cell){ let i;
+  if(cell.classList.contains("pcol")){ i=pcols.indexOf(cell); return i<0?null:{k:"note",i}; }
+  if(cell.classList.contains("acc")){ i=accs.indexOf(cell); return i<0?null:{k:"acc",i}; }
+  if(cell.classList.contains("sld")){ i=slds.indexOf(cell); return i<0?null:{k:"sld",i}; }
+  if(cell.classList.contains("oct")){ i=octs.indexOf(cell); return i<0?null:{k:"oct",i}; }
+  if(cell.classList.contains("dcell")) for(const d of DRUMS){ i=dcells[d.k].indexOf(cell); if(i>=0) return {k:d.k,i}; }
+  return null; }
+function readCell(k,i){ return k==="acc"?ACCENT[i]:k==="sld"?SLIDE[i]:k==="oct"?OCT[i]:k==="note"?{p:PITCH[i],o:OCT[i]}:DP[k][i]; }
+function applyCell(k,i,v){
+  if(k==="acc"){ ACCENT[i]=v; accs[i].classList.toggle("on",v); }
+  else if(k==="sld"){ SLIDE[i]=v; slds[i].classList.toggle("on",v); }
+  else if(k==="oct"){ OCT[i]=v; paintOct(i); paintPitch(i); }
+  else if(k==="note"){ PITCH[i]=v.p; OCT[i]=v.o; paintPitch(i); }
+  else { DP[k][i]=v; dcells[k][i].classList.toggle("on",v); } }
+let pstroke=null;
+// runs at BUBBLE (after the cell's own handler toggled), so readCell = the new value
+function paintDown(e){ const cell=e.target.closest(CELLSEL); if(!cell) return; const loc=locateCell(cell); if(!loc) return;
+  pstroke={k:loc.k, val:readCell(loc.k,loc.i), id:e.pointerId, x:e.clientX, y:e.clientY, moved:false, done:new Set([loc.i])}; }
+function paintMove(e){ if(!pstroke || e.pointerId!==pstroke.id || !(e.buttons&1)) return;
+  if(!pstroke.moved){ if(Math.hypot(e.clientX-pstroke.x, e.clientY-pstroke.y) < 10) return; pstroke.moved=true; }   // ignore tap jitter
+  const el=document.elementFromPoint(e.clientX,e.clientY); if(!el) return; const cell=el.closest(CELLSEL); if(!cell) return;
+  const loc=locateCell(cell); if(!loc || loc.k!==pstroke.k || pstroke.done.has(loc.i)) return;                       // same row, once each
+  pstroke.done.add(loc.i); applyCell(loc.k, loc.i, pstroke.val); }
+function paintEnd(e){ if(pstroke && (e.pointerId===pstroke.id || e.type==="pointercancel")) pstroke=null; }
+for(const gr of [acidGrid, drumGrid]) gr.addEventListener("pointerdown", paintDown);   // bubble = after the cell toggles
+document.addEventListener("pointermove", paintMove);
+document.addEventListener("pointerup", paintEnd);
+document.addEventListener("pointercancel", paintEnd);
+
 /* ── controls ──────────────────────────────────────────────────── */
 curCut=sliderToCut(+$("#cut").value);
 /* unified power + play: the FIRST tap creates the AudioContext inside the user

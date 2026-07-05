@@ -159,6 +159,18 @@ Will later get its own DNS/host (M7). Spec agreed with Valentin 2026-07-03.
   move-stream is rock-solid, so painting cells along a drag lets ONE good contact
   enter many steps — slashing how many drop-prone discrete contacts a pattern needs.
   Tap-to-toggle stays unchanged. `#debug` tracer kept in-tree (gated) for future.
+  **Pressure trace (4th round) closed it:** on the dropped taps `PRESS-HOV` stayed
+  0 — every hover event is `pr0.00`, no pressure, so the contact truly never
+  enters the web layer (registered taps ramp `pr0.08→0.28`). Uncatchable, final.
+  **FIX SHIPPED 2026-07-05 — drag-to-paint:** after a tap, dragging (>10px, so tap
+  jitter can't trigger it) across cells of the SAME row paints them to the tapped
+  value; one good contact fills a run of steps, so a dropped tap-down no longer
+  blocks entry. Unified over all rows (note=pitch+oct, acc/sld/oct, drums) via
+  `locateCell`/`readCell`/`applyCell` + a bubble-phase `paintDown` (reads the
+  post-toggle value) and a document `pointermove` painter using `elementFromPoint`
+  (capture-proof for touch). Additive — tap-to-toggle untouched. Verified headless
+  Chromium+WebKit 10/10 (paints runs per row, stops at edges, no jitter-bleed, no
+  cross-row bleed, tap still toggles, 0 errors); on-device pen retest still wanted.
 
 ### Requests → milestones (from Valentin's spec, 2026-07-03)
 1 self-contained root dir → M1 · 2 localStorage save/load → M3 · 3 WAV download → M4 ·
