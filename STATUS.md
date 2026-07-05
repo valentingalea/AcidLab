@@ -123,7 +123,7 @@ Will later get its own DNS/host (M7). Spec agreed with Valentin 2026-07-03.
 | M3 | Persistence & sharing | ✅ done | one bit-packed state token (~38 bytes → **51 url-safe chars**, version-tagged) drives BOTH transports: **localStorage autosave** (debounced; restores on reload) + **named slots** (💾 modal — name/save/load/🗑) and **`#s=` share links** (🔗 copies to clipboard; opening a link applies it then strips the hash so autosave takes over = "import once"). Stores raw slider values so restore = set+dispatch (re-derives internal state, audio, readouts); power-on now reads the fx/vol sliders too (restore-safe, also fixes a latent M2 gap). Headless-verified: 40/40 codec round-trips, apply-fidelity, reload-restore, share-restore + hash-strip, slots CRUD, 0 JS errors |
 | M4 | WAV export | ✅ done | refactored the live engine into a shared `buildGraph(ctx,out)` + engine-param voice/drum functions, used by BOTH the live AudioContext and an `OfflineAudioContext` — so export is **byte-faithful to what you hear** (drums + dub delay + reverb, all current knob/slider values; swing included). ⬇ renders 2 bars offline → dependency-free WAV (44-byte header + int16 PCM) → downloads `acidbox-loop.wav`; works even before power-on. Headless-verified: non-silent stereo render (peak 0.6), valid RIFF/WAVE, real ~900 KB file download, **live playback + full M2/M3 suites still green** (0 regressions from the refactor) |
 | M5 | Generators & clear | ✅ done | Generate card wired to the two lesson-17 algorithms. **303 · scale random-walk** — density/wander/octaves/accents/slides knobs + 🎲 generate 303 (also the app-bar 🎲 jam); knobs set the walk's params, the roll is stochastic. **drums · Euclidean** — per-drum pulse sliders (kick/snare/cl hat/op hat/clap) spread N hits evenly (`(i·k)%16<k`) and regenerate live as you drag (deterministic → no button needed). Clears stay per-instrument (303-card `clear` · drums `clear` preset). Generator params are session-only (deliberately NOT in the save/share token — the *resulting pattern* already is). Headless-verified: card enabled, gen303 = 16 in-scale notes at density 100, euclid kick4=`[0,4,8,12]` / chat7=7 hits, jam re-rolls, full M2–M4 suites still green |
-| M6 | Floating control surface | ⬜ planned | **(stretch)** the control clusters become a draggable/dockable "area" that floats & repositions to suit grip/orientation — additive on M2's area architecture |
+| M6 | Draggable panels + maximize | ✅ done | **drag-to-reorder** (grab a card by its whole title bar — the ⠿ is just the cue — and slide it; live reorder via `elementFromPoint`, monotonic insert, handle/title-only so grids & faders are safe) + a **maximize** ⤢ button on the 303 & drums cards that spans the full deck width and grows the grid cells in both axes (bigger tap targets; also eases the Pencil misses). Layout (order + maximize) persists to its OWN `localStorage` key — NOT the save/share token — with a footer "reset layout". Chosen over free-floating panels (Valentin, 2026-07-05: "on the grid" + "both axis"). See the dated entry below |
 | M7 | Deploy | 🟨 partial | **Live now** at `https://acidlab.duckdns.org/acidbox/` — whitelisted in the live Caddyfile's `acidlab` block (`redir /acidbox` + `/acidbox/*` on `@allowed`, same `:8083` origin, cf. puckline's `/legacy`); ufw unchanged (no new port); runbook synced in `DEPLOY.md`. **TODO:** its own DNS/subdomain (Valentin will add) + matching Caddy vhost |
 
 ### Bug fixes
@@ -274,3 +274,29 @@ DJ sliders + float/reposition, phone-first) → M2 (+ M6).
   → one undo reverts only the last), drag = one undoable stroke, clear→persist→
   **reload**→undo restores the exact pre-clear pattern, staleness drop, 0 JS
   errors; the scale-dropdown suite stayed 11/11 green.
+- 2026-07-05: **M6 — draggable panels + maximize.** Two parts, both additive on
+  M2's card grid. **(A) Maximize:** a corner ⤢ button on the 303 & drums cards
+  toggles `.card.max` → `grid-column:1/-1` (full deck width, both columns in
+  landscape) AND grows the grid cells in both axes (`.pcol` 70→120, `.tog`
+  21→34, `.dcell` 24→40) for big tap targets — also eases the Apple-Pencil
+  dropped-tap problem. Each card maximizes independently; the button flips glyph
+  (⤢↔⤡) + colour when active. **(B) Drag-to-reorder:** pointer-based sortable
+  from scratch (dependency-free, ~25 lines) — reorders live via
+  `document.elementFromPoint` with a monotonic insert (move toward the pointer →
+  no thrash) and a light lift (opacity + acid outline). Grab from the WHOLE
+  title bar, not just the ⠿ glyph (Valentin: the glyph alone was "very
+  hard/fiddly"); `.ctitle,.ctitle *` are `touch-action:none` (it doesn't
+  inherit, so the sub-text had been falling back to pan-x/pan-y scroll-
+  disambiguation) + a 5px engage threshold + grab/grabbing cursor. **Persistence:**
+  layout (order + maximize) on its OWN `localStorage` key `acidbox:layout`, NOT
+  in the save/share token (a shared link carries the sound, not your ergonomics);
+  a footer "reset layout" restores default order, un-maximizes, and clears the
+  key. `data-card` ids on all six cards; `applyLayout()` on load, `resetUndo`-
+  style guards so a slot/share load doesn't inherit a stale layout. Model =
+  drag-to-reorder (not free-floating panels — phone-first, no overlap/off-screen);
+  maximize = both axes; both per Valentin's plan sign-off. Verified 17/17 headless
+  on the live page (Chromium): maximize spans full width (876 vs 432px) + grows
+  cells + persists across reload + independent per card; drag from the title TEXT
+  (not the glyph) reorders, a fader gesture does NOT, order persists across reload;
+  reset restores/un-maxes/clears; grid+undo regression intact; 0 JS errors. Undo
+  (25/25) and scale (11/11) suites stayed green.

@@ -25,7 +25,7 @@
      Safari buffers pointer input to decide tap-vs-pan, and Apple Pencil taps get
      held/dropped in that buffer (finger taps resolve fine; pen missed ~every 3rd).
      touch-action:none delivers each tap immediately. Scroll from the gaps/labels. */
-  .pcol,.tog,.dcell,.seq .lbl.mut{touch-action:none}
+  .pcol,.tog,.dcell,.seq .lbl.mut,.ctitle,.ctitle *{touch-action:none}
   body{
     margin:0;background:radial-gradient(1200px 600px at 50% -10%,#1a1f14,var(--bg));
     color:var(--ink);font:15px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
@@ -64,12 +64,28 @@
   /* ── card deck (portrait stacks; ≥640px pairs up) ───────────── */
   .deck{display:grid;gap:12px;padding:12px 12px 80px;grid-template-columns:1fr;max-width:1080px;margin:0 auto}
   @media (min-width:640px){ .deck{grid-template-columns:1fr 1fr;align-items:start} }
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-  .ctitle{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin:0 0 10px;display:flex;gap:8px;align-items:center}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;position:relative}
+  .ctitle{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin:0 0 10px;display:flex;gap:8px;align-items:center;cursor:grab}
   .ctitle .drag{color:#3d4a30;font-size:15px;letter-spacing:0;cursor:grab}
   .ctitle .sub{color:var(--dim);text-transform:none;letter-spacing:0;font-size:11px}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 2px}
   .hint{color:var(--dim);font-size:12px}
+
+  /* ── M6: maximize (grows both axes) + drag-to-reorder ───────── */
+  .maxbtn{position:absolute;top:9px;right:11px;z-index:2;background:var(--panel2);color:var(--dim);
+    border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:14px;line-height:1.15;cursor:pointer;letter-spacing:0}
+  .maxbtn:hover{border-color:var(--acid);color:var(--acid)}
+  .card[data-card="acid"] .ctitle,.card[data-card="drums"] .ctitle{padding-right:34px}  /* reserve the corner for the button */
+  .card.max{grid-column:1/-1}                         /* fill the full deck width (both cols in landscape) */
+  .card.max .maxbtn{color:var(--acid);border-color:var(--acid)}
+  .card.max .seq{gap:5px}
+  .card.max .pcol{height:120px}
+  .card.max .tog{height:34px}
+  .card.max .dcell{height:40px}
+  .card.max .seq .lbl{font-size:11px}
+  .card.max .stepnum{font-size:11px}
+  .card.max .pcol .bar{font-size:12px}
+  .card.dragging{opacity:.9;box-shadow:0 6px 22px rgba(0,0,0,.55);outline:1px solid var(--acid);outline-offset:-1px;z-index:5}
 
   /* ── the DJ faders (full-length, long-throw) ────────────────── */
   .fader{display:flex;flex-direction:column;gap:3px;margin:15px 0}
@@ -154,7 +170,8 @@
 
 <div class="deck">
   <!-- 1 · 303 sequencer -->
-  <div class="card">
+  <div class="card" data-card="acid">
+    <button class="maxbtn" title="maximize" aria-label="maximize the 303 grid">⤢</button>
     <div class="ctitle"><span class="drag">⠿</span> acid · tb-303 <span class="sub">tap NOTE to cycle · ACC / SLD / OCT ▲▼</span></div>
     <div class="seq" id="acidgrid"></div>
     <div class="row">
@@ -166,7 +183,7 @@
   </div>
 
   <!-- 2 · filter (pairs with the 303 grid in landscape) -->
-  <div class="card">
+  <div class="card" data-card="filter">
     <div class="ctitle"><span class="drag">⠿</span> filter · 303 voice</div>
     <div class="fader"><div class="top"><span>cutoff</span><b id="cutVal">200</b></div><input id="cut" class="dj" type="range" min="0" max="1000" value="286"></div>
     <div class="fader"><div class="top"><span>reso</span><b id="resVal">16</b></div><input id="res" class="dj" type="range" min="0" max="26" value="16" step="0.5"></div>
@@ -176,7 +193,8 @@
   </div>
 
   <!-- 3 · drums -->
-  <div class="card">
+  <div class="card" data-card="drums">
+    <button class="maxbtn" title="maximize" aria-label="maximize the drum grid">⤢</button>
     <div class="ctitle"><span class="drag">⠿</span> drums <span class="sub">tap cells · tap a name to mute</span></div>
     <div class="seq" id="drumgrid"></div>
     <div class="row">
@@ -190,7 +208,7 @@
   </div>
 
   <!-- 4 · space / master (pairs with drums) -->
-  <div class="card">
+  <div class="card" data-card="space">
     <div class="ctitle"><span class="drag">⠿</span> space · master</div>
     <div class="fader fx"><div class="top"><span>delay</span><b id="dlVal">28%</b></div><input id="dl" class="dj fx" type="range" min="0" max="90" value="28"></div>
     <div class="fader fx"><div class="top"><span>feedback</span><b id="fbVal">40%</b></div><input id="fb" class="dj fx" type="range" min="0" max="80" value="40"></div>
@@ -199,14 +217,14 @@
   </div>
 
   <!-- 5 · transport -->
-  <div class="card">
+  <div class="card" data-card="transport">
     <div class="ctitle"><span class="drag">⠿</span> transport</div>
     <div class="fader"><div class="top"><span>tempo</span><b id="bpmVal">126</b></div><input id="bpm" class="dj" type="range" min="90" max="150" value="126"></div>
     <div class="fader"><div class="top"><span>swing</span><b id="swVal">12%</b></div><input id="sw" class="dj" type="range" min="0" max="65" value="12"></div>
   </div>
 
   <!-- 6 · generate (M5 — the two lesson-17 algorithms) -->
-  <div class="card">
+  <div class="card" data-card="generate">
     <div class="ctitle"><span class="drag">⠿</span> generate <span class="sub">grow patterns instead of drawing them</span></div>
     <div class="hint" style="margin:0 0 4px">acid line · scale random-walk</div>
     <div class="row">
@@ -229,7 +247,7 @@
 </div>
 
 <footer class="foot">
-  <span class="hint">AcidBox — the standalone instrument from <a href="../lessons/16-groovebox/index.html">Acid Lab · lesson 16</a>. Pure Web Audio, no samples. <a href="../index.html">← all lessons</a></span>
+  <span class="hint">AcidBox — the standalone instrument from <a href="../lessons/16-groovebox/index.html">Acid Lab · lesson 16</a>. Pure Web Audio, no samples. <a href="../index.html">← all lessons</a> · <a href="#" id="resetLayout">reset layout</a></span>
 </footer>
 
 <!-- save/load slots (M3) -->
@@ -688,8 +706,46 @@ dlBtn.onclick=async()=>{ if(dlBtn.dataset.busy) return; dlBtn.dataset.busy="1"; 
   catch(e){ console.error(e); toast("export failed"); }
   finally{ dlBtn.textContent=old; delete dlBtn.dataset.busy; } };
 
+/* ══ M6 · maximize + drag-to-reorder ═══════════════════════════════
+   Card layout is a grip/orientation preference, stored on its OWN
+   localStorage key (NOT in the save/share token — a shared link carries
+   the sound, not your ergonomics). Maximize spans the full deck width and
+   grows the grid cells in both axes (bigger tap targets); drag a card by
+   its ⠿ handle to reorder the deck (reorders live via elementFromPoint). */
+const DECK=$(".deck"), LKEY="acidbox:layout";
+const cardEls=()=>[...DECK.children];                    // deck children are the 6 cards (comments aren't elements)
+const DEFAULT_ORDER=cardEls().map(c=>c.dataset.card);    // captured before any restore reorders
+function setMax(card,on){ card.classList.toggle("max",on); const b=card.querySelector(".maxbtn"); if(b){ b.textContent=on?"⤡":"⤢"; b.title=on?"restore":"maximize"; } }
+function saveLayout(){ const max={}; for(const c of cardEls()) if(c.classList.contains("max")) max[c.dataset.card]=1;
+  try{ localStorage.setItem(LKEY, JSON.stringify({order:cardEls().map(c=>c.dataset.card), max})); }catch(e){} }
+function applyLayout(){ let L; try{ L=JSON.parse(localStorage.getItem(LKEY)||"null"); }catch(e){}
+  if(!L) return;
+  if(Array.isArray(L.order)){ const byKey={}; for(const c of cardEls()) byKey[c.dataset.card]=c;      // only reorder if the saved set matches the current cards
+    if(L.order.length===DEFAULT_ORDER.length && L.order.every(k=>byKey[k])) for(const k of L.order) DECK.appendChild(byKey[k]); }
+  if(L.max) for(const c of cardEls()) if(L.max[c.dataset.card]) setMax(c,true); }
+function resetLayout(){ for(const c of cardEls()) setMax(c,false);
+  const byKey={}; for(const c of cardEls()) byKey[c.dataset.card]=c; for(const k of DEFAULT_ORDER) DECK.appendChild(byKey[k]);
+  try{ localStorage.removeItem(LKEY); }catch(e){} toast("layout reset"); }
+DECK.querySelectorAll(".maxbtn").forEach(b=>{ b.onclick=()=>{ const c=b.closest(".card"); setMax(c,!c.classList.contains("max")); saveLayout(); }; });
+$("#resetLayout").onclick=e=>{ e.preventDefault(); resetLayout(); };
+// drag-to-reorder: starts ONLY from the ⠿ handle (grids/faders untouched); reorders live; saves on drop
+let drag=null;
+// grab from the WHOLE title bar (not just the tiny ⠿ glyph) — much easier to hit; ⠿ stays as the affordance
+DECK.querySelectorAll(".ctitle").forEach(h=>{ const card=h.closest(".card");
+  h.addEventListener("pointerdown",e=>{ e.preventDefault(); drag={card,id:e.pointerId,x:e.clientX,y:e.clientY,moved:false}; }); });
+document.addEventListener("pointermove",e=>{ if(!drag || e.pointerId!==drag.id) return;
+  if(!drag.moved){ if(Math.hypot(e.clientX-drag.x, e.clientY-drag.y)<5) return; drag.moved=true; drag.card.classList.add("dragging"); document.body.style.cursor="grabbing"; }  // low threshold → easy to engage
+  const t=document.elementFromPoint(e.clientX,e.clientY), tc=t&&t.closest(".card");
+  if(!tc || tc===drag.card || tc.parentNode!==DECK) return;
+  const cs=cardEls(), di=cs.indexOf(drag.card), ti=cs.indexOf(tc);
+  DECK.insertBefore(drag.card, ti<di ? tc : tc.nextSibling); });                                       // move toward the pointer (monotonic → no thrash)
+function dragEnd(e){ if(!drag || (e.pointerId!==drag.id && e.type!=="pointercancel")) return;
+  if(drag.moved){ drag.card.classList.remove("dragging"); document.body.style.cursor=""; saveLayout(); } drag=null; }
+document.addEventListener("pointerup",dragEnd);
+document.addEventListener("pointercancel",dragEnd);
+
 /* ── init grids + playhead ─────────────────────────────────────── */
-loadDrums("house"); repaintAcid(); initState();
+loadDrums("house"); repaintAcid(); initState(); applyLayout();
 function setCur(s,on){ pcols[s].classList.toggle("cur",on); accs[s].classList.toggle("cur",on); slds[s].classList.toggle("cur",on); octs[s].classList.toggle("cur",on); DRUMS.forEach(d=>dcells[d.k][s].classList.toggle("cur",on)); }
 function draw(){ requestAnimationFrame(draw); if(!ctx) return;
   if(playing){ let ns=playStep; while(schedQ.length && schedQ[0].t<=ctx.currentTime){ ns=schedQ.shift().s; }
