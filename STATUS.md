@@ -145,8 +145,20 @@ Will later get its own DNS/host (M7). Spec agreed with Valentin 2026-07-03.
   (`down/up/CANCEL/hit/drag/click/tcxl/gest`) + copy button — so a missed pen tap
   is unambiguous (no `down`=OS swallowed · `CANCEL`>0=gesture-canceled · `down` w/o
   `hit`=didn't reach cell · `down`>taps=double-fire). Panel is absent without
-  `#debug` (public app untouched; verified headless). Awaiting Valentin's on-device
-  trace to pick the real fix.
+  `#debug` (public app untouched; verified headless).
+  **VERDICT 2026-07-05 (3 device traces in):** the drop is at the OS/WebKit input
+  layer, NOT the app. On a missed tap there is no `pointerdown`/`touchstart`/`click`
+  AND no `buttons:1` move — the pen stays a *hovering* pointer (`pen #1, buttons:0`)
+  and the physical contact is never promoted to a `pointerdown`. So it's a
+  WebKit/Apple-Pencil hover-vs-contact miss (a real tap read as continued hover),
+  categorically uncatchable from JS. Corroborated every time: the missed tap always
+  lands in an oversized inter-tap gap (+900–2300ms vs ~400 normal) that contains
+  only `hover #1` lines — pen seen, contact dropped. Rate ~1–3 of 12. `touch-action`
+  and touch/click fallbacks are dead ends (nothing to catch). **Fix direction =
+  drag-to-paint** (additive): once a contact IS registered its `buttons:1`
+  move-stream is rock-solid, so painting cells along a drag lets ONE good contact
+  enter many steps — slashing how many drop-prone discrete contacts a pattern needs.
+  Tap-to-toggle stays unchanged. `#debug` tracer kept in-tree (gated) for future.
 
 ### Requests → milestones (from Valentin's spec, 2026-07-03)
 1 self-contained root dir → M1 · 2 localStorage save/load → M3 · 3 WAV download → M4 ·
