@@ -639,19 +639,27 @@ function initDebug(){
   panel.innerHTML=`<div id="dbgbar"><b>ptr trace</b><span id="dbgcount"></span><button id="dbgclr">clear</button><button id="dbgcopy">copy</button></div><div id="dbglog"></div>`;
   document.body.appendChild(panel);
   const logEl=panel.querySelector("#dbglog"), countEl=panel.querySelector("#dbgcount");
-  const buf=[]; let last=0; const c={down:0,ts:0,up:0,cancel:0,drag:0,click:0,gest:0,tcancel:0,hit:0};
+  const buf=[]; let last=0, lastHov=0; const c={down:0,ts:0,up:0,cancel:0,hov:0,drag:0,click:0,gest:0,tcancel:0,hit:0};
   const cls=t=>{ if(!t||typeof t.className!=="string") return (t&&t.tagName)||"?";
     return t.className.split(" ").find(x=>["pcol","tog","dcell","lbl"].includes(x)) || t.className.split(" ")[0] || t.tagName; };
-  function push(s){ buf.push(s); if(buf.length>500) buf.shift(); logEl.textContent=buf.join("\n"); logEl.scrollTop=logEl.scrollHeight; }
-  function count(){ countEl.textContent=`down:${c.down} ts:${c.ts} hit:${c.hit} up:${c.up} CANCEL:${c.cancel} click:${c.click} drag:${c.drag} tcxl:${c.tcancel} gest:${c.gest}`; }
+  function push(s){ buf.push(s); if(buf.length>900) buf.shift(); logEl.textContent=buf.join("\n"); logEl.scrollTop=logEl.scrollHeight; }
+  function count(){ countEl.textContent=`down:${c.down} ts:${c.ts} hit:${c.hit} hov:${c.hov} up:${c.up} CANCEL:${c.cancel} click:${c.click} drag:${c.drag} tcxl:${c.tcancel} gest:${c.gest}`; }
   function log(e,tag){ const now=Math.round(performance.now()), dt=last?now-last:0; last=now;
     if(dt>250 && buf.length) push("──── new tap ────");
     const pt=(e.pointerType||"").padEnd(5), id=e.pointerId!=null?("#"+e.pointerId):"", b=e.buttons!=null?(" b"+e.buttons):"",
       sec=e.isPrimary===false?" 2nd":"", xy=e.clientX!=null?` @${Math.round(e.clientX)},${Math.round(e.clientY)}`:"";
     push(`+${String(dt).padStart(4)} ${(tag||e.type).padEnd(15)} ${pt}${id}${b}${sec}${xy} [${cls(e.target)}]`); count(); }
+  // Hover / boundary events go through raw() — no timing/grouping, so the per-tap
+  // "──── new tap ────" separators (driven by REAL taps) stay intact. If a
+  // swallowed tap still shows hover/over lines in its gap → pen detected, contact
+  // dropped. If the gap is silent → full palm rejection (nothing to catch).
+  function raw(tag,e){ const pt=(e.pointerType||"").padEnd(5), id=e.pointerId!=null?("#"+e.pointerId):"",
+    xy=e.clientX!=null?` @${Math.round(e.clientX)},${Math.round(e.clientY)}`:""; push(`       ${tag.padEnd(9)} ${pt}${id}${xy} [${cls(e.target)}]`); count(); }
   const D=document, on=(t,f)=>D.addEventListener(t,f,true);
   on("pointerdown",e=>{c.down++;log(e);}); on("pointerup",e=>{c.up++;log(e);});
-  on("pointermove",e=>{ if(e.buttons){c.drag++;log(e);} });               // only drag-moves (pen contact), not hover
+  on("pointermove",e=>{ if(e.buttons){c.drag++;log(e);}                    // pen down = drag
+    else { c.hov++; const now=Math.round(performance.now()); if(now-lastHov>150){ lastHov=now; raw("hover",e); } } });  // pen near = hover (sampled)
+  on("pointerover",e=>raw("over",e)); on("pointerout",e=>raw("out",e));   // pen crosses a cell boundary
   on("pointercancel",e=>{c.cancel++;log(e);}); on("gotpointercapture",e=>log(e)); on("lostpointercapture",e=>log(e));
   on("click",e=>{c.click++;log(e);}); on("contextmenu",e=>log(e));
   on("touchstart",e=>{c.ts++;log(e);}); on("touchend",e=>log(e)); on("touchcancel",e=>{c.tcancel++;log(e);});
@@ -667,7 +675,7 @@ function initDebug(){
     if(cell){ c.hit++; const st=cell.classList.contains("on")?"ON":cell.classList.contains("note")?"NOTE":"off"; log(e,`HIT t${c.down}→${st}`); } });
   panel.querySelector("#dbgclr").onclick=()=>{ buf.length=0; logEl.textContent=""; for(const k in c)c[k]=0; count(); last=0; };
   panel.querySelector("#dbgcopy").onclick=async()=>{ const cp=panel.querySelector("#dbgcopy"); try{ await navigator.clipboard.writeText(buf.join("\n")); cp.textContent="✓"; }catch(_){ cp.textContent="⚠ select"; } setTimeout(()=>cp.textContent="copy",1200); };
-  push("READY — clear, then tap ONE empty ACC cell exactly 12× slowly. Watch it: note how many times YOU tapped vs the on/off you see. Compare down: vs ts: vs hit: — then copy."); count();
+  push("READY (hover build) — clear, then tap ONE empty ACC cell 12× slowly, lifting the pen FULLY between taps. On a missed tap, watch the gap: 'hover'/'over' lines = pen seen, contact dropped; a SILENT gap = full palm rejection. Then copy."); count();
 }
 </script>
 </body>
