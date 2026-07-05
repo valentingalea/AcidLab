@@ -2,7 +2,7 @@
 
 Progress tracker for Acid Lab. See `AGENTS.md` for the concept & full curriculum.
 
-**Last updated:** 2026-07-03
+**Last updated:** 2026-07-05
 
 ## Legend
 `⬜ planned` · `🟨 in progress` · `✅ done` · `⏭️ optional/skipped`
@@ -235,3 +235,19 @@ DJ sliders + float/reposition, phone-first) → M2 (+ M6).
   errors); the *leak cure itself* (iOS ~4-cap + bfcache eviction) is NOT
   reproducible headless — needs real-device confirmation, same caveat class as the
   autoplay-policy note above.
+- 2026-07-05: **scale picker → dropdown** (small UX). The 303 card's scale
+  control was a button that *cycled* through the 6 scales (one hidden option per
+  tap, no overview); it's now a native `<select>` — styled to match the buttons
+  (▾ caret, `scale` hint label like the drums card's `kit:`), so every scale is
+  visible at once and iOS gets its native wheel picker (fits the phone-first
+  design). Options are built from the `SCALES` array (no drift) with index 0
+  (**Min pent**) labelled "Min pent · default" so the default is marked. Rewired
+  `setScale()` + the `applyState()` restore to set `scaleSel.value` instead of
+  button text; the save/share token/codec is unchanged (scale was already a
+  field). Also removed dead M2 leftovers: the `.soon` CSS + `[data-soon]` click
+  handler (nothing carries those attributes anymore) and refreshed the stale
+  "placeholder buttons" comment over `toast`. Verified 11/11 headless on the live
+  page (Chromium): SELECT has 6 options, only the default is marked, change
+  re-masks the grid, switching to a smaller scale clamps out-of-range pitch,
+  save/restore round-trips the scale through the select, sibling controls (wave /
+  grid tap) intact, 0 JS errors.

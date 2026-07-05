@@ -52,9 +52,12 @@
   #rnd,.gen{border-color:var(--orange);color:var(--orange);font-weight:700}
   .io{border-color:var(--blue);color:var(--blue);padding:8px 10px}
   .sm{padding:6px 9px;font-size:12px}
-  .soon{position:relative}
-  .soon::after{content:attr(data-tag);position:absolute;top:-7px;right:-7px;background:var(--panel);
-    border:1px solid var(--line);color:var(--dim);font-size:8px;border-radius:8px;padding:0 4px;letter-spacing:1px}
+  /* native scale <select> — styled to match the buttons, with a custom caret */
+  .selwrap{position:relative;display:inline-flex;align-items:center;gap:6px}
+  .selwrap::after{content:"▾";position:absolute;right:11px;color:var(--dim);font-size:11px;pointer-events:none}
+  select#scale{-webkit-appearance:none;appearance:none;background:var(--panel2);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:8px 26px 8px 12px;font:inherit;font-size:13px;cursor:pointer;transition:.1s}
+  select#scale:hover,select#scale:focus{border-color:var(--acid);outline:none}
 
   /* ── card deck (portrait stacks; ≥640px pairs up) ───────────── */
   .deck{display:grid;gap:12px;padding:12px 12px 80px;grid-template-columns:1fr;max-width:1080px;margin:0 auto}
@@ -154,7 +157,7 @@
     <div class="seq" id="acidgrid"></div>
     <div class="row">
       <button id="wave">◿ saw</button>
-      <button id="scale">scale: Min pent</button>
+      <label class="selwrap"><span class="hint">scale</span><select id="scale" aria-label="scale"></select></label>
       <button id="clr303">clear</button>
     </div>
   </div>
@@ -286,7 +289,7 @@ const DPRE={
 };
 
 const $=s=>document.querySelector(s);
-const playBtn=$("#play"), rndBtn=$("#rnd"), waveBtn=$("#wave"), scaleBtn=$("#scale");
+const playBtn=$("#play"), rndBtn=$("#rnd"), waveBtn=$("#wave"), scaleSel=$("#scale");
 
 /* Build the WHOLE groovebox graph on ANY context — the live AudioContext or an
    OfflineAudioContext for WAV export — so the render is exactly what you hear
@@ -405,7 +408,7 @@ function paintPitch(i){ const pv=PITCH[i],c=pcols[i],bar=c.querySelector(".bar")
   if(pv>0){ const semi=SCALE[pv-1]+12*OCT[i]; bar.style.height=(14+(Math.max(-12,Math.min(24,semi))+12)/36*82)+"%"; bar.textContent=pcName(SCALE[pv-1]); } else { bar.style.height="0%"; bar.textContent=""; } }
 function paintOct(i){ const o=OCT[i],c=octs[i]; c.textContent=o>0?"▲":o<0?"▼":"·"; c.classList.toggle("up",o>0); c.classList.toggle("dn",o<0); }
 function repaintAcid(){ for(let i=0;i<16;i++){ paintPitch(i); accs[i].classList.toggle("on",ACCENT[i]); slds[i].classList.toggle("on",SLIDE[i]); paintOct(i); } }
-function setScale(idx){ curScale=idx; SCALE=SCALES[idx].s; NP=SCALE.length; for(let i=0;i<16;i++) if(PITCH[i]>NP) PITCH[i]=NP; scaleBtn.textContent="scale: "+SCALES[idx].n; repaintAcid(); }
+function setScale(idx){ curScale=idx; SCALE=SCALES[idx].s; NP=SCALE.length; for(let i=0;i<16;i++) if(PITCH[i]>NP) PITCH[i]=NP; scaleSel.value=idx; repaintAcid(); }
 function repaintDrums(){ DRUMS.forEach(d=>{ for(let i=0;i<16;i++) dcells[d.k][i].classList.toggle("on",DP[d.k][i]); }); }
 function setMute(k,on){ dmute[k]=on; dlabels[k].classList.toggle("muted",on); dcells[k].forEach(c=>c.classList.toggle("mutedrow",on)); }
 function loadDrums(name){ const p=DPRE[name]; DRUMS.forEach(d=>{ DP[d.k]=new Array(16).fill(false); (p[d.k]||[]).forEach(i=>DP[d.k][i]=true); }); repaintDrums(); }
@@ -506,7 +509,10 @@ document.querySelectorAll(".pulse").forEach(inp=>{ const b=inp.closest(".mini").
 [["gDen",v=>restProb=1-v/100],["gWan",v=>gWander=v],["gOct",v=>octProb=v/100],["gAcc",v=>gAccP=v/100],["gSld",v=>gSlideP=v/100]]
   .forEach(([id,fn])=>{ const el=$("#"+id),b=el.closest(".mini").querySelector("b"); el.oninput=()=>{ b.textContent=el.value; fn(+el.value); }; });
 waveBtn.onclick=()=>{ waveform=waveform==="sawtooth"?"square":"sawtooth"; waveBtn.textContent=waveform==="square"?"▨ square":"◿ saw"; if(osc) osc.type=waveform; };
-scaleBtn.onclick=()=>setScale((curScale+1)%SCALES.length);
+// scale dropdown: build the options once (index 0 marked as the default), then re-mask on change
+SCALES.forEach((sc,i)=>{ const o=el("option"); o.value=i; o.textContent=sc.n+(i===0?" · default":""); scaleSel.appendChild(o); });
+scaleSel.value=curScale;
+scaleSel.onchange=()=>setScale(+scaleSel.value);
 document.querySelectorAll(".dpre").forEach(b=>b.onclick=()=>loadDrums(b.dataset.p));
 $("#bpm").oninput=e=>{ bpm=+e.target.value; $("#bpmVal").textContent=bpm; setDelayTime(); };
 $("#sw").oninput=e=>{ swing=+e.target.value/100*0.5; $("#swVal").textContent=e.target.value+"%"; };
@@ -521,11 +527,10 @@ $("#dec").oninput=e=>{ decay=+e.target.value/1000; $("#decVal").textContent=e.ta
 $("#acc").oninput=e=>{ accentAmt=+e.target.value/100; $("#accVal").textContent=e.target.value; };
 $("#cutVal").textContent=Math.round(curCut);
 
-/* placeholder buttons (💾 🔗 ⬇) — flag the milestone that lights them up */
+/* toast — brief confirmation popups (save, share, export, …) */
 let toastEl,toastT;
 function toast(m){ if(!toastEl){ toastEl=el("div"); toastEl.id="toast"; document.body.appendChild(toastEl); }
   toastEl.textContent=m; toastEl.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove("show"),1700); }
-document.querySelectorAll("[data-soon]").forEach(b=>b.addEventListener("click",()=>toast(b.dataset.soon)));
 
 /* ══ M3 · persistence & sharing ═══════════════════════════════════
    ONE compact state token drives both localStorage and the #s= share
@@ -547,7 +552,7 @@ function applyState(s){
   setSlider("#env-mod",s.env); setSlider("#dec",s.dec); setSlider("#acc",s.acc);
   setSlider("#dl",s.dl); setSlider("#fb",s.fb); setSlider("#rv",s.rv); setSlider("#vol",s.vol);
   waveform=s.wave?"square":"sawtooth"; waveBtn.textContent=s.wave?"▨ square":"◿ saw"; if(osc) osc.type=waveform;
-  curScale=s.scale; SCALE=SCALES[s.scale].s; NP=SCALE.length; scaleBtn.textContent="scale: "+SCALES[s.scale].n;
+  curScale=s.scale; SCALE=SCALES[s.scale].s; NP=SCALE.length; scaleSel.value=s.scale;
   for(let i=0;i<16;i++){ PITCH[i]=Math.min(s.pitch[i],NP); OCT[i]=s.oct[i]-1; ACCENT[i]=!!s.accg[i]; SLIDE[i]=!!s.sld[i]; }
   repaintAcid();
   DRUMS.forEach((d,di)=>{ for(let i=0;i<16;i++) DP[d.k][i]=!!s.drums[di][i]; }); repaintDrums();
